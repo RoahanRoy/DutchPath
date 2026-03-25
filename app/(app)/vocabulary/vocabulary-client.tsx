@@ -292,7 +292,7 @@ export function VocabularyClient({ cards, userId }: Props) {
       </div>
 
       {/* Category progress rings */}
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {catStats.map(({ value, label, emoji, mastered, total }) => {
           const pct = total > 0 ? (mastered / total) * 100 : 0;
           const circumference = 2 * Math.PI * 16;

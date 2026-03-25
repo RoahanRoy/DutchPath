@@ -12,6 +12,7 @@ import type { Profile, DailyActivity } from "@/lib/supabase/types";
 import { createClient } from "@/lib/supabase/client";
 import { useAppStore } from "@/lib/store";
 import { getInitials, getDaysUntilExam, cn } from "@/lib/utils";
+import { DarkModeToggle } from "@/components/ui/dark-mode-toggle";
 
 interface AchievementWithStatus {
   id: number;
@@ -109,7 +110,7 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
             <span className="text-xs font-bold bg-primary text-white px-2 py-0.5 rounded-full">
               {profile.current_level}
             </span>
-            <span className="text-xs text-[var(--muted)]">{completedCount} lessons · {profile.xp_total} XP</span>
+            <span className="text-xs text-[var(--muted)] truncate">{completedCount} lessons · {profile.xp_total.toLocaleString()} XP</span>
           </div>
         </div>
         <button
@@ -194,6 +195,12 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
           </div>
         </div>
 
+        {/* Dark mode */}
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-medium">Dark mode</p>
+          <DarkModeToggle />
+        </div>
+
         <button
           onClick={handleSave}
           disabled={saving}
@@ -212,7 +219,7 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
             <ResponsiveContainer width="100%" height={180}>
               <LineChart data={xpChartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                <XAxis dataKey="date" tick={{ fontSize: 11, fill: "var(--muted)" }} interval="preserveStartEnd" />
+                <XAxis dataKey="date" tick={{ fontSize: 10, fill: "var(--muted)" }} interval="preserveStartEnd" tickLine={false} />
                 <YAxis tick={{ fontSize: 11, fill: "var(--muted)" }} />
                 <Tooltip
                   contentStyle={{

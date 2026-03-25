@@ -179,8 +179,9 @@ export function DashboardClient({
               <div className="flex-1 min-w-0">
                 <p className="text-xs opacity-80 mb-0.5">Continue learning</p>
                 <p className="font-semibold truncate">{nextLesson.title}</p>
-                <p className="text-xs opacity-70 mt-0.5">
-                  Week {nextLesson.week} · Day {nextLesson.day} · {nextLesson.estimated_minutes} min · +{nextLesson.xp_reward} XP
+                <p className="text-xs opacity-70 mt-0.5 flex flex-wrap gap-x-1">
+                  <span>Week {nextLesson.week} · Day {nextLesson.day}</span>
+                  <span>· {nextLesson.estimated_minutes} min · +{nextLesson.xp_reward} XP</span>
                 </p>
               </div>
               <ChevronRight size={20} className="shrink-0 opacity-80 group-hover:translate-x-1 transition-transform" aria-hidden="true" />

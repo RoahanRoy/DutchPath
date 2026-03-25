@@ -47,42 +47,44 @@ export function ReadingClient({ lessons }: Props) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-6">
         {/* Toolbar */}
-        <div className="flex items-center gap-3 mb-4 flex-wrap">
-          <button
-            onClick={() => { setSelectedLesson(null); setHighlightMode(false); setTimerMode(false); }}
-            className="tap-target flex items-center gap-1.5 text-sm text-[var(--muted)] hover:text-[var(--foreground)]"
-            aria-label="Back to reading list"
-          >
-            <X size={16} aria-hidden="true" />
-            Back
-          </button>
-          <h1 className="font-semibold flex-1 truncate">{selectedLesson.title}</h1>
-
-          <button
-            onClick={() => setHighlightMode(!highlightMode)}
-            className={cn(
-              "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors tap-target",
-              highlightMode ? "bg-accent/20 text-accent" : "bg-[var(--border)]/50 text-[var(--muted)]"
-            )}
-            aria-pressed={highlightMode}
-            aria-label="Toggle highlight mode"
-          >
-            <Highlighter size={14} aria-hidden="true" />
-            Highlight
-          </button>
-
-          <button
-            onClick={() => setTimerMode(!timerMode)}
-            className={cn(
-              "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors tap-target",
-              timerMode ? "bg-primary/20 text-primary dark:text-blue-400" : "bg-[var(--border)]/50 text-[var(--muted)]"
-            )}
-            aria-pressed={timerMode}
-            aria-label="Toggle exam timer mode"
-          >
-            <Timer size={14} aria-hidden="true" />
-            Timer
-          </button>
+        <div className="mb-4">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => { setSelectedLesson(null); setHighlightMode(false); setTimerMode(false); }}
+              className="tap-target flex items-center gap-1.5 text-sm text-[var(--muted)] hover:text-[var(--foreground)] shrink-0"
+              aria-label="Back to reading list"
+            >
+              <X size={16} aria-hidden="true" />
+              Back
+            </button>
+            <h1 className="font-semibold flex-1 truncate min-w-0">{selectedLesson.title}</h1>
+          </div>
+          <div className="flex gap-2 mt-2">
+            <button
+              onClick={() => setHighlightMode(!highlightMode)}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors tap-target",
+                highlightMode ? "bg-accent/20 text-accent" : "bg-[var(--border)]/50 text-[var(--muted)]"
+              )}
+              aria-pressed={highlightMode}
+              aria-label="Toggle highlight mode"
+            >
+              <Highlighter size={14} aria-hidden="true" />
+              Highlight
+            </button>
+            <button
+              onClick={() => setTimerMode(!timerMode)}
+              className={cn(
+                "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors tap-target",
+                timerMode ? "bg-primary/20 text-primary dark:text-blue-400" : "bg-[var(--border)]/50 text-[var(--muted)]"
+              )}
+              aria-pressed={timerMode}
+              aria-label="Toggle exam timer mode"
+            >
+              <Timer size={14} aria-hidden="true" />
+              Timer
+            </button>
+          </div>
         </div>
 
         {/* Exam timer */}

@@ -378,8 +378,20 @@ export function LessonPlayer({ lesson, progress, userId }: Props) {
         )}
       </AnimatePresence>
 
+      {/* Passage (always visible) */}
+      <div className="sticky top-[57px] z-10 bg-[var(--background)] border-b border-[var(--border)] px-4 pt-3 pb-2">
+        <div className="max-w-2xl mx-auto">
+          <div className="max-h-[28vh] overflow-y-auto bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-3">
+            <p className="text-[10px] font-medium text-[var(--muted)] uppercase tracking-wide mb-1.5">{content.passage?.source_label}</p>
+            <pre className="dutch-text whitespace-pre-wrap text-[var(--foreground)] text-xs leading-relaxed">
+              {content.passage?.text}
+            </pre>
+          </div>
+        </div>
+      </div>
+
       {/* Question */}
-      <div className="flex-1 overflow-y-auto px-4 py-6 max-w-2xl mx-auto w-full">
+      <div className="flex-1 overflow-y-auto px-4 py-5 max-w-2xl mx-auto w-full">
         <p className="text-xs text-[var(--muted)] mb-4">
           Question {currentQ + 1} of {questions.length}
         </p>
