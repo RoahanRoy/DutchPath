@@ -103,6 +103,8 @@ const config: Config = {
         full: "9999px",
       },
       boxShadow: {
+        "card":          "0px 2px 12px rgba(26, 28, 27, 0.06), 0px 1px 4px rgba(26, 28, 27, 0.04)",
+        "card-hover":    "0px 8px 24px rgba(26, 28, 27, 0.10), 0px 2px 8px rgba(26, 28, 27, 0.06)",
         "card-ambient":  "0px 12px 32px rgba(26, 28, 27, 0.06)",
         "card-subtle":   "0px 4px 16px rgba(26, 28, 27, 0.04)",
         "card-light":    "0px 8px 24px rgba(26, 28, 27, 0.04)",
