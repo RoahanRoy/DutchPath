@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { BookMarked, RotateCcw, CheckCircle2, ChevronRight } from "lucide-react";
+import { BookMarked, RotateCcw, CheckCircle2, ChevronRight, Volume2 } from "lucide-react";
 import type { VocabCard, UserVocab } from "@/lib/supabase/types";
 import { createClient } from "@/lib/supabase/client";
 import { useAppStore } from "@/lib/store";
@@ -26,11 +26,25 @@ const CATEGORIES: { value: Category; label: string; emoji: string }[] = [
   { value: "people", label: "People", emoji: "👥" },
 ];
 
+const CATEGORY_EMOJIS: Record<string, string> = {
+  forms: "📝",
+  everyday: "🏠",
+  time: "⏰",
+  people: "👥",
+};
+
+const CATEGORY_BORDER_COLORS: Record<string, string> = {
+  forms: "#3b82f6",
+  everyday: "#22c55e",
+  time: "#f59e0b",
+  people: "#a855f7",
+};
+
 const STATUS_COLORS: Record<string, string> = {
-  new: "bg-gray-200 dark:bg-gray-700",
-  learning: "bg-blue-200 dark:bg-blue-800",
-  reviewing: "bg-amber-200 dark:bg-amber-800",
-  mastered: "bg-green-200 dark:bg-green-800",
+  new: "bg-gray-100 text-gray-500",
+  learning: "bg-blue-100 text-blue-600",
+  reviewing: "bg-amber-100 text-amber-600",
+  mastered: "bg-green-100 text-green-600",
 };
 
 export function VocabularyClient({ cards, userId }: Props) {
@@ -158,6 +172,7 @@ export function VocabularyClient({ cards, userId }: Props) {
     const cardId = reviewQueue[reviewIndex];
     const card = cards.find((c) => c.id === cardId)!;
     const uv = cardStates.get(cardId);
+    const categoryEmoji = CATEGORY_EMOJIS[card.category] ?? "📋";
 
     return (
       <div className="max-w-sm mx-auto px-4 py-6">
@@ -194,30 +209,64 @@ export function VocabularyClient({ cards, userId }: Props) {
           >
             {/* Front */}
             <div
-              className="absolute inset-0 bg-[var(--card-bg)] border-2 border-primary rounded-2xl flex flex-col items-center justify-center p-6"
+              className="absolute inset-0 bg-[var(--card-bg)] border-2 border-primary rounded-2xl flex flex-col items-center justify-center p-6 overflow-hidden"
               style={{ backfaceVisibility: "hidden" }}
             >
-              <p className="text-3xl font-bold text-primary mb-2">{card.dutch}</p>
-              <p className="text-xs text-[var(--muted)]">Tap to reveal</p>
+              {/* Subtle grid overlay */}
+              <div
+                className="absolute inset-0 rounded-2xl pointer-events-none"
+                style={{
+                  backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.15) 1px, transparent 1px)",
+                  backgroundSize: "24px 24px",
+                }}
+                aria-hidden="true"
+              />
+              {/* Category emoji top-left */}
+              <span className="absolute top-3 left-3 text-2xl" aria-hidden="true">{categoryEmoji}</span>
+              {/* Status badge top-right */}
               {uv && (
-                <span className={cn("absolute top-3 right-3 text-xs px-2 py-1 rounded-full text-[var(--foreground)]", STATUS_COLORS[uv.status])}>
+                <span className={cn("absolute top-3 right-3 text-xs px-2 py-1 rounded-full", STATUS_COLORS[uv.status])}>
                   {uv.status}
                 </span>
               )}
+              <p className="text-4xl font-bold text-primary mb-3 relative z-10">{card.dutch}</p>
+              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--border)] text-[var(--muted)] text-xs relative z-10">
+                <span aria-hidden="true">👆</span>
+                <span>Tap to reveal</span>
+              </div>
             </div>
 
             {/* Back */}
             <div
-              className="absolute inset-0 bg-[var(--card-bg)] border-2 border-success rounded-2xl flex flex-col items-center justify-center p-6 text-center"
+              className="absolute inset-0 bg-[var(--card-bg)] border-2 border-success rounded-2xl flex flex-col items-center justify-center p-6 text-center overflow-hidden"
               style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
             >
-              <p className="text-xl font-bold text-success mb-2">{card.english}</p>
+              <p className="text-2xl font-bold text-success mb-2">{card.english}</p>
               {card.example_sentence_nl && (
-                <p className="dutch-text text-sm text-[var(--muted)] italic mt-2">{card.example_sentence_nl}</p>
+                <>
+                  <div className="w-full h-px bg-[var(--border)] my-3" aria-hidden="true" />
+                  <div className="w-full rounded-xl px-3 py-2 text-left" style={{ background: "#FFFBF5" }}>
+                    <p className="dutch-text text-sm text-[var(--muted)] italic">{card.example_sentence_nl}</p>
+                    {card.example_sentence_en && (
+                      <p className="text-xs text-[var(--muted)] mt-1">{card.example_sentence_en}</p>
+                    )}
+                  </div>
+                </>
               )}
-              {card.example_sentence_en && (
+              {!card.example_sentence_nl && card.example_sentence_en && (
                 <p className="text-xs text-[var(--muted)] mt-1">{card.example_sentence_en}</p>
               )}
+              {/* Speaker button */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  addToast({ type: "success", title: "🔊 Audio coming soon", message: "Text-to-speech is not yet available." });
+                }}
+                className="absolute bottom-3 right-3 w-8 h-8 flex items-center justify-center rounded-full bg-[var(--border)] text-[var(--muted)] hover:bg-primary/10 hover:text-primary transition-colors tap-target"
+                aria-label="Play audio (coming soon)"
+              >
+                <Volume2 size={14} aria-hidden="true" />
+              </button>
             </div>
           </motion.div>
         </div>
@@ -231,19 +280,22 @@ export function VocabularyClient({ cards, userId }: Props) {
               className="flex gap-3 mt-6"
             >
               {([
-                { rating: "hard", label: "Hard", emoji: "😅", color: "border-danger text-danger" },
-                { rating: "ok", label: "OK", emoji: "😊", color: "border-amber-400 text-amber-600" },
-                { rating: "easy", label: "Easy", emoji: "😎", color: "border-success text-success" },
-              ] as const).map(({ rating, label, emoji, color }) => (
+                { rating: "hard", label: "Hard", emoji: "😅", color: "border-danger text-danger", bg: "bg-danger/5", interval: "again tomorrow" },
+                { rating: "ok",   label: "OK",   emoji: "😊", color: "border-amber-400 text-amber-600", bg: "bg-amber-400/5", interval: "in 3 days" },
+                { rating: "easy", label: "Easy", emoji: "😎", color: "border-success text-success", bg: "bg-success/5", interval: "in 7 days" },
+              ] as const).map(({ rating, label, emoji, color, bg, interval }) => (
                 <button
                   key={rating}
                   onClick={() => handleRating(rating)}
-                  className={cn("flex-1 border-2 rounded-xl py-3 font-semibold text-sm transition-all tap-target hover:opacity-80", color)}
+                  className={cn(
+                    "flex-1 border-2 rounded-xl py-4 font-semibold text-sm transition-all tap-target hover:opacity-80 flex flex-col items-center gap-0.5",
+                    color, bg
+                  )}
                   aria-label={`Rate as ${label}`}
                 >
                   <span aria-hidden="true">{emoji}</span>
-                  <br />
-                  {label}
+                  <span>{label}</span>
+                  <span className="text-[10px] font-normal opacity-60">{interval}</span>
                 </button>
               ))}
             </motion.div>
@@ -301,20 +353,21 @@ export function VocabularyClient({ cards, userId }: Props) {
             <button
               key={value}
               onClick={() => setCategory(value as Category)}
-              className="flex flex-col items-center gap-1.5 bg-[var(--card-bg)] border border-[var(--border)] rounded-xl p-3 tap-target transition-colors hover:border-primary/30"
+              className="flex flex-col items-center gap-1 bg-[var(--card-bg)] border border-[var(--border)] rounded-xl p-3 tap-target transition-colors hover:border-primary/30"
               aria-label={`${label}: ${mastered} of ${total} mastered`}
             >
-              <div className="relative w-10 h-10" aria-hidden="true">
+              <span className="text-lg" aria-hidden="true">{emoji}</span>
+              <div className="relative w-14 h-14" aria-hidden="true">
                 <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 40 40">
                   <circle cx="20" cy="20" r="16" fill="none" stroke="var(--border)" strokeWidth="3" />
                   <circle cx="20" cy="20" r="16" fill="none" stroke="#00A86B" strokeWidth="3"
                     strokeDasharray={circumference} strokeDashoffset={offset}
                     strokeLinecap="round" className="transition-all duration-700" />
                 </svg>
-                <span className="absolute inset-0 flex items-center justify-center text-lg">{emoji}</span>
+                <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-success">{mastered}</span>
               </div>
               <p className="text-[10px] font-medium text-[var(--muted)]">{label}</p>
-              <p className="text-[10px] text-success font-semibold">{mastered}/{total}</p>
+              <p className="text-[10px] text-[var(--muted)]">{Math.round(pct)}%</p>
             </button>
           );
         })}
@@ -347,6 +400,7 @@ export function VocabularyClient({ cards, userId }: Props) {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.02 }}
                 className="flex items-center gap-4 bg-[var(--card-bg)] border border-[var(--border)] rounded-xl px-4 py-3"
+                style={{ borderLeft: `3px solid ${CATEGORY_BORDER_COLORS[card.category] ?? "var(--border)"}` }}
               >
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-sm">{card.dutch}</p>
@@ -357,10 +411,11 @@ export function VocabularyClient({ cards, userId }: Props) {
                     {uv.status}
                   </span>
                 ) : (
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-[var(--muted)] shrink-0">
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 shrink-0">
                     new
                   </span>
                 )}
+                <ChevronRight size={14} className="text-[var(--muted)] shrink-0" aria-hidden="true" />
               </motion.div>
             );
           })}
