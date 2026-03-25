@@ -6,6 +6,22 @@
 @import "@fontsource/lora/400.css";
 @import "@fontsource/lora/400-italic.css";
 @import "@fontsource/lora/600.css";
+@import "@fontsource/plus-jakarta-sans/400.css";
+@import "@fontsource/plus-jakarta-sans/500.css";
+@import "@fontsource/plus-jakarta-sans/600.css";
+@import "@fontsource/plus-jakarta-sans/700.css";
+@import "@fontsource/plus-jakarta-sans/800.css";
+@import "@fontsource/noto-serif/400.css";
+@import "@fontsource/noto-serif/400-italic.css";
+@import "@fontsource/noto-serif/700.css";
+/* Material Symbols — self-hosted from /public/fonts */
+@font-face {
+  font-family: "Material Symbols Outlined";
+  font-style: normal;
+  font-weight: 100 700;
+  font-display: block;
+  src: url("/fonts/material-symbols-outlined.woff2") format("woff2");
+}
 
 :root {
   --background: #f9f9f7;
@@ -114,3 +130,26 @@ body {
 
 .pb-safe { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
 .tap-target { min-width: 44px; min-height: 44px; }
+
+/* Material Symbols Outlined (Google Fonts) */
+.mso {
+  font-family: 'Material Symbols Outlined';
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  vertical-align: middle;
+  font-style: normal;
+  display: inline-block;
+  line-height: 1;
+  text-transform: none;
+  letter-spacing: normal;
+  word-wrap: normal;
+  white-space: nowrap;
+  direction: ltr;
+  -webkit-font-smoothing: antialiased;
+}
+.mso-fill {
+  font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+/* Hide scrollbar utility */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
