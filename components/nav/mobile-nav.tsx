@@ -17,10 +17,11 @@ export function MobileNav() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-[var(--card-bg)] border-t border-[var(--border)] pb-safe"
+      className="fixed bottom-6 left-4 right-4 z-50 md:hidden rounded-full bg-white/80 dark:bg-[var(--card-bg)]/85 backdrop-blur-xl shadow-float"
+      style={{ border: "0.5px solid var(--border)" }}
       aria-label="Main navigation"
     >
-      <div className="flex items-stretch">
+      <div className="flex items-center justify-around h-16 px-2">
         {NAV_ITEMS.map(({ href, icon: Icon, label }) => {
           const active = pathname.startsWith(href);
           return (
@@ -28,16 +29,20 @@ export function MobileNav() {
               key={href}
               href={href}
               className={cn(
-                "flex-1 flex flex-col items-center justify-center gap-1 py-2 tap-target transition-colors",
+                "flex items-center justify-center rounded-full transition-all duration-300 min-w-[44px] min-h-[44px]",
                 active
-                  ? "text-primary dark:text-blue-400"
-                  : "text-[var(--muted)] hover:text-[var(--foreground)]"
+                  ? "gap-2 px-4 bg-[#003DA5] text-white"
+                  : "w-11 h-11 text-[var(--muted)] hover:bg-black/5 dark:hover:bg-white/10"
               )}
               aria-label={label}
               aria-current={active ? "page" : undefined}
             >
-              <Icon size={22} strokeWidth={active ? 2.5 : 2} aria-hidden="true" />
-              <span className="text-[10px] font-medium">{label}</span>
+              <Icon size={20} strokeWidth={active ? 2.5 : 2} aria-hidden="true" />
+              {active && (
+                <span className="text-[10px] font-bold uppercase tracking-[0.05em] whitespace-nowrap">
+                  {label}
+                </span>
+              )}
             </Link>
           );
         })}
