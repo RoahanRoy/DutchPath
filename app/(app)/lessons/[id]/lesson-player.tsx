@@ -7,7 +7,7 @@ import { Heart, X, ChevronRight, Star, Zap, Clock, RotateCcw } from "lucide-reac
 import type { Lesson, UserLessonProgress, LessonContent, Question } from "@/lib/supabase/types";
 import { createClient } from "@/lib/supabase/client";
 import { useAppStore } from "@/lib/store";
-import { getAmsterdamHour, getAmsterdamDate, getStarRating, cn } from "@/lib/utils";
+import { getAmsterdamHour, getAmsterdamDate, getStarRating, getLessonTypeColor, cn } from "@/lib/utils";
 
 interface Props {
   lesson: Lesson;
@@ -180,6 +180,7 @@ export function LessonPlayer({ lesson, progress, userId }: Props) {
 
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
+  // ─── Complete screen ──────────────────────────────────────────────────────────
   if (phase === "complete") {
     const score = Math.round((correctCount / questions.length) * 100);
     const stars = getStarRating(score);
@@ -196,15 +197,24 @@ export function LessonPlayer({ lesson, progress, userId }: Props) {
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
           className="w-full max-w-sm bg-[var(--card-bg)] rounded-3xl border border-[var(--border)] p-6 text-center shadow-xl"
         >
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.2, type: "spring", stiffness: 400 }}
-            className="text-5xl mb-3"
-            aria-hidden="true"
-          >
-            {score >= 80 ? "🎉" : score >= 50 ? "👍" : "💪"}
-          </motion.div>
+          {/* Emoji with confetti dots */}
+          <div className="relative mx-auto mb-3 w-24 h-24 flex items-center justify-center">
+            <span className="absolute top-1 left-3 w-2.5 h-2.5 rounded-full bg-primary" aria-hidden="true" />
+            <span className="absolute top-0 right-4 w-2 h-2 rounded-full bg-accent" aria-hidden="true" />
+            <span className="absolute top-1/2 right-0 w-2.5 h-2.5 rounded-full bg-yellow-400" aria-hidden="true" />
+            <span className="absolute bottom-2 right-4 w-2 h-2 rounded-full bg-primary/60" aria-hidden="true" />
+            <span className="absolute bottom-1 left-2 w-2.5 h-2.5 rounded-full bg-accent/70" aria-hidden="true" />
+            <span className="absolute top-1/2 left-0 w-2 h-2 rounded-full bg-yellow-400/80" aria-hidden="true" />
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.2, type: "spring", stiffness: 400 }}
+              className="text-5xl"
+              aria-hidden="true"
+            >
+              {score >= 80 ? "🎉" : score >= 50 ? "👍" : "💪"}
+            </motion.div>
+          </div>
 
           <h2 className="text-xl font-bold mb-1">
             {score >= 80 ? "Uitstekend!" : score >= 50 ? "Goed gedaan!" : "Blijf oefenen!"}
@@ -219,7 +229,7 @@ export function LessonPlayer({ lesson, progress, userId }: Props) {
                 transition={{ delay: 0.3 + i * 0.1, type: "spring", stiffness: 400 }}
               >
                 <Star
-                  size={28}
+                  size={36}
                   className={i < stars ? "text-yellow-400 fill-yellow-400" : "text-[var(--border)] fill-[var(--border)]"}
                   aria-hidden="true"
                 />
@@ -228,15 +238,15 @@ export function LessonPlayer({ lesson, progress, userId }: Props) {
           </div>
 
           <div className="grid grid-cols-3 gap-3 mb-5">
-            <div className="bg-[var(--background)] rounded-xl p-3">
+            <div className="bg-gradient-to-b from-primary/[0.05] to-transparent rounded-xl p-3">
               <p className="text-2xl font-bold text-primary">{score}%</p>
               <p className="text-xs text-[var(--muted)]">Score</p>
             </div>
-            <div className="bg-[var(--background)] rounded-xl p-3">
+            <div className="bg-gradient-to-b from-primary/[0.05] to-transparent rounded-xl p-3">
               <p className="text-2xl font-bold text-yellow-500">+{xpEarned}</p>
               <p className="text-xs text-[var(--muted)]">XP earned</p>
             </div>
-            <div className="bg-[var(--background)] rounded-xl p-3">
+            <div className="bg-gradient-to-b from-primary/[0.05] to-transparent rounded-xl p-3">
               <p className="text-2xl font-bold">{formatTime(elapsedSeconds)}</p>
               <p className="text-xs text-[var(--muted)]">Time</p>
             </div>
@@ -262,6 +272,7 @@ export function LessonPlayer({ lesson, progress, userId }: Props) {
     );
   }
 
+  // ─── Intro phase ──────────────────────────────────────────────────────────────
   if (phase === "intro") {
     return (
       <div className="min-h-screen flex flex-col bg-[var(--background)]">
@@ -278,16 +289,20 @@ export function LessonPlayer({ lesson, progress, userId }: Props) {
         </div>
 
         <div className="flex-1 overflow-y-auto px-4 py-6 max-w-2xl mx-auto w-full">
-          {/* Source label */}
+          {/* Source label with type dot */}
           <div className="flex items-center gap-2 text-sm text-[var(--muted)] mb-4">
+            <span className={cn("w-2 h-2 rounded-full shrink-0", getLessonTypeColor(lesson.type))} aria-hidden="true" />
             <span>{content.passage?.source_label}</span>
             <span>·</span>
             <Clock size={14} aria-hidden="true" />
             <span>{lesson.estimated_minutes} min</span>
           </div>
 
-          {/* Passage */}
-          <div className="bg-[var(--card-bg)] rounded-2xl border border-[var(--border)] p-5 mb-6">
+          {/* Passage — warm parchment bg, primary left accent */}
+          <div
+            className="rounded-2xl p-5 mb-6 bg-[#FFFBF5] dark:bg-[var(--card-bg)]"
+            style={{ borderLeft: "3px solid var(--passage-accent)" }}
+          >
             <pre className="dutch-text whitespace-pre-wrap text-[var(--foreground)] text-sm leading-relaxed">
               {content.passage?.text}
             </pre>
@@ -321,7 +336,7 @@ export function LessonPlayer({ lesson, progress, userId }: Props) {
     );
   }
 
-  // Question phase
+  // ─── Question phase ───────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen flex flex-col bg-[var(--background)]">
       {/* Top bar */}
@@ -330,20 +345,30 @@ export function LessonPlayer({ lesson, progress, userId }: Props) {
           <button onClick={() => router.back()} className="tap-target flex items-center justify-center text-[var(--muted)] shrink-0" aria-label="Exit lesson">
             <X size={20} aria-hidden="true" />
           </button>
-          {/* Progress bar */}
+
+          {/* Segmented progress bar */}
           <div
-            className="flex-1 h-2.5 bg-[var(--border)] rounded-full overflow-hidden"
+            className="flex-1 flex gap-0.5"
             role="progressbar"
             aria-valuenow={currentQ}
             aria-valuemax={questions.length}
             aria-label={`Question ${currentQ + 1} of ${questions.length}`}
           >
-            <motion.div
-              className="h-full bg-primary rounded-full"
-              animate={{ width: `${((currentQ) / questions.length) * 100}%` }}
-              transition={{ duration: 0.3 }}
-            />
+            {Array.from({ length: questions.length }).map((_, i) => (
+              <div
+                key={i}
+                className={cn(
+                  "h-2.5 flex-1 rounded-full transition-colors duration-300",
+                  i < currentQ
+                    ? "bg-primary"
+                    : i === currentQ
+                    ? "bg-primary/40 animate-pulse"
+                    : "bg-[var(--border)]"
+                )}
+              />
+            ))}
           </div>
+
           {/* Hearts */}
           <div className="flex items-center gap-0.5 shrink-0" aria-label={`${heartsLeft} hearts remaining`}>
             {unlockedHearts ? (
@@ -378,11 +403,18 @@ export function LessonPlayer({ lesson, progress, userId }: Props) {
         )}
       </AnimatePresence>
 
-      {/* Passage (always visible) */}
+      {/* Passage (sticky) — warm parchment bg, primary left accent */}
       <div className="sticky top-[57px] z-10 bg-[var(--background)] border-b border-[var(--border)] px-4 pt-3 pb-2">
         <div className="max-w-2xl mx-auto">
-          <div className="max-h-[28vh] overflow-y-auto bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-3">
-            <p className="text-[10px] font-medium text-[var(--muted)] uppercase tracking-wide mb-1.5">{content.passage?.source_label}</p>
+          <div
+            className="max-h-[28vh] overflow-y-auto rounded-xl p-3 bg-[#FFFBF5] dark:bg-[var(--card-bg)]"
+            style={{ borderLeft: "3px solid var(--passage-accent)" }}
+          >
+            {/* Source label with type dot */}
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", getLessonTypeColor(lesson.type))} aria-hidden="true" />
+              <p className="text-[10px] font-medium text-[var(--muted)] uppercase tracking-wide">{content.passage?.source_label}</p>
+            </div>
             <pre className="dutch-text whitespace-pre-wrap text-[var(--foreground)] text-xs leading-relaxed">
               {content.passage?.text}
             </pre>
@@ -437,7 +469,7 @@ export function LessonPlayer({ lesson, progress, userId }: Props) {
       </div>
 
       {/* Bottom action */}
-      <div className="sticky bottom-0 pb-safe px-4 py-3 bg-[var(--card-bg)] border-t border-[var(--border)]">
+      <div className="sticky bottom-16 md:bottom-0 pb-safe px-4 py-3 bg-[var(--card-bg)] border-t border-[var(--border)]">
         <div className="max-w-2xl mx-auto">
           {isCorrect === null ? (
             question.type === "fill_blank" && (
@@ -490,15 +522,26 @@ function QuestionRenderer({
                 onClick={() => isCorrect === null && onAnswer(i)}
                 disabled={isCorrect !== null}
                 className={cn(
-                  "w-full text-left px-4 py-3.5 rounded-xl border-2 font-medium text-sm transition-all tap-target",
+                  "w-full text-left px-5 py-4 rounded-xl border-2 font-medium text-sm transition-all tap-target active:scale-[0.98] flex items-center gap-3",
                   isRight ? "border-success bg-success/10 text-success"
                   : isWrong ? "border-danger bg-danger/10 text-danger"
-                  : isSelected ? "border-primary bg-primary/10"
+                  : isSelected ? "border-primary bg-primary/10 border-l-[3px]"
                   : "border-[var(--border)] hover:border-[var(--muted)] bg-[var(--card-bg)]"
                 )}
                 aria-pressed={isSelected}
                 aria-label={`Option: ${option}`}
               >
+                {/* State dot */}
+                <span
+                  className={cn(
+                    "w-2 h-2 rounded-full shrink-0",
+                    isRight ? "bg-success"
+                    : isWrong ? "bg-danger"
+                    : isSelected ? "bg-primary"
+                    : "bg-gray-300 dark:bg-gray-600"
+                  )}
+                  aria-hidden="true"
+                />
                 {option}
               </button>
             );
@@ -524,7 +567,7 @@ function QuestionRenderer({
                 onClick={() => isCorrect === null && onAnswer(val)}
                 disabled={isCorrect !== null}
                 className={cn(
-                  "py-4 rounded-xl border-2 font-semibold text-sm transition-all tap-target",
+                  "py-6 rounded-xl border-2 font-semibold text-sm transition-all tap-target",
                   isRight ? "border-success bg-success/10 text-success"
                   : isWrong ? "border-danger bg-danger/10 text-danger"
                   : isSelected ? "border-primary bg-primary/10"
@@ -532,7 +575,10 @@ function QuestionRenderer({
                 )}
                 aria-pressed={isSelected}
               >
-                {val ? "✓ True" : "✗ False"}
+                {val
+                  ? (isRight ? "✓ True" : "True")
+                  : (isRight ? "✗ False" : "False")
+                }
               </button>
             );
           })}

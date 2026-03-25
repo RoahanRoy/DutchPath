@@ -8,16 +8,45 @@
 @import "@fontsource/lora/600.css";
 
 :root {
-  --background: #FFF8F0;
-  --foreground: #1a1a1a;
-  --primary: #003DA5;
-  --accent: #FF6B00;
+  --background: #f9f9f7;
+  --foreground: #1a1c1b;
+  --primary: #002975;
+  --primary-container: #003da5;
+  --primary-fixed: #dbe1ff;
+  --on-primary-fixed: #00174b;
+  --accent: #fe6b00;
   --success: #00A86B;
   --danger: #D63B3B;
+  --error: #ba1a1a;
+  --error-container: #ffdad6;
   --gold: #FFD700;
   --card-bg: #ffffff;
-  --border: #e5e2dc;
-  --muted: #6b6b6b;
+  --border: rgba(0, 40, 100, 0.08);
+  --muted: #434653;
+
+  /* MD3 surface stack */
+  --surface: #f9f9f7;
+  --surface-container-lowest: #ffffff;
+  --surface-container-low: #f4f4f2;
+  --surface-container: #eeeeec;
+  --surface-container-high: #e8e8e6;
+  --surface-container-highest: #e2e3e1;
+
+  /* secondary / tertiary */
+  --secondary: #a04100;
+  --secondary-container: #fe6b00;
+  --secondary-fixed: #ffdbcc;
+  --tertiary-fixed: #ffddb8;
+  --on-tertiary-container: #f8a110;
+
+  /* passage accent — tinted left border on reading cards */
+  --passage-accent: rgba(0, 41, 117, 0.25);
+
+  /* text & outlines */
+  --on-surface: #1a1c1b;
+  --on-surface-variant: #434653;
+  --outline: #747684;
+  --outline-variant: #c4c6d5;
 }
 
 .dark {
@@ -31,6 +60,7 @@
   --card-bg: #1e2130;
   --border: #2e3142;
   --muted: #9ca3af;
+  --passage-accent: rgba(77, 121, 209, 0.45);
 }
 
 * {

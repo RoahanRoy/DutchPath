@@ -14,7 +14,15 @@
       "Bash(gh repo:*)",
       "Bash(vercel env:*)",
       "Bash(vercel --version)",
-      "Bash(vercel --prod --yes)"
+      "Bash(vercel --prod --yes)",
+      "Bash(grep -r \"GOOGLE\\\\|NEXTAUTH\\\\|SUPABASE\\\\|AUTH\" /Users/roahanroy/DutchPath --include=*.ts --include=*.tsx --include=*.js --include=*.env*)",
+      "Bash(grep -r \"signOut\\\\|logout\\\\|auth\\\\|useUser\\\\|user\" /Users/roahanroy/DutchPath/app --include=*.ts --include=*.tsx)",
+      "Bash(ls -la /Users/roahanroy/DutchPath/app/\\\\\\(app\\\\\\)/lessons/[id]/)",
+      "Bash(ls -la '/Users/roahanroy/DutchPath/app/\\(app\\)/lessons/[id]/')",
+      "Bash(ls -la '/Users/roahanroy/DutchPath/app/\\(app\\)/lessons/')",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ]
   }
 }

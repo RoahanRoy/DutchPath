@@ -57,9 +57,9 @@ export function LessonMapClient({ lessons }: Props) {
         <p className="text-[var(--muted)] text-sm mt-0.5">
           {completedCount} of {totalCount} lessons completed
         </p>
-        <div className="mt-3 h-2 bg-[var(--border)] rounded-full overflow-hidden">
+        <div className="mt-3 h-3 bg-[var(--border)] rounded-full overflow-hidden">
           <motion.div
-            className="h-full bg-gradient-to-r from-primary to-accent rounded-full"
+            className="relative h-full bg-gradient-to-r from-primary to-accent rounded-full overflow-hidden"
             initial={{ width: 0 }}
             animate={{ width: `${(completedCount / totalCount) * 100}%` }}
             transition={{ duration: 0.8, ease: "easeOut" }}
@@ -67,29 +67,39 @@ export function LessonMapClient({ lessons }: Props) {
             aria-valuenow={completedCount}
             aria-valuemax={totalCount}
             aria-label={`${completedCount} of ${totalCount} lessons completed`}
-          />
+          >
+            <div className="absolute inset-0 w-1/3 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer" aria-hidden="true" />
+          </motion.div>
         </div>
       </div>
 
       {/* Weeks */}
       <div className="space-y-10">
-        {lessonsByWeek.map(({ week, lessons: weekLessons }) => (
+        {lessonsByWeek.map(({ week, lessons: weekLessons }, weekIdx) => (
           <div key={week}>
+            {/* Gradient divider above every week except the first */}
+            {weekIdx > 0 && (
+              <div
+                className="h-px bg-gradient-to-r from-transparent via-[var(--border)] to-transparent mb-10"
+                aria-hidden="true"
+              />
+            )}
+
             {/* Week header */}
             <div className="flex items-center gap-3 mb-5">
-              <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shrink-0" aria-hidden="true">
+              <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center shrink-0" aria-hidden="true">
                 <span className="text-white font-bold text-sm">{week}</span>
               </div>
               <div>
                 <h2 className="font-bold">Week {week}</h2>
-                <p className="text-xs text-[var(--muted)]">{WEEK_SUBTITLES[week]}</p>
+                <p className="text-sm text-[var(--muted)]">{WEEK_SUBTITLES[week]}</p>
               </div>
             </div>
 
             {/* Lesson nodes */}
             <div className="relative">
-              {/* Vertical path */}
-              <div className="absolute left-5 top-5 bottom-5 w-0.5 bg-[var(--border)]" aria-hidden="true">
+              {/* Vertical path — left-7 centers on w-14 nodes */}
+              <div className="absolute left-7 top-7 bottom-7 w-[2px] bg-[var(--border)]" aria-hidden="true">
                 {weekLessons.filter((l) => l.status === "completed").length > 0 && (
                   <motion.div
                     className="w-full bg-primary rounded-full origin-top"
@@ -134,73 +144,80 @@ export function LessonMapClient({ lessons }: Props) {
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
               transition={{ type: "spring", stiffness: 400, damping: 40 }}
-              className="fixed bottom-0 left-0 right-0 z-50 bg-[var(--card-bg)] rounded-t-3xl p-6 shadow-2xl max-h-[70vh] overflow-y-auto"
+              className="fixed bottom-0 left-0 right-0 z-50 bg-[var(--card-bg)] rounded-t-3xl overflow-hidden shadow-2xl max-h-[70vh] overflow-y-auto"
               role="dialog"
               aria-label={`Lesson: ${selectedLesson.title}`}
             >
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center text-xl", getLessonTypeColor(selectedLesson.type))}>
-                    <span aria-hidden="true">{TYPE_ICONS[selectedLesson.type]}</span>
-                  </div>
-                  <div>
-                    <span className={cn("text-xs font-semibold px-2 py-0.5 rounded-full text-white", getLessonTypeColor(selectedLesson.type))}>
-                      {TYPE_LABELS[selectedLesson.type]}
-                    </span>
-                    <h3 className="font-bold text-lg mt-1">{selectedLesson.title}</h3>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setSelectedLesson(null)}
-                  className="tap-target flex items-center justify-center text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
-                  aria-label="Close lesson detail"
-                >
-                  <X size={20} aria-hidden="true" />
-                </button>
+              {/* Drag handle */}
+              <div className="flex justify-center pt-3 pb-0" aria-hidden="true">
+                <div className="w-10 h-1 bg-[var(--border)] rounded-full" />
               </div>
 
-              <div className="flex flex-wrap gap-3 mb-5">
-                <div className="flex items-center gap-1.5 text-sm text-[var(--muted)]">
-                  <Clock size={14} aria-hidden="true" />
-                  {selectedLesson.estimated_minutes} min
-                </div>
-                <div className="flex items-center gap-1.5 text-sm text-[var(--muted)]">
-                  <Zap size={14} className="text-yellow-500" aria-hidden="true" />
-                  +{selectedLesson.xp_reward} XP
-                </div>
-                {selectedLesson.source_label && (
-                  <span className="text-sm text-[var(--muted)]">{selectedLesson.source_label}</span>
-                )}
-              </div>
-
-              {selectedLesson.status === "completed" && selectedLesson.score !== null && (
-                <div className="flex items-center gap-3 mb-5 bg-success/10 rounded-xl p-3">
-                  <CheckCircle2 size={20} className="text-success shrink-0" aria-hidden="true" />
-                  <div>
-                    <p className="font-semibold text-sm text-success">Completed!</p>
-                    <div className="flex items-center gap-1 mt-0.5">
-                      {Array.from({ length: 3 }).map((_, i) => (
-                        <Star
-                          key={i}
-                          size={14}
-                          className={i < getStarRating(selectedLesson.score!) ? "text-yellow-400 fill-yellow-400" : "text-[var(--border)]"}
-                          aria-hidden="true"
-                        />
-                      ))}
-                      <span className="text-xs text-[var(--muted)] ml-1">{selectedLesson.score}%</span>
+              <div className="p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center text-xl", getLessonTypeColor(selectedLesson.type))}>
+                      <span aria-hidden="true">{TYPE_ICONS[selectedLesson.type]}</span>
+                    </div>
+                    <div>
+                      <span className={cn("text-xs font-semibold px-2 py-0.5 rounded-full text-white", getLessonTypeColor(selectedLesson.type))}>
+                        {TYPE_LABELS[selectedLesson.type]}
+                      </span>
+                      <h3 className="font-bold text-lg mt-1">{selectedLesson.title}</h3>
                     </div>
                   </div>
+                  <button
+                    onClick={() => setSelectedLesson(null)}
+                    className="tap-target flex items-center justify-center text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
+                    aria-label="Close lesson detail"
+                  >
+                    <X size={20} aria-hidden="true" />
+                  </button>
                 </div>
-              )}
 
-              <Link
-                href={`/lessons/${selectedLesson.id}`}
-                className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white font-semibold py-3.5 rounded-xl transition-colors tap-target"
-              >
-                <BookOpen size={18} aria-hidden="true" />
-                {selectedLesson.status === "completed" ? "Practice again" : "Start lesson"}
-                <ChevronRight size={18} aria-hidden="true" />
-              </Link>
+                <div className="flex flex-wrap gap-3 mb-5">
+                  <div className="flex items-center gap-1.5 text-sm text-[var(--muted)]">
+                    <Clock size={14} aria-hidden="true" />
+                    {selectedLesson.estimated_minutes} min
+                  </div>
+                  <div className="flex items-center gap-1.5 text-sm text-[var(--muted)]">
+                    <Zap size={14} className="text-yellow-500" aria-hidden="true" />
+                    +{selectedLesson.xp_reward} XP
+                  </div>
+                  {selectedLesson.source_label && (
+                    <span className="text-sm text-[var(--muted)]">{selectedLesson.source_label}</span>
+                  )}
+                </div>
+
+                {selectedLesson.status === "completed" && selectedLesson.score !== null && (
+                  <div className="flex items-center gap-3 mb-5 bg-success/10 rounded-xl p-3">
+                    <CheckCircle2 size={20} className="text-success shrink-0" aria-hidden="true" />
+                    <div>
+                      <p className="font-semibold text-sm text-success">Completed!</p>
+                      <div className="flex items-center gap-1 mt-0.5">
+                        {Array.from({ length: 3 }).map((_, i) => (
+                          <Star
+                            key={i}
+                            size={14}
+                            className={i < getStarRating(selectedLesson.score!) ? "text-yellow-400 fill-yellow-400" : "text-[var(--border)]"}
+                            aria-hidden="true"
+                          />
+                        ))}
+                        <span className="text-xs text-[var(--muted)] ml-1">{selectedLesson.score}%</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <Link
+                  href={`/lessons/${selectedLesson.id}`}
+                  className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white font-semibold py-3.5 rounded-xl transition-colors tap-target"
+                >
+                  <BookOpen size={18} aria-hidden="true" />
+                  {selectedLesson.status === "completed" ? "Practice again" : "Start lesson"}
+                  <ChevronRight size={18} aria-hidden="true" />
+                </Link>
+              </div>
             </motion.div>
           </>
         )}
@@ -216,6 +233,7 @@ function LessonNode({ lesson, index, onClick }: {
 }) {
   const isLocked = lesson.status === "locked";
   const isCompleted = lesson.status === "completed";
+  const isAvailable = lesson.status === "available" || lesson.status === "in_progress";
   const stars = lesson.score !== null ? getStarRating(lesson.score) : 0;
 
   return (
@@ -227,25 +245,45 @@ function LessonNode({ lesson, index, onClick }: {
       disabled={isLocked}
       className={cn(
         "flex items-center gap-4 w-full text-left transition-all tap-target rounded-xl p-2 -ml-2",
-        isLocked ? "opacity-50 cursor-not-allowed" : "hover:bg-[var(--border)]/30 cursor-pointer"
+        isLocked ? "opacity-[35%] cursor-not-allowed" : "hover:bg-[var(--border)]/30 cursor-pointer"
       )}
       aria-label={`${lesson.title} — ${lesson.status === "locked" ? "locked" : lesson.status}`}
     >
-      {/* Node circle */}
-      <div className={cn(
-        "w-10 h-10 rounded-full flex items-center justify-center shrink-0 border-2 transition-all",
-        isLocked
-          ? "bg-[var(--border)] border-[var(--border)]"
-          : isCompleted
-          ? "bg-success border-success"
-          : `border-2 ${getLessonTypeBorder(lesson.type)} bg-[var(--card-bg)]`
-      )} aria-hidden="true">
-        {isLocked ? (
-          <Lock size={14} className="text-[var(--muted)]" />
-        ) : isCompleted ? (
-          <CheckCircle2 size={18} className="text-white" />
-        ) : (
-          <span className="text-sm font-bold" style={{ color: "var(--primary)" }}>{lesson.day}</span>
+      {/* Node circle + pulsing ring + stars */}
+      <div className="relative shrink-0 flex flex-col items-center gap-1">
+        {/* Pulsing ring for available/in_progress */}
+        {isAvailable && (
+          <div
+            className={cn("absolute inset-0 rounded-full border-2 animate-node-ring", getLessonTypeBorder(lesson.type))}
+            aria-hidden="true"
+          />
+        )}
+
+        {/* Circle */}
+        <div className={cn(
+          "relative w-14 h-14 rounded-full flex items-center justify-center border-2 transition-all z-10",
+          isLocked
+            ? "bg-[var(--border)] border-[var(--border)]"
+            : isCompleted
+            ? "bg-success border-success"
+            : `border-2 ${getLessonTypeBorder(lesson.type)} bg-[var(--card-bg)]`
+        )} aria-hidden="true">
+          {isLocked ? (
+            <Lock size={18} className="text-[var(--muted)]" />
+          ) : isCompleted ? (
+            <CheckCircle2 size={22} className="text-white" />
+          ) : (
+            <span className="text-base font-bold" style={{ color: "var(--primary)" }}>{lesson.day}</span>
+          )}
+        </div>
+
+        {/* Stars below circle */}
+        {isCompleted && stars > 0 && (
+          <div className="flex items-center gap-0.5" aria-label={`${stars} stars`}>
+            {Array.from({ length: stars }).map((_, i) => (
+              <Star key={i} size={8} className="text-yellow-400 fill-yellow-400" aria-hidden="true" />
+            ))}
+          </div>
         )}
       </div>
 
