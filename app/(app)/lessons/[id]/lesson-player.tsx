@@ -3,11 +3,15 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Heart, X, ChevronRight, Star, Zap, Clock, RotateCcw } from "lucide-react";
 import type { Lesson, UserLessonProgress, LessonContent, Question } from "@/lib/supabase/types";
 import { createClient } from "@/lib/supabase/client";
 import { useAppStore } from "@/lib/store";
-import { getAmsterdamHour, getAmsterdamDate, getStarRating, getLessonTypeColor, cn } from "@/lib/utils";
+import { getAmsterdamHour, getAmsterdamDate, getStarRating } from "@/lib/utils";
+
+/**
+ * Lesson Player — Stitch "focus mode" design.
+ * All game logic preserved, visual layer replaced with inline-style Stitch design.
+ */
 
 interface Props {
   lesson: Lesson;
@@ -17,9 +21,38 @@ interface Props {
 
 type Phase = "intro" | "question" | "result" | "complete";
 
+/* ── Design tokens ─────────────────────────────────────────────────── */
+const c = {
+  primary: "#002975",
+  primaryContainer: "#003da5",
+  primaryFixed: "#dbe1ff",
+  onPrimaryFixed: "#00174b",
+  secondary: "#a04100",
+  tertiary: "#452900",
+  tertiaryFixed: "#ffddb8",
+  onTertiaryContainer: "#f8a110",
+  error: "#ba1a1a",
+  background: "#f9f9f7",
+  surfaceLowest: "#ffffff",
+  surfaceLow: "#f4f4f2",
+  surfaceHigh: "#e8e8e6",
+  surfaceHighest: "#e2e3e1",
+  onSurface: "#1a1c1b",
+  onSurfaceVariant: "#434653",
+  outline: "#747684",
+  outlineVariant: "#c4c6d5",
+  success: "#00A86B",
+  danger: "#D63B3B",
+};
+
+const font = {
+  headline: "'Plus Jakarta Sans', sans-serif",
+  body: "'Noto Serif', serif",
+};
+
 export function LessonPlayer({ lesson, progress, userId }: Props) {
   const router = useRouter();
-  const { hearts, loseHeart, refillHearts, unlockedHearts, addToast, updateXP } = useAppStore();
+  const { hearts, loseHeart, unlockedHearts, addToast, updateXP } = useAppStore();
 
   const content = lesson.content as unknown as LessonContent;
   const questions = content.questions ?? [];
@@ -35,14 +68,10 @@ export function LessonPlayer({ lesson, progress, userId }: Props) {
   const [startTime] = useState(Date.now());
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [fillWords, setFillWords] = useState<string[]>([]);
-  const [matchPairs, setMatchPairs] = useState<{ id: number; selected: boolean }[]>([]);
-  const [matchSelected, setMatchSelected] = useState<string | null>(null);
-  const [matchCompleted, setMatchCompleted] = useState<string[]>([]);
   const [showXP, setShowXP] = useState(false);
   const [xpAmount, setXpAmount] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Timer
   useEffect(() => {
     timerRef.current = setInterval(() => {
       setElapsedSeconds(Math.floor((Date.now() - startTime) / 1000));
@@ -54,7 +83,7 @@ export function LessonPlayer({ lesson, progress, userId }: Props) {
   const isLastQuestion = currentQ === questions.length - 1;
 
   const submitAnswer = useCallback((answer: number | boolean | string[]) => {
-    if (isCorrect !== null) return; // already answered
+    if (isCorrect !== null) return;
     setSelectedAnswer(answer);
     let correct = false;
 
@@ -114,65 +143,31 @@ export function LessonPlayer({ lesson, progress, userId }: Props) {
     const today = getAmsterdamDate();
     const hour = getAmsterdamHour();
 
-    // Update lesson progress
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase.from("user_lesson_progress") as any).upsert({
-      user_id: userId,
-      lesson_id: lesson.id,
-      status: "completed",
-      score,
-      attempts: (progress?.attempts ?? 0) + 1,
-      time_spent_seconds: elapsedSeconds,
-      completed_at: now,
-      last_attempt_at: now,
+      user_id: userId, lesson_id: lesson.id, status: "completed",
+      score, attempts: (progress?.attempts ?? 0) + 1,
+      time_spent_seconds: elapsedSeconds, completed_at: now, last_attempt_at: now,
     });
 
-    // Unlock next lesson if it exists
-    const { data: nextLesson } = await supabase
-      .from("lessons")
-      .select("id")
-      .eq("unlock_after_lesson_id", lesson.id)
-      .single();
-
+    const { data: nextLesson } = await supabase.from("lessons").select("id").eq("unlock_after_lesson_id", lesson.id).single();
     if (nextLesson) {
       const nextLessonId = (nextLesson as unknown as { id: number }).id;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await (supabase.from("user_lesson_progress") as any).upsert({
-        user_id: userId,
-        lesson_id: nextLessonId,
-        status: "available",
-      });
+      await (supabase.from("user_lesson_progress") as any).upsert({ user_id: userId, lesson_id: nextLessonId, status: "available" });
     }
 
-    // Update profile XP
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase as any).rpc("increment_xp", { p_user_id: userId, p_amount: totalXP });
-
-    // Daily activity
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase.from("daily_activity") as any).upsert({
-      user_id: userId,
-      date: today,
-      xp_earned: totalXP,
-      minutes_spent: Math.ceil(elapsedSeconds / 60),
-      lessons_completed: 1,
-    }, {
-      onConflict: "user_id,date",
-    });
+      user_id: userId, date: today, xp_earned: totalXP,
+      minutes_spent: Math.ceil(elapsedSeconds / 60), lessons_completed: 1,
+    }, { onConflict: "user_id,date" });
 
     updateXP(totalXP);
 
-    // Achievement checks
     if (score === 100 && heartsLeft === (unlockedHearts ? 999 : 5)) {
-      // geen_fouten — perfect with all hearts
       addToast({ type: "achievement", title: "💚 Geen fouten!", message: "Completed with all hearts!", xp: 30 });
     }
-    if (hour < 8) {
-      addToast({ type: "achievement", title: "🌅 Vroege vogel!", message: "Lesson before 8am", xp: 15 });
-    }
-    if (hour >= 21) {
-      addToast({ type: "achievement", title: "🌙 Avondleerder!", message: "Lesson after 9pm", xp: 15 });
-    }
+    if (hour < 8) addToast({ type: "achievement", title: "🌅 Vroege vogel!", message: "Lesson before 8am", xp: 15 });
+    if (hour >= 21) addToast({ type: "achievement", title: "🌙 Avondleerder!", message: "Lesson after 9pm", xp: 15 });
     if (lesson.type === "reading" && elapsedSeconds < 180) {
       addToast({ type: "achievement", title: "⚡ Snelle lezer!", message: "Finished in under 3 minutes", xp: 20 });
     }
@@ -180,212 +175,172 @@ export function LessonPlayer({ lesson, progress, userId }: Props) {
 
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
-  // ─── Complete screen ──────────────────────────────────────────────────────────
+  /* ═══ Complete screen ═══ */
   if (phase === "complete") {
     const score = Math.round((correctCount / questions.length) * 100);
     const stars = getStarRating(score);
 
     return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="min-h-screen flex flex-col items-center justify-center bg-[var(--background)] px-4"
-      >
+      <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: c.background, fontFamily: font.headline, padding: 24 }}>
         <motion.div
           initial={{ y: 60, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
-          className="w-full max-w-sm bg-[var(--card-bg)] rounded-3xl border border-[var(--border)] p-6 text-center shadow-xl"
+          style={{ width: "100%", maxWidth: 380, background: c.surfaceLowest, borderRadius: 24, padding: 24, textAlign: "center", boxShadow: "0px 12px 32px rgba(26,28,27,0.06)" }}
         >
-          {/* Emoji with confetti dots */}
-          <div className="relative mx-auto mb-3 w-24 h-24 flex items-center justify-center">
-            <span className="absolute top-1 left-3 w-2.5 h-2.5 rounded-full bg-primary" aria-hidden="true" />
-            <span className="absolute top-0 right-4 w-2 h-2 rounded-full bg-accent" aria-hidden="true" />
-            <span className="absolute top-1/2 right-0 w-2.5 h-2.5 rounded-full bg-yellow-400" aria-hidden="true" />
-            <span className="absolute bottom-2 right-4 w-2 h-2 rounded-full bg-primary/60" aria-hidden="true" />
-            <span className="absolute bottom-1 left-2 w-2.5 h-2.5 rounded-full bg-accent/70" aria-hidden="true" />
-            <span className="absolute top-1/2 left-0 w-2 h-2 rounded-full bg-yellow-400/80" aria-hidden="true" />
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.2, type: "spring", stiffness: 400 }}
-              className="text-5xl"
-              aria-hidden="true"
-            >
-              {score >= 80 ? "🎉" : score >= 50 ? "👍" : "💪"}
-            </motion.div>
-          </div>
-
-          <h2 className="text-xl font-bold mb-1">
+          <div style={{ fontSize: 48, marginBottom: 12 }}>{score >= 80 ? "🎉" : score >= 50 ? "👍" : "💪"}</div>
+          <h2 style={{ fontSize: 24, fontWeight: 800, color: c.onSurface, marginBottom: 8 }}>
             {score >= 80 ? "Uitstekend!" : score >= 50 ? "Goed gedaan!" : "Blijf oefenen!"}
           </h2>
 
-          <div className="flex justify-center gap-1 mb-4" aria-label={`${stars} out of 3 stars`}>
-            {Array.from({ length: 3 }).map((_, i) => (
-              <motion.div
-                key={i}
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 0.3 + i * 0.1, type: "spring", stiffness: 400 }}
-              >
-                <Star
-                  size={36}
-                  className={i < stars ? "text-yellow-400 fill-yellow-400" : "text-[var(--border)] fill-[var(--border)]"}
-                  aria-hidden="true"
-                />
-              </motion.div>
+          <div style={{ display: "flex", justifyContent: "center", gap: 4, marginBottom: 24 }}>
+            {[1, 2, 3].map((s) => (
+              <span key={s} className={s <= stars ? "mso mso-fill" : "mso"} style={{ fontSize: 36, color: s <= stars ? c.onTertiaryContainer : c.outlineVariant }}>star</span>
             ))}
           </div>
 
-          <div className="grid grid-cols-3 gap-3 mb-5">
-            <div className="bg-gradient-to-b from-primary/[0.05] to-transparent rounded-xl p-3">
-              <p className="text-2xl font-bold text-primary">{score}%</p>
-              <p className="text-xs text-[var(--muted)]">Score</p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 24 }}>
+            <div style={{ background: c.surfaceLow, padding: 12, borderRadius: 16, display: "flex", flexDirection: "column", alignItems: "center" }}>
+              <span style={{ fontSize: 24, fontWeight: 900, color: c.primary }}>{score}%</span>
+              <span style={{ fontSize: 10, fontWeight: 700, color: c.onSurfaceVariant, textTransform: "uppercase" }}>Score</span>
             </div>
-            <div className="bg-gradient-to-b from-primary/[0.05] to-transparent rounded-xl p-3">
-              <p className="text-2xl font-bold text-yellow-500">+{xpEarned}</p>
-              <p className="text-xs text-[var(--muted)]">XP earned</p>
+            <div style={{ background: c.surfaceLow, padding: 12, borderRadius: 16, display: "flex", flexDirection: "column", alignItems: "center" }}>
+              <span style={{ fontSize: 24, fontWeight: 900, color: c.tertiary }}>+{xpEarned}</span>
+              <span style={{ fontSize: 10, fontWeight: 700, color: c.onSurfaceVariant, textTransform: "uppercase" }}>XP Earned</span>
             </div>
-            <div className="bg-gradient-to-b from-primary/[0.05] to-transparent rounded-xl p-3">
-              <p className="text-2xl font-bold">{formatTime(elapsedSeconds)}</p>
-              <p className="text-xs text-[var(--muted)]">Time</p>
+            <div style={{ background: c.surfaceLow, padding: 12, borderRadius: 16, display: "flex", flexDirection: "column", alignItems: "center" }}>
+              <span style={{ fontSize: 24, fontWeight: 900, color: c.onSurface }}>{formatTime(elapsedSeconds)}</span>
+              <span style={{ fontSize: 10, fontWeight: 700, color: c.onSurfaceVariant, textTransform: "uppercase" }}>Time</span>
             </div>
           </div>
 
-          <div className="flex gap-3">
+          <div style={{ display: "flex", gap: 12 }}>
             <button
               onClick={() => router.push("/lessons")}
-              className="flex-1 border border-[var(--border)] rounded-xl py-3 font-medium text-sm hover:bg-[var(--border)]/30 transition-colors tap-target"
+              style={{ flex: 1, padding: 14, borderRadius: 9999, border: `1.5px solid ${c.outlineVariant}`, background: "transparent", fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: font.headline, color: c.onSurface }}
             >
               Back to map
             </button>
             <button
               onClick={() => { setPhase("intro"); setCurrentQ(0); setCorrectCount(0); setSelectedAnswer(null); setIsCorrect(null); setHeartsLeft(unlockedHearts ? 999 : 5); }}
-              className="flex-1 bg-primary text-white rounded-xl py-3 font-semibold text-sm transition-colors tap-target flex items-center justify-center gap-1.5"
+              style={{ flex: 1, padding: 14, borderRadius: 9999, border: "none", background: c.primary, color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: font.headline }}
             >
-              <RotateCcw size={14} aria-hidden="true" />
               Try again
             </button>
           </div>
         </motion.div>
-      </motion.div>
+      </div>
     );
   }
 
-  // ─── Intro phase ──────────────────────────────────────────────────────────────
+  /* ═══ Intro phase ═══ */
   if (phase === "intro") {
     return (
-      <div className="min-h-screen flex flex-col bg-[var(--background)]">
+      <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: c.background, fontFamily: font.headline }}>
         {/* Top bar */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border)] bg-[var(--card-bg)]">
-          <button onClick={() => router.back()} className="tap-target flex items-center justify-center text-[var(--muted)]" aria-label="Go back">
-            <X size={20} aria-hidden="true" />
+        <nav style={{
+          position: "sticky", top: 0, zIndex: 50, height: 64,
+          display: "flex", alignItems: "center", gap: 16, padding: "0 16px",
+          background: "rgba(249,249,247,0.7)", backdropFilter: "blur(24px)",
+        }}>
+          <button onClick={() => router.back()} style={{ width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 9999, border: "none", background: "transparent", cursor: "pointer" }}>
+            <span className="mso" style={{ color: c.onSurface, fontSize: 24 }}>close</span>
           </button>
-          <h1 className="font-semibold text-sm truncate max-w-xs">{lesson.title}</h1>
-          <div className="flex items-center gap-1 text-sm text-[var(--muted)]">
-            <Zap size={14} className="text-yellow-500" aria-hidden="true" />
-            +{lesson.xp_reward} XP
+          <span style={{ fontWeight: 700, fontSize: 14, color: c.onSurface, flex: 1 }}>{lesson.title}</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+            <span className="mso" style={{ fontSize: 14, color: c.tertiary }}>emoji_events</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: c.onSurfaceVariant }}>+{lesson.xp_reward} XP</span>
           </div>
-        </div>
+        </nav>
 
-        <div className="flex-1 overflow-y-auto px-4 py-6 max-w-2xl mx-auto w-full">
-          {/* Source label with type dot */}
-          <div className="flex items-center gap-2 text-sm text-[var(--muted)] mb-4">
-            <span className={cn("w-2 h-2 rounded-full shrink-0", getLessonTypeColor(lesson.type))} aria-hidden="true" />
-            <span>{content.passage?.source_label}</span>
+        <div style={{ flex: 1, padding: "24px 24px 128px", maxWidth: 672, margin: "0 auto", width: "100%" }}>
+          {/* Source label */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: c.onSurfaceVariant, marginBottom: 16 }}>
+            <span className="mso" style={{ fontSize: 16 }}>description</span>
+            <span style={{ fontWeight: 600 }}>{content.passage?.source_label}</span>
             <span>·</span>
-            <Clock size={14} aria-hidden="true" />
             <span>{lesson.estimated_minutes} min</span>
           </div>
 
-          {/* Passage — warm parchment bg, primary left accent */}
-          <div
-            className="rounded-2xl p-5 mb-6 bg-[#FFFBF5] dark:bg-[var(--card-bg)]"
-            style={{ borderLeft: "3px solid var(--passage-accent)" }}
-          >
-            <pre className="dutch-text whitespace-pre-wrap text-[var(--foreground)] text-sm leading-relaxed">
+          {/* Passage */}
+          <div style={{ background: "#FFFBF5", borderRadius: 32, padding: 24, borderLeft: `4px solid ${c.primaryContainer}`, marginBottom: 24, boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
+            <pre style={{ fontFamily: font.body, whiteSpace: "pre-wrap", fontSize: 16, lineHeight: 1.8, color: c.onSurface, margin: 0 }}>
               {content.passage?.text}
             </pre>
           </div>
 
-          <div className="flex items-center gap-2 text-sm text-[var(--muted)] mb-6">
+          <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: c.onSurfaceVariant, marginBottom: 24 }}>
             <span>{questions.length} questions</span>
             <span>·</span>
-            <span className="flex items-center gap-1">
+            <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
               {unlockedHearts ? (
                 <span>♾️ Unlimited hearts</span>
               ) : (
-                <>
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <Heart key={i} size={14} className={i < heartsLeft ? "text-danger fill-danger" : "text-[var(--border)]"} aria-hidden="true" />
-                  ))}
-                </>
+                Array.from({ length: 5 }).map((_, i) => (
+                  <span key={i} className="mso mso-fill" style={{ fontSize: 14, color: i < heartsLeft ? c.error : c.outlineVariant }}>favorite</span>
+                ))
               )}
-            </span>
+            </div>
           </div>
 
           <button
             onClick={() => setPhase("question")}
-            className="w-full bg-primary hover:bg-primary/90 text-white font-semibold py-4 rounded-xl transition-colors tap-target flex items-center justify-center gap-2"
+            style={{
+              width: "100%", height: 56, borderRadius: 9999, border: "none", cursor: "pointer",
+              background: `linear-gradient(to bottom, ${c.primary}, ${c.primaryContainer})`,
+              color: "#fff", fontWeight: 800, fontSize: 18, fontFamily: font.headline,
+              boxShadow: "0 10px 15px -3px rgba(0,0,0,.1)",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+            }}
           >
-            Start questions
-            <ChevronRight size={18} aria-hidden="true" />
+            Start Questions
+            <span className="mso" style={{ fontSize: 20 }}>arrow_forward</span>
           </button>
         </div>
+
+        {/* Background decorations */}
+        <div style={{ position: "fixed", top: -96, right: -96, width: 256, height: 256, background: `${c.primary}0d`, borderRadius: 9999, filter: "blur(96px)", zIndex: -1 }} />
+        <div style={{ position: "fixed", bottom: 128, left: -48, width: 192, height: 192, background: `${c.secondary}0d`, borderRadius: 9999, filter: "blur(96px)", zIndex: -1 }} />
       </div>
     );
   }
 
-  // ─── Question phase ───────────────────────────────────────────────────────────
+  /* ═══ Question phase ═══ */
   return (
-    <div className="min-h-screen flex flex-col bg-[var(--background)]">
-      {/* Top bar */}
-      <div className="sticky top-0 z-10 bg-[var(--card-bg)] border-b border-[var(--border)] px-4 py-3">
-        <div className="flex items-center gap-3 max-w-2xl mx-auto">
-          <button onClick={() => router.back()} className="tap-target flex items-center justify-center text-[var(--muted)] shrink-0" aria-label="Exit lesson">
-            <X size={20} aria-hidden="true" />
-          </button>
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: c.background, fontFamily: font.headline }}>
+      {/* Focus Mode Top Bar */}
+      <nav style={{
+        position: "sticky", top: 0, zIndex: 50, height: 64,
+        display: "flex", alignItems: "center", gap: 16, padding: "0 16px",
+        background: "rgba(249,249,247,0.7)", backdropFilter: "blur(24px)",
+      }}>
+        <button onClick={() => router.back()} style={{ width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 9999, border: "none", background: "transparent", cursor: "pointer" }}>
+          <span className="mso" style={{ color: c.onSurface, fontSize: 24 }}>close</span>
+        </button>
 
-          {/* Segmented progress bar */}
-          <div
-            className="flex-1 flex gap-0.5"
-            role="progressbar"
-            aria-valuenow={currentQ}
-            aria-valuemax={questions.length}
-            aria-label={`Question ${currentQ + 1} of ${questions.length}`}
-          >
-            {Array.from({ length: questions.length }).map((_, i) => (
-              <div
-                key={i}
-                className={cn(
-                  "h-2.5 flex-1 rounded-full transition-colors duration-300",
-                  i < currentQ
-                    ? "bg-primary"
-                    : i === currentQ
-                    ? "bg-primary/40 animate-pulse"
-                    : "bg-[var(--border)]"
-                )}
-              />
-            ))}
-          </div>
-
-          {/* Hearts */}
-          <div className="flex items-center gap-0.5 shrink-0" aria-label={`${heartsLeft} hearts remaining`}>
-            {unlockedHearts ? (
-              <span className="text-sm" aria-hidden="true">♾️</span>
-            ) : (
-              Array.from({ length: 5 }).map((_, i) => (
-                <Heart
-                  key={i}
-                  size={16}
-                  className={i < heartsLeft ? "text-danger fill-danger" : "text-[var(--border)] fill-[var(--border)]"}
-                  aria-hidden="true"
-                />
-              ))
-            )}
-          </div>
+        {/* Segmented progress */}
+        <div style={{ flex: 1, height: 10, display: "flex", gap: 6, padding: "0 8px" }}>
+          {Array.from({ length: questions.length }).map((_, i) => (
+            <div key={i} style={{
+              flex: 1, height: "100%", borderRadius: 9999,
+              background: i < currentQ ? c.secondary : i === currentQ ? c.secondary : c.surfaceHighest,
+              opacity: i === currentQ ? 0.4 : 1,
+            }} />
+          ))}
         </div>
-      </div>
+
+        {/* Hearts */}
+        <div style={{ display: "flex", alignItems: "center", gap: 4, paddingRight: 8 }}>
+          {unlockedHearts ? (
+            <span style={{ fontSize: 14 }}>♾️</span>
+          ) : (
+            <>
+              <span className="mso mso-fill" style={{ color: c.error, fontSize: 20 }}>favorite</span>
+              <span style={{ fontWeight: 700, fontSize: 14, color: c.onSurface }}>{heartsLeft}</span>
+            </>
+          )}
+        </div>
+      </nav>
 
       {/* XP float */}
       <AnimatePresence>
@@ -395,36 +350,36 @@ export function LessonPlayer({ lesson, progress, userId }: Props) {
             animate={{ opacity: 0, y: -60 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 1.2 }}
-            className="fixed top-20 right-6 z-50 text-yellow-500 font-bold text-lg pointer-events-none"
-            aria-hidden="true"
+            style={{ position: "fixed", top: 80, right: 24, zIndex: 50, color: c.tertiary, fontWeight: 800, fontSize: 18, pointerEvents: "none" }}
           >
             +{xpAmount} XP
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Passage (sticky) — warm parchment bg, primary left accent */}
-      <div className="sticky top-[57px] z-10 bg-[var(--background)] border-b border-[var(--border)] px-4 pt-3 pb-2">
-        <div className="max-w-2xl mx-auto">
-          <div
-            className="max-h-[28vh] overflow-y-auto rounded-xl p-3 bg-[#FFFBF5] dark:bg-[var(--card-bg)]"
-            style={{ borderLeft: "3px solid var(--passage-accent)" }}
-          >
-            {/* Source label with type dot */}
-            <div className="flex items-center gap-1.5 mb-1.5">
-              <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", getLessonTypeColor(lesson.type))} aria-hidden="true" />
-              <p className="text-[10px] font-medium text-[var(--muted)] uppercase tracking-wide">{content.passage?.source_label}</p>
+      {/* Sticky passage */}
+      <div style={{ position: "sticky", top: 64, zIndex: 10, background: c.background, padding: "12px 24px 8px", borderBottom: `1px solid ${c.surfaceHighest}` }}>
+        <div style={{ maxWidth: 672, margin: "0 auto" }}>
+          <div style={{
+            maxHeight: "28vh", overflowY: "auto", borderRadius: 16, padding: 12,
+            background: "#FFFBF5", borderLeft: `3px solid ${c.primaryContainer}`,
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+              <span className="mso" style={{ fontSize: 12, color: c.onSurfaceVariant }}>description</span>
+              <p style={{ fontSize: 10, fontWeight: 600, color: c.onSurfaceVariant, textTransform: "uppercase", letterSpacing: "0.1em", margin: 0 }}>
+                {content.passage?.source_label}
+              </p>
             </div>
-            <pre className="dutch-text whitespace-pre-wrap text-[var(--foreground)] text-xs leading-relaxed">
+            <pre style={{ fontFamily: font.body, whiteSpace: "pre-wrap", fontSize: 13, lineHeight: 1.6, color: c.onSurface, margin: 0 }}>
               {content.passage?.text}
             </pre>
           </div>
         </div>
       </div>
 
-      {/* Question */}
-      <div className="flex-1 overflow-y-auto px-4 py-5 max-w-2xl mx-auto w-full">
-        <p className="text-xs text-[var(--muted)] mb-4">
+      {/* Question area */}
+      <div style={{ flex: 1, padding: "20px 24px 200px", maxWidth: 672, margin: "0 auto", width: "100%" }}>
+        <p style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 800, color: c.onSurfaceVariant, marginBottom: 8 }}>
           Question {currentQ + 1} of {questions.length}
         </p>
 
@@ -447,55 +402,93 @@ export function LessonPlayer({ lesson, progress, userId }: Props) {
             />
           </motion.div>
         </AnimatePresence>
+      </div>
 
-        {/* Explanation + continue */}
+      {/* Bottom Action Bar */}
+      <div style={{
+        position: "fixed", bottom: 0, left: 0, width: "100%", zIndex: 60,
+        background: `${c.surfaceLow}cc`, backdropFilter: "blur(16px)",
+        padding: "16px 24px 32px", display: "flex", flexDirection: "column", gap: 16,
+      }}>
+        {/* Feedback */}
         {isCorrect !== null && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className={cn(
-              "mt-4 rounded-2xl p-4",
-              isCorrect ? "bg-success/10 border border-success/30" : "bg-danger/10 border border-danger/30"
-            )}
+            style={{
+              borderRadius: 16, padding: 16,
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              background: isCorrect ? "rgba(187,247,208,0.8)" : "rgba(254,202,202,0.8)",
+              border: `1px solid ${isCorrect ? "rgba(134,239,172,0.6)" : "rgba(252,165,165,0.6)"}`,
+            }}
           >
-            <p className={cn("font-semibold text-sm mb-1", isCorrect ? "text-success" : "text-danger")}>
-              {isCorrect ? "✓ Goed gedaan!" : "✗ Niet helemaal juist"}
-            </p>
-            {"explanation" in question && (
-              <p className="text-sm text-[var(--muted)]">{(question as any).explanation}</p>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div style={{
+                width: 40, height: 40, borderRadius: 9999,
+                background: isCorrect ? "#22c55e" : c.danger,
+                display: "flex", alignItems: "center", justifyContent: "center", color: "#fff",
+              }}>
+                <span className="mso mso-fill" style={{ fontSize: 24 }}>{isCorrect ? "check_circle" : "cancel"}</span>
+              </div>
+              <div>
+                <h4 style={{ fontWeight: 700, color: isCorrect ? "#14532d" : "#7f1d1d", fontSize: 14, margin: 0 }}>
+                  {isCorrect ? "Goed gedaan!" : "Niet helemaal juist"}
+                </h4>
+                {"explanation" in question && (
+                  <p style={{ fontSize: 12, color: isCorrect ? "#166534" : "#991b1b", fontWeight: 500, margin: 0, marginTop: 2 }}>
+                    {(question as any).explanation}
+                  </p>
+                )}
+              </div>
+            </div>
+            {isCorrect && (
+              <span style={{ color: c.tertiary, fontWeight: 800, fontSize: 18 }}>+{xpAmount} XP</span>
             )}
           </motion.div>
         )}
+
+        {/* Action button */}
+        {isCorrect === null ? (
+          question.type === "fill_blank" && (
+            <button
+              onClick={() => submitAnswer(fillWords)}
+              disabled={fillWords.length === 0}
+              style={{
+                width: "100%", height: 56, borderRadius: 9999, border: "none", cursor: "pointer",
+                background: fillWords.length === 0 ? c.surfaceHighest : `linear-gradient(to bottom, ${c.primary}, ${c.primaryContainer})`,
+                color: fillWords.length === 0 ? c.onSurfaceVariant : "#fff",
+                fontWeight: 700, fontSize: 18, fontFamily: font.headline,
+                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+              }}
+            >
+              Check Answer
+            </button>
+          )
+        ) : (
+          <button
+            onClick={advance}
+            style={{
+              width: "100%", height: 56, borderRadius: 9999, border: "none", cursor: "pointer",
+              background: `linear-gradient(to bottom, ${c.primary}, ${c.primaryContainer})`,
+              color: "#fff", fontWeight: 700, fontSize: 18, fontFamily: font.headline,
+              boxShadow: "0 10px 15px -3px rgba(0,0,0,.1)",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+            }}
+          >
+            {isLastQuestion || heartsLeft === 0 ? "See Results" : "Continue"}
+            <span className="mso" style={{ fontSize: 20 }}>arrow_forward</span>
+          </button>
+        )}
       </div>
 
-      {/* Bottom action */}
-      <div className="sticky bottom-16 md:bottom-0 pb-safe px-4 py-3 bg-[var(--card-bg)] border-t border-[var(--border)]">
-        <div className="max-w-2xl mx-auto">
-          {isCorrect === null ? (
-            question.type === "fill_blank" && (
-              <button
-                onClick={() => submitAnswer(fillWords)}
-                disabled={fillWords.length === 0}
-                className="w-full bg-primary hover:bg-primary/90 disabled:opacity-40 text-white font-semibold py-3.5 rounded-xl transition-colors tap-target"
-              >
-                Check answer
-              </button>
-            )
-          ) : (
-            <button
-              onClick={advance}
-              className="w-full bg-primary hover:bg-primary/90 text-white font-semibold py-3.5 rounded-xl transition-colors tap-target flex items-center justify-center gap-2"
-            >
-              {isLastQuestion || heartsLeft === 0 ? "See results" : "Continue"}
-              <ChevronRight size={18} aria-hidden="true" />
-            </button>
-          )}
-        </div>
-      </div>
+      {/* Background decorations */}
+      <div style={{ position: "fixed", top: -96, right: -96, width: 256, height: 256, background: `${c.primary}0d`, borderRadius: 9999, filter: "blur(96px)", zIndex: -1 }} />
+      <div style={{ position: "fixed", bottom: 128, left: -48, width: 192, height: 192, background: `${c.secondary}0d`, borderRadius: 9999, filter: "blur(96px)", zIndex: -1 }} />
     </div>
   );
 }
 
+/* ── Question Renderer ─────────────────────────────────────────────── */
 function QuestionRenderer({
   question, selectedAnswer, isCorrect, fillWords, setFillWords, onAnswer,
 }: {
@@ -506,43 +499,59 @@ function QuestionRenderer({
   setFillWords: (w: string[]) => void;
   onAnswer: (a: number | boolean | string[]) => void;
 }) {
+  const font = { headline: "'Plus Jakarta Sans', sans-serif", body: "'Noto Serif', serif" };
+  const c = {
+    primary: "#002975", onSurface: "#1a1c1b", onSurfaceVariant: "#434653",
+    surfaceLowest: "#ffffff", surfaceHighest: "#e2e3e1", outlineVariant: "#c4c6d5",
+    success: "#00A86B", danger: "#D63B3B",
+  };
+
   if (question.type === "multiple_choice" || question.type === "reading_comp") {
     const q = question as any;
     return (
       <div>
-        <p className="font-semibold text-base mb-5">{q.prompt}</p>
-        <div className="space-y-3">
+        <h1 style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-0.025em", marginBottom: 24, color: c.primary, lineHeight: 1.2, fontFamily: font.headline }}>
+          {q.prompt}
+        </h1>
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {q.options.map((option: string, i: number) => {
             const isSelected = selectedAnswer === i;
             const isRight = isCorrect !== null && i === q.correct_index;
             const isWrong = isCorrect === false && isSelected;
+
+            let bg = c.surfaceLowest;
+            let border = `1.5px solid ${c.outlineVariant}30`;
+            let color = c.onSurface;
+            let weight = 500;
+
+            if (isRight) { bg = "rgba(0,168,107,0.08)"; border = `1.5px solid ${c.success}`; color = c.success; weight = 700; }
+            else if (isWrong) { bg = "rgba(214,59,59,0.08)"; border = `1.5px solid ${c.danger}`; color = c.danger; weight = 700; }
+            else if (isSelected) { bg = `${c.primary}0d`; border = `1.5px solid ${c.primary}`; color = c.primary; weight = 700; }
+
             return (
               <button
                 key={i}
                 onClick={() => isCorrect === null && onAnswer(i)}
                 disabled={isCorrect !== null}
-                className={cn(
-                  "w-full text-left px-5 py-4 rounded-xl border-2 font-medium text-sm transition-all tap-target active:scale-[0.98] flex items-center gap-3",
-                  isRight ? "border-success bg-success/10 text-success"
-                  : isWrong ? "border-danger bg-danger/10 text-danger"
-                  : isSelected ? "border-primary bg-primary/10 border-l-[3px]"
-                  : "border-[var(--border)] hover:border-[var(--muted)] bg-[var(--card-bg)]"
-                )}
-                aria-pressed={isSelected}
-                aria-label={`Option: ${option}`}
+                style={{
+                  width: "100%", textAlign: "left", padding: 20, borderRadius: 16,
+                  display: "flex", alignItems: "center", justifyContent: "space-between",
+                  border, background: bg, cursor: isCorrect !== null ? "default" : "pointer",
+                  fontFamily: font.headline, transition: "all 0.2s",
+                }}
               >
-                {/* State dot */}
-                <span
-                  className={cn(
-                    "w-2 h-2 rounded-full shrink-0",
-                    isRight ? "bg-success"
-                    : isWrong ? "bg-danger"
-                    : isSelected ? "bg-primary"
-                    : "bg-gray-300 dark:bg-gray-600"
-                  )}
-                  aria-hidden="true"
-                />
-                {option}
+                <span style={{ fontSize: 15, color, fontWeight: weight }}>{option}</span>
+                {isRight ? (
+                  <span className="mso mso-fill" style={{ fontSize: 20, color: c.success }}>check_circle</span>
+                ) : isWrong ? (
+                  <span className="mso mso-fill" style={{ fontSize: 20, color: c.danger }}>cancel</span>
+                ) : isSelected ? (
+                  <div style={{ width: 24, height: 24, borderRadius: 9999, background: c.primary, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <div style={{ width: 10, height: 10, borderRadius: 9999, background: "#fff" }} />
+                  </div>
+                ) : (
+                  <div style={{ width: 24, height: 24, borderRadius: 9999, border: `2px solid ${c.outlineVariant}` }} />
+                )}
               </button>
             );
           })}
@@ -555,30 +564,35 @@ function QuestionRenderer({
     const q = question as any;
     return (
       <div>
-        <p className="font-semibold text-base mb-5">{q.prompt}</p>
-        <div className="grid grid-cols-2 gap-3">
+        <h1 style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-0.025em", marginBottom: 24, color: c.primary, lineHeight: 1.2, fontFamily: font.headline }}>
+          {q.prompt}
+        </h1>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
           {[true, false].map((val) => {
             const isSelected = selectedAnswer === val;
             const isRight = isCorrect !== null && val === q.correct_answer;
             const isWrong = isCorrect === false && isSelected;
+
+            let bg = c.surfaceLowest;
+            let border = `2px solid ${c.outlineVariant}30`;
+            let color = c.onSurface;
+
+            if (isRight) { bg = "rgba(0,168,107,0.08)"; border = `2px solid ${c.success}`; color = c.success; }
+            else if (isWrong) { bg = "rgba(214,59,59,0.08)"; border = `2px solid ${c.danger}`; color = c.danger; }
+            else if (isSelected) { bg = `${c.primary}0d`; border = `2px solid ${c.primary}`; color = c.primary; }
+
             return (
               <button
                 key={String(val)}
                 onClick={() => isCorrect === null && onAnswer(val)}
                 disabled={isCorrect !== null}
-                className={cn(
-                  "py-6 rounded-xl border-2 font-semibold text-sm transition-all tap-target",
-                  isRight ? "border-success bg-success/10 text-success"
-                  : isWrong ? "border-danger bg-danger/10 text-danger"
-                  : isSelected ? "border-primary bg-primary/10"
-                  : "border-[var(--border)] hover:border-[var(--muted)] bg-[var(--card-bg)]"
-                )}
-                aria-pressed={isSelected}
+                style={{
+                  padding: 24, borderRadius: 16, border, background: bg, color,
+                  fontWeight: 700, fontSize: 16, cursor: isCorrect !== null ? "default" : "pointer",
+                  fontFamily: font.headline, transition: "all 0.2s",
+                }}
               >
-                {val
-                  ? (isRight ? "✓ True" : "True")
-                  : (isRight ? "✗ False" : "False")
-                }
+                {val ? "True" : "False"}
               </button>
             );
           })}
@@ -592,20 +606,19 @@ function QuestionRenderer({
     const parts = q.prompt.split("___");
     return (
       <div>
-        {/* Show sentence with blanks */}
-        <div className="bg-[var(--card-bg)] rounded-xl border border-[var(--border)] p-4 mb-5 text-sm leading-relaxed font-serif">
+        <h1 style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.025em", marginBottom: 20, color: c.primary, lineHeight: 1.2, fontFamily: font.headline }}>
+          Fill in the blanks
+        </h1>
+        <div style={{ background: "#FFFBF5", borderRadius: 16, padding: 16, marginBottom: 20, fontFamily: font.body, fontSize: 16, lineHeight: 1.8, color: c.onSurface }}>
           {parts.map((part: string, i: number) => (
             <span key={i}>
               {part}
               {i < parts.length - 1 && (
-                <span
-                  className={cn(
-                    "inline-block min-w-[80px] border-b-2 mx-1 text-center font-semibold",
-                    isCorrect === true ? "border-success text-success"
-                    : isCorrect === false ? "border-danger text-danger"
-                    : "border-primary text-primary"
-                  )}
-                >
+                <span style={{
+                  display: "inline-block", minWidth: 80, borderBottom: `2px solid ${isCorrect === true ? c.success : isCorrect === false ? c.danger : c.primary}`,
+                  margin: "0 4px", textAlign: "center", fontWeight: 700,
+                  color: isCorrect === true ? c.success : isCorrect === false ? c.danger : c.primary,
+                }}>
                   {fillWords[i] ?? "___"}
                 </span>
               )}
@@ -613,9 +626,8 @@ function QuestionRenderer({
           ))}
         </div>
 
-        {/* Word bank */}
-        <p className="text-xs text-[var(--muted)] mb-2">Tap words to fill in the blanks:</p>
-        <div className="flex flex-wrap gap-2">
+        <p style={{ fontSize: 12, color: c.onSurfaceVariant, marginBottom: 8 }}>Tap words to fill in the blanks:</p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
           {q.word_bank.map((word: string) => {
             const usedIdx = fillWords.indexOf(word);
             const used = usedIdx !== -1;
@@ -624,20 +636,17 @@ function QuestionRenderer({
                 key={word}
                 onClick={() => {
                   if (isCorrect !== null) return;
-                  if (used) {
-                    setFillWords(fillWords.filter((_, i) => i !== usedIdx));
-                  } else if (fillWords.length < parts.length - 1) {
-                    setFillWords([...fillWords, word]);
-                  }
+                  if (used) setFillWords(fillWords.filter((_, i) => i !== usedIdx));
+                  else if (fillWords.length < parts.length - 1) setFillWords([...fillWords, word]);
                 }}
                 disabled={isCorrect !== null}
-                className={cn(
-                  "px-3 py-2 rounded-lg border text-sm font-medium transition-all tap-target",
-                  used
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-[var(--border)] bg-[var(--card-bg)] hover:border-[var(--muted)]"
-                )}
-                aria-pressed={used}
+                style={{
+                  padding: "8px 12px", borderRadius: 12, fontSize: 14, fontWeight: 600,
+                  fontFamily: font.headline, cursor: isCorrect !== null ? "default" : "pointer",
+                  border: used ? `1.5px solid ${c.primary}` : `1.5px solid ${c.outlineVariant}`,
+                  background: used ? `${c.primary}0d` : c.surfaceLowest,
+                  color: used ? c.primary : c.onSurface, transition: "all 0.2s",
+                }}
               >
                 {word}
               </button>
@@ -648,7 +657,7 @@ function QuestionRenderer({
         {fillWords.length > 0 && isCorrect === null && (
           <button
             onClick={() => setFillWords([])}
-            className="mt-3 text-xs text-[var(--muted)] hover:text-[var(--foreground)] underline"
+            style={{ marginTop: 12, fontSize: 12, color: c.onSurfaceVariant, background: "none", border: "none", cursor: "pointer", textDecoration: "underline", fontFamily: font.headline }}
           >
             Clear all
           </button>

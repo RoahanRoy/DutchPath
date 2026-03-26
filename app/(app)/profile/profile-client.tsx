@@ -3,16 +3,16 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, BarChart, Bar
-} from "recharts";
-import { LogOut, Save, Loader2, Zap, BookOpen, Flame, Lock, Calendar, Star } from "lucide-react";
 import type { Profile, DailyActivity } from "@/lib/supabase/types";
 import { createClient } from "@/lib/supabase/client";
 import { useAppStore } from "@/lib/store";
-import { getInitials, getDaysUntilExam, cn } from "@/lib/utils";
+import { getInitials, getDaysUntilExam } from "@/lib/utils";
 import { DarkModeToggle } from "@/components/ui/dark-mode-toggle";
+
+/**
+ * Profile — Stitch design.
+ * All settings/save logic preserved, visual layer replaced with inline-style Stitch design.
+ */
 
 interface AchievementWithStatus {
   id: number;
@@ -33,16 +33,44 @@ interface Props {
   completedCount: number;
 }
 
+/* ── Design tokens ─────────────────────────────────────────────────── */
+const c = {
+  primary: "#002975",
+  primaryContainer: "#003da5",
+  primaryFixed: "#dbe1ff",
+  secondary: "#a04100",
+  secondaryFixed: "#ffdbcc",
+  tertiary: "#452900",
+  tertiaryFixed: "#ffddb8",
+  onTertiaryFixed: "#2a1700",
+  onTertiaryContainer: "#f8a110",
+  error: "#ba1a1a",
+  background: "#f9f9f7",
+  surfaceLowest: "#ffffff",
+  surfaceLow: "#f4f4f2",
+  surfaceHigh: "#e8e8e6",
+  surfaceHighest: "#e2e3e1",
+  onSurface: "#1a1c1b",
+  onSurfaceVariant: "#434653",
+  outline: "#747684",
+  outlineVariant: "#c4c6d5",
+};
+
+const font = {
+  headline: "'Plus Jakarta Sans', sans-serif",
+  body: "'Noto Serif', serif",
+};
+
 const GOAL_OPTIONS = [
-  { value: 10, label: "Casual",    emoji: "🌱", desc: "10 min · light pace" },
-  { value: 20, label: "Regular",   emoji: "⚡", desc: "20 min · steady"     },
-  { value: 30, label: "Intensive", emoji: "🔥", desc: "30 min · full prep"  },
+  { value: 10, emoji: "🌱", label: "10min" },
+  { value: 20, emoji: "⚡", label: "20min" },
+  { value: 30, emoji: "🔥", label: "30min" },
 ];
 
 const LEVEL_CARDS = [
-  { level: "A2", label: "Civic Dutch",  available: true,  color: "bg-primary"  },
-  { level: "B1", label: "Intermediate", available: false, color: "bg-gray-400" },
-  { level: "B2", label: "Advanced",     available: false, color: "bg-gray-400" },
+  { code: "A2", name: "Elementary Dutch", available: true },
+  { code: "B1", name: "Intermediate", available: false },
+  { code: "B2", name: "Upper Intermediate", available: false },
 ];
 
 export function ProfileClient({ profile, activity, achievements, userId, avgScore, completedCount }: Props) {
@@ -52,21 +80,21 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
   const [goalMinutes, setGoalMinutes] = useState(profile?.daily_goal_minutes ?? 20);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [tooltipId, setTooltipId] = useState<number | null>(null);
 
   if (!profile) return null;
 
   const daysUntilExam = getDaysUntilExam(examDate);
+  const unlockedCount = achievements.filter((a) => a.unlocked).length;
 
-  const xpChartData = activity.map((a) => ({
-    date: new Date(a.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-    xp: a.xp_earned,
-  }));
+  // XP bar chart data from activity
+  const xpBars = activity.length > 0
+    ? activity.map((a) => a.xp_earned)
+    : [0];
+  const maxXP = Math.max(...xpBars, 1);
 
   const handleSave = async () => {
     setSaving(true);
     const supabase = createClient();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data } = await (supabase as any)
       .from("profiles")
       .update({ exam_target_date: examDate || null, daily_goal_minutes: goalMinutes })
@@ -85,310 +113,298 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
     router.push("/login");
   };
 
-  const unlockedCount = achievements.filter((a) => a.unlocked).length;
-
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+    <div style={{ background: c.background, color: c.onSurface, fontFamily: font.headline, minHeight: "100vh" }}>
+      <main style={{ padding: "24px 24px 128px", maxWidth: 448, margin: "0 auto", display: "flex", flexDirection: "column", gap: 32 }}>
 
-      {/* Profile header */}
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex items-center gap-4 bg-[var(--card-bg)] border border-[var(--border)] rounded-2xl p-5"
-      >
-        {/* Avatar with conic-gradient ring */}
-        <div
-          className="relative shrink-0 rounded-full p-[3px]"
-          style={{ background: "conic-gradient(from 0deg, var(--primary), var(--accent), var(--primary))" }}
-          aria-label={`Avatar for ${profile.username}`}
-        >
-          <div className="w-20 h-20 rounded-full bg-primary flex items-center justify-center text-white font-bold text-2xl overflow-hidden">
-            {profile.avatar_url ? (
-              <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
-            ) : (
-              getInitials(profile.username)
-            )}
-          </div>
-        </div>
-
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <p className="font-bold text-xl truncate">{profile.username}</p>
-            <span className="text-xs font-bold bg-primary text-white px-2 py-0.5 rounded-full shrink-0">
-              {profile.current_level}
-            </span>
-          </div>
-          <div className="flex items-center gap-1.5 mt-2 flex-wrap">
-            <span className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-[var(--border)] text-[var(--muted)]">
-              <Zap size={9} className="text-yellow-500" aria-hidden="true" />
-              {profile.xp_total.toLocaleString()} XP
-            </span>
-            <span className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-[var(--border)] text-[var(--muted)]">
-              <BookOpen size={9} aria-hidden="true" />
-              {completedCount} lessons
-            </span>
-            <span className="flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-[var(--border)] text-[var(--muted)]">
-              <Flame size={9} className="text-orange-500" aria-hidden="true" />
-              {profile.streak_days} streak
-            </span>
-          </div>
-        </div>
-
-        <button
-          onClick={handleSignOut}
-          className="tap-target flex items-center justify-center text-[var(--muted)] hover:text-danger transition-colors"
-          aria-label="Sign out"
-        >
-          <LogOut size={20} aria-hidden="true" />
-        </button>
-      </motion.div>
-
-      {/* Level path */}
-      <div>
-        <h2 className="text-sm font-semibold text-[var(--muted)] uppercase tracking-wide mb-3">Learning path</h2>
-        <div className="grid grid-cols-3 gap-3">
-          {LEVEL_CARDS.map(({ level, label, available, color }) => (
-            <div
-              key={level}
-              className={cn(
-                "rounded-xl p-4 border relative overflow-hidden",
-                available
-                  ? "shadow-card border-primary/30 bg-primary/[0.06] dark:bg-primary/[0.12]"
-                  : "border-[var(--border)] bg-[var(--card-bg)]"
-              )}
-            >
-              <span className={cn("text-xs font-bold text-white px-2 py-0.5 rounded-full", color)}>
-                {level}
-              </span>
-              <p className={cn("text-sm font-medium mt-2", !available && "text-[var(--muted)]")}>{label}</p>
-              {available && (
-                <>
-                  <div className="mt-3 h-1.5 bg-[var(--border)] rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-primary rounded-full transition-all"
-                      style={{ width: `${Math.min(100, (completedCount / 30) * 100)}%` }}
-                    />
-                  </div>
-                  <p className="text-[10px] text-[var(--muted)] mt-1">{completedCount} / 30 lessons</p>
-                </>
-              )}
-              {!available && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-[var(--card-bg)]/80 rounded-xl gap-1.5">
-                  <Lock size={20} className="text-[var(--muted)]" aria-hidden="true" />
-                  <span className="text-[10px] font-semibold text-[var(--muted)]">Coming soon</span>
-                </div>
+        {/* ── Hero Section ── */}
+        <section style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 16 }}>
+          {/* Avatar */}
+          <div style={{ position: "relative" }}>
+            <div style={{
+              width: 96, height: 96, borderRadius: 9999, background: c.primary,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              color: "#fff", fontSize: 30, fontWeight: 700,
+              boxShadow: "0 8px 24px rgba(0,0,0,0.12)", overflow: "hidden",
+            }}>
+              {profile.avatar_url ? (
+                <img src={profile.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              ) : (
+                getInitials(profile.username)
               )}
             </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Settings */}
-      <div className="bg-[var(--card-bg)] border border-[var(--border)] rounded-2xl p-5 space-y-5">
-        <h2 className="font-semibold">Settings</h2>
-
-        {/* Exam date */}
-        <div>
-          <label htmlFor="examDate" className="block text-sm font-medium mb-1.5">
-            Exam date
-          </label>
-          <div className="relative">
-            <input
-              id="examDate"
-              type="date"
-              value={examDate}
-              onChange={(e) => setExamDate(e.target.value)}
-              min={new Date().toISOString().split("T")[0]}
-              className="w-full px-3 py-2.5 pr-10 rounded-xl border border-[var(--border)] bg-[var(--background)] text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
-            />
-            <Calendar
-              size={16}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--muted)] pointer-events-none"
-              aria-hidden="true"
-            />
-          </div>
-          {daysUntilExam !== null && daysUntilExam > 0 && (
-            <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium text-primary dark:text-blue-400 bg-primary/10 dark:bg-blue-900/30">
-              <span aria-hidden="true">📅</span>
-              {daysUntilExam} days to exam
+            <div style={{
+              position: "absolute", bottom: -4, right: -4,
+              width: 32, height: 32, borderRadius: 9999,
+              background: c.secondary, border: `4px solid ${c.background}`,
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              <span className="mso mso-fill" style={{ color: "#fff", fontSize: 12 }}>verified</span>
             </div>
-          )}
-        </div>
+          </div>
 
-        {/* Daily goal */}
-        <div>
-          <p className="text-sm font-medium mb-2">Daily goal</p>
-          <div className="grid grid-cols-3 gap-2">
-            {GOAL_OPTIONS.map(({ value, label, emoji, desc }) => (
-              <button
-                key={value}
-                onClick={() => setGoalMinutes(value)}
-                className={cn(
-                  "flex flex-col items-center gap-1 p-4 rounded-xl border-2 text-sm font-medium transition-all tap-target",
-                  goalMinutes === value ? "border-primary bg-primary/5" : "border-[var(--border)]"
-                )}
-                aria-pressed={goalMinutes === value}
-              >
-                <span className="text-lg" aria-hidden="true">{emoji}</span>
-                <span className="font-semibold text-sm">{label}</span>
-                <span className="text-[10px] font-normal text-[var(--muted)] text-center leading-tight">{desc}</span>
-              </button>
+          {/* Name & Level */}
+          <div>
+            <h2 style={{ fontSize: 24, fontWeight: 800, color: c.onSurface, letterSpacing: "-0.025em", margin: 0 }}>
+              {profile.username}
+            </h2>
+            <span style={{
+              display: "inline-flex", padding: "4px 12px", marginTop: 8,
+              borderRadius: 9999, background: c.primaryContainer, color: "#fff",
+              fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em",
+            }}>
+              {profile.current_level} Level
+            </span>
+          </div>
+
+          {/* Stats Row */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", width: "100%", gap: 16, marginTop: 16 }}>
+            {[
+              { icon: "stars", iconColor: c.tertiary, value: profile.xp_total.toLocaleString(), label: "Total XP" },
+              { icon: "menu_book", iconColor: c.primary, value: String(completedCount), label: "Lessons" },
+              { icon: "local_fire_department", iconColor: c.secondary, value: String(profile.streak_days), label: "Day Streak" },
+            ].map((stat, i) => (
+              <div key={i} style={{
+                background: c.surfaceLow, padding: 16, borderRadius: 16,
+                display: "flex", flexDirection: "column", alignItems: "center",
+              }}>
+                <span className="mso mso-fill" style={{ color: stat.iconColor, fontSize: 20, marginBottom: 4 }}>{stat.icon}</span>
+                <span style={{ fontSize: 18, fontWeight: 800 }}>{stat.value}</span>
+                <span style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.15em", fontWeight: 700, color: c.onSurfaceVariant }}>{stat.label}</span>
+              </div>
             ))}
           </div>
-        </div>
+        </section>
 
-        {/* Dark mode */}
-        <div className="flex items-center justify-between">
-          <p className="text-sm font-medium">Dark mode</p>
-          <DarkModeToggle />
-        </div>
-
-        {/* Save button with shimmer while saving */}
-        <button
-          onClick={handleSave}
-          disabled={saving}
-          className="relative w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white font-semibold py-3 rounded-xl transition-colors tap-target disabled:opacity-60 overflow-hidden"
-        >
-          {saving && (
-            <div
-              className="absolute inset-0 w-1/3 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer"
-              aria-hidden="true"
-            />
-          )}
-          {saving ? (
-            <Loader2 size={16} className="animate-spin relative z-10" aria-hidden="true" />
-          ) : (
-            <Save size={16} className="relative z-10" aria-hidden="true" />
-          )}
-          <span className="relative z-10">{saved ? "Saved!" : "Save settings"}</span>
-        </button>
-      </div>
-
-      {/* XP chart */}
-      {xpChartData.length > 0 && (
-        <div className="bg-[var(--card-bg)] border border-[var(--border)] rounded-2xl p-5">
-          <h2 className="font-semibold mb-4">XP history (last 30 days)</h2>
-          <div aria-label="XP history line chart" role="img">
-            <ResponsiveContainer width="100%" height={180}>
-              <LineChart data={xpChartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                <XAxis dataKey="date" tick={{ fontSize: 10, fill: "var(--muted)" }} interval="preserveStartEnd" tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: "var(--muted)" }} />
-                <Tooltip
-                  contentStyle={{
-                    background: "var(--card-bg)",
-                    border: "1px solid var(--border)",
-                    borderRadius: "8px",
-                    fontSize: 12,
-                  }}
-                />
-                <Line type="monotone" dataKey="xp" stroke="#FFD700" strokeWidth={2} dot={false} />
-              </LineChart>
-            </ResponsiveContainer>
+        {/* ── Level Path Cards ── */}
+        <section>
+          <h3 style={{ fontSize: 10, textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.2em", color: c.onSurfaceVariant, marginBottom: 16, marginLeft: 4 }}>
+            Current Roadmap
+          </h3>
+          <div style={{ display: "flex", gap: 16, overflowX: "auto", paddingBottom: 16 }} className="no-scrollbar">
+            {LEVEL_CARDS.map((lvl, i) => {
+              const pct = lvl.available ? Math.min(100, Math.round((completedCount / 30) * 100)) : 0;
+              return (
+                <div key={lvl.code} style={{
+                  minWidth: 200, padding: 20, borderRadius: 24,
+                  display: "flex", flexDirection: "column", gap: 12,
+                  background: lvl.available ? c.surfaceLowest : c.surfaceLow,
+                  border: lvl.available ? `2px solid ${c.primary}` : "none",
+                  opacity: i === 2 ? 0.4 : i === 1 ? 0.6 : 1,
+                }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                    <span style={{ fontSize: 24, fontWeight: 900, color: lvl.available ? c.primary : c.outline }}>{lvl.code}</span>
+                    {lvl.available ? (
+                      <span style={{ fontSize: 12, fontWeight: 700, color: c.primary }}>{pct}%</span>
+                    ) : (
+                      <span className="mso" style={{ color: c.outline, fontSize: 20 }}>lock</span>
+                    )}
+                  </div>
+                  <p style={{ fontFamily: font.body, fontSize: 14, fontWeight: 700, margin: 0 }}>{lvl.name}</p>
+                  {lvl.available ? (
+                    <div style={{ width: "100%", height: 6, background: c.surfaceHighest, borderRadius: 9999, overflow: "hidden" }}>
+                      <div style={{ height: "100%", width: `${pct}%`, background: c.primary }} />
+                    </div>
+                  ) : (
+                    <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: c.outline }}>Coming Soon</span>
+                  )}
+                </div>
+              );
+            })}
           </div>
-        </div>
-      )}
+        </section>
 
-      {/* Performance */}
-      <div className="bg-[var(--card-bg)] border border-[var(--border)] rounded-2xl p-5">
-        <h2 className="font-semibold mb-4">Performance</h2>
-        <div className="flex items-center gap-6">
-          {/* Score ring — w-28 h-28 */}
-          <div className="w-28 h-28 relative shrink-0" aria-label={`Average score: ${avgScore}%`}>
-            <svg className="w-full h-full -rotate-90" viewBox="0 0 80 80" aria-hidden="true">
-              <circle cx="40" cy="40" r="32" fill="none" stroke="var(--border)" strokeWidth="6" />
-              <circle cx="40" cy="40" r="32" fill="none" stroke="#003DA5" strokeWidth="6"
-                strokeDasharray={`${2 * Math.PI * 32}`}
-                strokeDashoffset={`${2 * Math.PI * 32 * (1 - avgScore / 100)}`}
-                strokeLinecap="round" />
-            </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="font-bold text-2xl leading-none">{avgScore}</span>
-              <span className="text-[10px] text-[var(--muted)] font-medium">avg %</span>
+        {/* ── Accuracy Ring + XP History ── */}
+        <section style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          {/* Accuracy Card */}
+          <div style={{
+            background: c.surfaceLowest, padding: 24, borderRadius: 24,
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            boxShadow: "0px 12px 32px rgba(26,28,27,0.06)",
+          }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <span style={{ fontSize: 30, fontWeight: 900, color: c.primary }}>{avgScore}%</span>
+              <p style={{ fontSize: 12, fontWeight: 500, color: c.onSurfaceVariant, lineHeight: 1.4, margin: 0 }}>
+                Average Score<br />
+                <span style={{ opacity: 0.6, fontSize: 10, fontWeight: 700, textTransform: "uppercase" }}>Across {completedCount} Lessons</span>
+              </p>
             </div>
-          </div>
-
-          <div className="flex flex-col gap-3 flex-1 min-w-0">
-            <div>
-              <p className="font-semibold">Average score</p>
-              <p className="text-sm text-[var(--muted)]">{completedCount} lessons completed</p>
-              <p className="text-sm text-[var(--muted)]">{profile.streak_days} day streak</p>
-            </div>
-            <div
-              className="flex items-center gap-2 rounded-xl px-3 py-2 w-fit"
-              style={{ background: "rgba(255, 215, 0, 0.10)" }}
-            >
-              <Star size={14} className="text-yellow-400 fill-yellow-400 shrink-0" aria-hidden="true" />
-              <div>
-                <p className="text-sm font-bold leading-none">—</p>
-                <p className="text-[10px] text-[var(--muted)]">Best score</p>
+            <div style={{ position: "relative", width: 80, height: 80 }}>
+              <svg width={80} height={80} style={{ transform: "rotate(-90deg)" }}>
+                <circle cx={40} cy={40} r={32} fill="transparent" stroke={c.surfaceHighest} strokeWidth={6} />
+                <circle cx={40} cy={40} r={32} fill="transparent" stroke={c.secondary} strokeWidth={6}
+                  strokeDasharray={201} strokeDashoffset={201 - (avgScore / 100) * 201} />
+              </svg>
+              <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <span className="mso" style={{ fontSize: 20, color: c.secondary }}>bolt</span>
               </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* Achievements */}
-      <div>
-        {/* Progress bar + header */}
-        <div className="mb-3">
-          <div className="flex items-center justify-between mb-1.5">
-            <h2 className="text-sm font-semibold text-[var(--muted)] uppercase tracking-wide">Achievements</h2>
-            <span className="text-xs text-[var(--muted)]">{unlockedCount} / {achievements.length} unlocked</span>
+          {/* XP History */}
+          {activity.length > 0 && (
+            <div style={{ background: c.surfaceLow, padding: 24, borderRadius: 24, display: "flex", flexDirection: "column", gap: 16 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+                <h4 style={{ fontSize: 10, textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.15em", margin: 0 }}>XP History</h4>
+                <span style={{ fontSize: 12, fontWeight: 700, color: c.onSurfaceVariant }}>Last 30 Days</span>
+              </div>
+              <div style={{ height: 128, width: "100%", display: "flex", alignItems: "flex-end", gap: 3 }}>
+                {xpBars.map((xp, i) => {
+                  const h = maxXP > 0 ? (xp / maxXP) * 100 : 0;
+                  const isMax = xp === maxXP && xp > 0;
+                  return (
+                    <div key={i} style={{
+                      flex: 1, borderRadius: "2px 2px 0 0", minHeight: 4,
+                      height: `${Math.max(h, 4)}%`,
+                      background: isMax ? c.secondary : c.surfaceHighest,
+                    }} />
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </section>
+
+        {/* ── Settings Card ── */}
+        <section style={{ background: c.surfaceLow, padding: 24, borderRadius: 24, display: "flex", flexDirection: "column", gap: 24 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <h3 style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.025em", margin: 0 }}>Learning Goals</h3>
+            <span className="mso" style={{ color: c.onSurfaceVariant, fontSize: 24 }}>settings</span>
           </div>
-          <div className="h-2 bg-[var(--border)] rounded-full overflow-hidden">
+
+          {/* Exam Date */}
+          <div style={{
+            display: "flex", justifyContent: "space-between", alignItems: "center",
+            padding: 16, background: c.surfaceLowest, borderRadius: 16,
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <span className="mso" style={{ color: c.error, fontSize: 20 }}>event</span>
+              <span style={{ fontSize: 14, fontWeight: 700 }}>Exam Date</span>
+            </div>
+            {daysUntilExam !== null && daysUntilExam > 0 ? (
+              <span style={{ fontSize: 14, fontWeight: 900, color: c.error }}>{daysUntilExam} Days!</span>
+            ) : (
+              <input
+                type="date"
+                value={examDate}
+                onChange={(e) => setExamDate(e.target.value)}
+                min={new Date().toISOString().split("T")[0]}
+                style={{
+                  border: "none", background: "transparent", fontSize: 14, fontWeight: 700,
+                  color: c.onSurface, fontFamily: font.headline, outline: "none",
+                }}
+              />
+            )}
+          </div>
+
+          {/* Daily Goal */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <label style={{ fontSize: 10, textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.15em", color: c.onSurfaceVariant }}>
+              Daily Goal Intensity
+            </label>
+            <div style={{ display: "flex", gap: 8 }}>
+              {GOAL_OPTIONS.map((goal) => (
+                <button
+                  key={goal.value}
+                  onClick={() => setGoalMinutes(goal.value)}
+                  style={{
+                    flex: 1, padding: "12px 4px", borderRadius: 12, border: "none", cursor: "pointer",
+                    display: "flex", flexDirection: "column", alignItems: "center",
+                    fontSize: 10, fontWeight: 700, fontFamily: font.headline,
+                    background: goalMinutes === goal.value ? c.primaryContainer : c.surfaceHigh,
+                    color: goalMinutes === goal.value ? "#fff" : c.onSurface,
+                    boxShadow: goalMinutes === goal.value ? "0 8px 16px rgba(0,0,0,0.12)" : "none",
+                    transform: goalMinutes === goal.value ? "scale(1.05)" : "scale(1)",
+                    transition: "all 0.2s",
+                  }}
+                >
+                  <span style={{ fontSize: 16 }}>{goal.emoji}</span>
+                  {goal.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Dark Mode */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 8 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span className="mso" style={{ color: c.primary, fontSize: 20 }}>dark_mode</span>
+              <span style={{ fontSize: 14, fontWeight: 700 }}>Dark Mode</span>
+            </div>
+            <DarkModeToggle />
+          </div>
+
+          {/* Save Button */}
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            style={{
+              width: "100%", padding: 16, borderRadius: 9999, border: "none", cursor: "pointer",
+              background: c.primary, color: "#fff", fontWeight: 700, fontSize: 14,
+              fontFamily: font.headline, opacity: saving ? 0.6 : 1,
+              boxShadow: "0 10px 20px -5px rgba(0,0,0,0.15)",
+            }}
+          >
+            {saving ? "Saving..." : saved ? "Saved! ✓" : "Save Changes"}
+          </button>
+
+          {/* Sign Out */}
+          <button
+            onClick={handleSignOut}
+            style={{
+              width: "100%", padding: 12, borderRadius: 9999, cursor: "pointer",
+              background: "transparent", border: `1.5px solid ${c.outlineVariant}`,
+              color: c.onSurfaceVariant, fontWeight: 600, fontSize: 14, fontFamily: font.headline,
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+            }}
+          >
+            <span className="mso" style={{ fontSize: 18 }}>logout</span>
+            Sign Out
+          </button>
+        </section>
+
+        {/* ── Achievements ── */}
+        <section style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", padding: "0 4px" }}>
+            <h3 style={{ fontSize: 18, fontWeight: 800, margin: 0 }}>Achievements</h3>
+            <span style={{ fontSize: 10, fontWeight: 700, color: c.onSurfaceVariant, textTransform: "uppercase", letterSpacing: "0.15em" }}>
+              {unlockedCount}/{achievements.length} Unlocked
+            </span>
+          </div>
+
+          {/* Progress bar */}
+          <div style={{ height: 8, background: c.surfaceHighest, borderRadius: 9999, overflow: "hidden" }}>
             <motion.div
-              className="h-full rounded-full bg-gradient-to-r from-yellow-400 to-amber-500"
               initial={{ width: 0 }}
               animate={{ width: `${achievements.length > 0 ? (unlockedCount / achievements.length) * 100 : 0}%` }}
-              transition={{ duration: 0.8, ease: "easeOut" }}
+              transition={{ duration: 0.8 }}
+              style={{ height: "100%", borderRadius: 9999, background: "linear-gradient(to right, #fbbf24, #f59e0b)" }}
             />
           </div>
-        </div>
 
-        <div className="grid grid-cols-4 gap-3 sm:grid-cols-5">
-          {achievements.map((achievement, i) => (
-            <motion.div
-              key={achievement.id}
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={
-                achievement.unlocked
-                  ? { opacity: 1, scale: 1, borderColor: ["#fbbf24", "#f59e0b", "#fcd34d", "#fbbf24"] }
-                  : { opacity: 1, scale: 1 }
-              }
-              transition={
-                achievement.unlocked
-                  ? { delay: i * 0.03, borderColor: { duration: 2, repeat: Infinity, ease: "linear" } }
-                  : { delay: i * 0.03 }
-              }
-              onClick={() =>
-                !achievement.unlocked &&
-                setTooltipId(tooltipId === achievement.id ? null : achievement.id)
-              }
-              className={cn(
-                "relative flex flex-col items-center gap-1.5 bg-[var(--card-bg)] border rounded-xl p-3 text-center transition-all",
-                achievement.unlocked
-                  ? "shadow-sm cursor-default"
-                  : "border-[var(--border)] opacity-40 grayscale cursor-pointer"
-              )}
-              aria-label={`${achievement.title}: ${achievement.description}${achievement.unlocked ? " (unlocked)" : " (locked — tap for details)"}`}
-            >
-              {/* Tooltip for locked achievements */}
-              {!achievement.unlocked && tooltipId === achievement.id && (
-                <div className="absolute -top-1 left-1/2 -translate-x-1/2 -translate-y-full z-20 bg-[var(--foreground)] text-[var(--background)] text-[9px] font-medium px-2 py-1 rounded whitespace-nowrap pointer-events-none max-w-[130px] text-center leading-tight">
-                  {achievement.description}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12 }}>
+            {achievements.map((ach) => (
+              <div key={ach.id} style={{
+                display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
+                opacity: ach.unlocked ? 1 : 0.3,
+                filter: ach.unlocked ? "none" : "grayscale(1)",
+              }}>
+                <div style={{
+                  aspectRatio: "1", width: "100%", borderRadius: 16,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  background: ach.unlocked ? c.secondaryFixed : c.surfaceHighest,
+                  boxShadow: ach.unlocked ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
+                }}>
+                  <span style={{ fontSize: 20 }}>{ach.icon}</span>
                 </div>
-              )}
-              <span className="text-2xl" aria-hidden="true">{achievement.icon}</span>
-              <p className="text-[10px] font-semibold leading-tight">{achievement.title}</p>
-              {achievement.unlocked && (
-                <span className="text-[9px] text-yellow-600 font-medium">+{achievement.xp_reward} XP</span>
-              )}
-            </motion.div>
-          ))}
-        </div>
-      </div>
-
+                <span style={{ fontSize: 8, fontWeight: 900, textTransform: "uppercase", textAlign: "center", lineHeight: 1.1 }}>
+                  {ach.title}
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+      </main>
     </div>
   );
 }

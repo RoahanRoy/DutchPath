@@ -2,11 +2,15 @@
 
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { BookMarked, RotateCcw, CheckCircle2, ChevronRight, Volume2 } from "lucide-react";
 import type { VocabCard, UserVocab } from "@/lib/supabase/types";
 import { createClient } from "@/lib/supabase/client";
 import { useAppStore } from "@/lib/store";
-import { calculateNextReview, cn } from "@/lib/utils";
+import { calculateNextReview } from "@/lib/utils";
+
+/**
+ * Vocabulary Review — Stitch "flip card" design.
+ * All SRS logic preserved, visual layer replaced with inline-style Stitch design.
+ */
 
 interface CardWithStatus extends VocabCard {
   userVocab: UserVocab | null;
@@ -18,34 +22,54 @@ interface Props {
 }
 
 type Category = "all" | "forms" | "everyday" | "time" | "people";
-const CATEGORIES: { value: Category; label: string; emoji: string }[] = [
-  { value: "all", label: "All", emoji: "📋" },
-  { value: "forms", label: "Forms", emoji: "📝" },
-  { value: "everyday", label: "Everyday", emoji: "🏠" },
-  { value: "time", label: "Time", emoji: "⏰" },
-  { value: "people", label: "People", emoji: "👥" },
+
+/* ── Design tokens ─────────────────────────────────────────────────── */
+const c = {
+  primary: "#002975",
+  primaryContainer: "#003da5",
+  primaryFixed: "#dbe1ff",
+  secondary: "#a04100",
+  tertiary: "#452900",
+  tertiaryFixed: "#ffddb8",
+  onTertiaryContainer: "#f8a110",
+  error: "#ba1a1a",
+  background: "#f9f9f7",
+  surfaceLowest: "#ffffff",
+  surfaceLow: "#f4f4f2",
+  surfaceHigh: "#e8e8e6",
+  surfaceHighest: "#e2e3e1",
+  onSurface: "#1a1c1b",
+  onSurfaceVariant: "#434653",
+  outline: "#747684",
+  outlineVariant: "#c4c6d5",
+  success: "#2e7d32",
+};
+
+const font = {
+  headline: "'Plus Jakarta Sans', sans-serif",
+  body: "'Noto Serif', serif",
+};
+
+const CATEGORIES: { value: Category; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "forms", label: "📝 Forms" },
+  { value: "everyday", label: "🏠 Everyday" },
+  { value: "time", label: "⏰ Time" },
+  { value: "people", label: "👥 People" },
 ];
 
-const CATEGORY_EMOJIS: Record<string, string> = {
-  forms: "📝",
-  everyday: "🏠",
-  time: "⏰",
-  people: "👥",
+const CATEGORY_ICONS: Record<string, string> = {
+  forms: "star",
+  everyday: "home",
+  time: "schedule",
+  people: "person",
 };
 
-const CATEGORY_BORDER_COLORS: Record<string, string> = {
-  forms: "#3b82f6",
-  everyday: "#22c55e",
-  time: "#f59e0b",
-  people: "#a855f7",
-};
-
-const STATUS_COLORS: Record<string, string> = {
-  new:       "bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400",
-  learning:  "bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400",
-  reviewing: "bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400",
-  mastered:  "bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400",
-};
+const RATING_BUTTONS = [
+  { rating: "hard" as const, emoji: "😅", label: "Hard", interval: "+1d", color: "#ba1a1a" },
+  { rating: "ok" as const, emoji: "😊", label: "OK", interval: "+3d", color: "#a04100" },
+  { rating: "easy" as const, emoji: "😎", label: "Easy", interval: "+7d", color: "#2e7d32" },
+];
 
 export function VocabularyClient({ cards, userId }: Props) {
   const { addToast, updateXP } = useAppStore();
@@ -64,23 +88,25 @@ export function VocabularyClient({ cards, userId }: Props) {
     return cards.filter((c) => category === "all" || c.category === category);
   }, [cards, category]);
 
-  // Cards due for review (next_review_at <= now) sorted by urgency
   const dueCards = useMemo(() => {
     return filtered
       .filter((c) => {
         const uv = cardStates.get(c.id);
-        if (!uv) return false; // not started
+        if (!uv) return false;
         return new Date(uv.next_review_at) <= now;
       })
       .map((c) => c.id);
   }, [filtered, cardStates, now]);
 
-  // Progress rings per category
   const catStats = useMemo(() => {
-    return CATEGORIES.slice(1).map(({ value, label, emoji }) => {
+    return CATEGORIES.slice(1).map(({ value, label }) => {
       const catCards = cards.filter((c) => c.category === value);
       const mastered = catCards.filter((c) => cardStates.get(c.id)?.status === "mastered").length;
-      return { value, label, emoji, mastered, total: catCards.length };
+      const total = catCards.length;
+      const pct = total > 0 ? Math.round((mastered / total) * 100) : 0;
+      const circumference = 2 * Math.PI * 18;
+      const dashoffset = circumference - (pct / 100) * circumference;
+      return { value, label, pct, icon: CATEGORY_ICONS[value], dashoffset };
     });
   }, [cards, cardStates]);
 
@@ -101,42 +127,26 @@ export function VocabularyClient({ cards, userId }: Props) {
     const nextReview = calculateNextReview(rating, currentStreak);
     const newStreak = rating === "easy" ? currentStreak + 1 : 0;
     const newStatus: UserVocab["status"] =
-      newStreak >= 3 ? "mastered"
-      : rating === "easy" ? "reviewing"
-      : rating === "ok" ? "learning"
-      : "learning";
+      newStreak >= 3 ? "mastered" : rating === "easy" ? "reviewing" : "learning";
 
     const newCorrect = (current?.correct_count ?? 0) + (rating !== "hard" ? 1 : 0);
     const newIncorrect = (current?.incorrect_count ?? 0) + (rating === "hard" ? 1 : 0);
 
     const supabase = createClient();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase.from("user_vocabulary") as any).upsert({
-      user_id: userId,
-      card_id: cardId,
-      status: newStatus,
+      user_id: userId, card_id: cardId, status: newStatus,
       next_review_at: nextReview.toISOString(),
-      correct_count: newCorrect,
-      incorrect_count: newIncorrect,
-      streak: newStreak,
+      correct_count: newCorrect, incorrect_count: newIncorrect, streak: newStreak,
     });
-
-    // Update XP (2 per review)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (supabase as any).rpc("increment_xp", { p_user_id: userId, p_amount: 2 });
     updateXP(2);
 
-    // Update local state
     setCardStates((prev) => {
       const next = new Map(prev);
       next.set(cardId, {
-        user_id: userId,
-        card_id: cardId,
-        status: newStatus,
+        user_id: userId, card_id: cardId, status: newStatus,
         next_review_at: nextReview.toISOString(),
-        correct_count: newCorrect,
-        incorrect_count: newIncorrect,
-        streak: newStreak,
+        correct_count: newCorrect, incorrect_count: newIncorrect, streak: newStreak,
       });
       return next;
     });
@@ -145,7 +155,6 @@ export function VocabularyClient({ cards, userId }: Props) {
       addToast({ type: "success", title: "Word mastered! 📖", message: cards.find((c) => c.id === cardId)?.dutch });
     }
 
-    // Advance
     if (reviewIndex + 1 >= reviewQueue.length) {
       setReviewDone(true);
     } else {
@@ -154,273 +163,290 @@ export function VocabularyClient({ cards, userId }: Props) {
     }
   };
 
-  // Review mode
-  if (reviewQueue !== null) {
-    if (reviewDone) {
-      return (
-        <div className="max-w-sm mx-auto px-4 py-12 text-center">
-          <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} className="text-5xl mb-4" aria-hidden="true">🎉</motion.div>
-          <h2 className="text-xl font-bold mb-2">Review complete!</h2>
-          <p className="text-[var(--muted)] mb-6">{reviewQueue.length} cards reviewed</p>
-          <button onClick={() => setReviewQueue(null)} className="bg-primary text-white font-semibold px-8 py-3 rounded-xl tap-target">
-            Back to vocab
-          </button>
-        </div>
-      );
-    }
-
-    const cardId = reviewQueue[reviewIndex];
-    const card = cards.find((c) => c.id === cardId)!;
-    const uv = cardStates.get(cardId);
-    const categoryEmoji = CATEGORY_EMOJIS[card.category] ?? "📋";
-
+  /* ═══ Review complete ═══ */
+  if (reviewQueue !== null && reviewDone) {
     return (
-      <div className="max-w-sm mx-auto px-4 py-6">
-        <div className="flex items-center justify-between mb-6">
-          <button onClick={() => setReviewQueue(null)} className="text-sm text-[var(--muted)] hover:text-[var(--foreground)] tap-target">
-            ← Back
-          </button>
-          <span className="text-sm text-[var(--muted)]">{reviewIndex + 1} / {reviewQueue.length}</span>
-        </div>
-
-        {/* Progress */}
-        <div className="h-1.5 bg-[var(--border)] rounded-full mb-6 overflow-hidden">
-          <motion.div
-            className="h-full bg-primary rounded-full"
-            animate={{ width: `${(reviewIndex / reviewQueue.length) * 100}%` }}
-          />
-        </div>
-
-        {/* Flip card */}
-        <div
-          className="relative h-56 cursor-pointer"
-          onClick={() => setIsFlipped(!isFlipped)}
-          role="button"
-          aria-label={isFlipped ? "Flip to Dutch" : "Flip to see English"}
-          tabIndex={0}
-          onKeyDown={(e) => e.key === "Enter" && setIsFlipped(!isFlipped)}
-          style={{ perspective: "1000px" }}
+      <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: c.background, fontFamily: font.headline, padding: 24 }}>
+        <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} style={{ fontSize: 48, marginBottom: 16 }}>🎉</motion.div>
+        <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 8, color: c.onSurface }}>Review complete!</h2>
+        <p style={{ fontSize: 14, color: c.onSurfaceVariant, marginBottom: 24 }}>{reviewQueue.length} cards reviewed</p>
+        <button
+          onClick={() => setReviewQueue(null)}
+          style={{
+            padding: "14px 32px", borderRadius: 9999, border: "none", cursor: "pointer",
+            background: `linear-gradient(to bottom, ${c.primary}, ${c.primaryContainer})`,
+            color: "#fff", fontWeight: 700, fontSize: 16, fontFamily: font.headline,
+          }}
         >
-          <motion.div
-            animate={{ rotateY: isFlipped ? 180 : 0 }}
-            transition={{ duration: 0.5 }}
-            style={{ transformStyle: "preserve-3d" }}
-            className="relative w-full h-full"
-          >
-            {/* Front */}
-            <div
-              className="absolute inset-0 bg-[var(--card-bg)] border-2 border-primary rounded-2xl flex flex-col items-center justify-center p-6 overflow-hidden"
-              style={{ backfaceVisibility: "hidden" }}
-            >
-              {/* Subtle grid overlay */}
-              <div
-                className="absolute inset-0 rounded-2xl pointer-events-none"
-                style={{
-                  backgroundImage: "radial-gradient(circle, rgba(255,255,255,0.15) 1px, transparent 1px)",
-                  backgroundSize: "24px 24px",
-                }}
-                aria-hidden="true"
-              />
-              {/* Category emoji top-left */}
-              <span className="absolute top-3 left-3 text-2xl" aria-hidden="true">{categoryEmoji}</span>
-              {/* Status badge top-right */}
-              {uv && (
-                <span className={cn("absolute top-3 right-3 text-xs px-2 py-1 rounded-full", STATUS_COLORS[uv.status])}>
-                  {uv.status}
-                </span>
-              )}
-              <p className="text-4xl font-bold text-primary mb-3 relative z-10">{card.dutch}</p>
-              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--border)] text-[var(--muted)] text-xs relative z-10">
-                <span aria-hidden="true">👆</span>
-                <span>Tap to reveal</span>
-              </div>
-            </div>
-
-            {/* Back */}
-            <div
-              className="absolute inset-0 bg-[var(--card-bg)] border-2 border-success rounded-2xl flex flex-col items-center justify-center p-6 text-center overflow-hidden"
-              style={{ backfaceVisibility: "hidden", transform: "rotateY(180deg)" }}
-            >
-              <p className="text-2xl font-bold text-success mb-2">{card.english}</p>
-              {card.example_sentence_nl && (
-                <>
-                  <div className="w-full h-px bg-[var(--border)] my-3" aria-hidden="true" />
-                  <div className="w-full rounded-xl px-3 py-2 text-left bg-[#FFFBF5] dark:bg-[var(--card-bg)]">
-                    <p className="dutch-text text-sm text-[var(--muted)] italic">{card.example_sentence_nl}</p>
-                    {card.example_sentence_en && (
-                      <p className="text-xs text-[var(--muted)] mt-1">{card.example_sentence_en}</p>
-                    )}
-                  </div>
-                </>
-              )}
-              {!card.example_sentence_nl && card.example_sentence_en && (
-                <p className="text-xs text-[var(--muted)] mt-1">{card.example_sentence_en}</p>
-              )}
-              {/* Speaker button */}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  addToast({ type: "success", title: "🔊 Audio coming soon", message: "Text-to-speech is not yet available." });
-                }}
-                className="absolute bottom-3 right-3 w-8 h-8 flex items-center justify-center rounded-full bg-[var(--border)] text-[var(--muted)] hover:bg-primary/10 hover:text-primary transition-colors tap-target"
-                aria-label="Play audio (coming soon)"
-              >
-                <Volume2 size={14} aria-hidden="true" />
-              </button>
-            </div>
-          </motion.div>
-        </div>
-
-        {/* Rating buttons */}
-        <AnimatePresence>
-          {isFlipped && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex gap-3 mt-6"
-            >
-              {([
-                { rating: "hard", label: "Hard", emoji: "😅", color: "border-danger text-danger", bg: "bg-danger/5", interval: "again tomorrow" },
-                { rating: "ok",   label: "OK",   emoji: "😊", color: "border-amber-400 text-amber-600", bg: "bg-amber-400/5", interval: "in 3 days" },
-                { rating: "easy", label: "Easy", emoji: "😎", color: "border-success text-success", bg: "bg-success/5", interval: "in 7 days" },
-              ] as const).map(({ rating, label, emoji, color, bg, interval }) => (
-                <button
-                  key={rating}
-                  onClick={() => handleRating(rating)}
-                  className={cn(
-                    "flex-1 border-2 rounded-xl py-4 font-semibold text-sm transition-all tap-target hover:opacity-80 flex flex-col items-center gap-0.5",
-                    color, bg
-                  )}
-                  aria-label={`Rate as ${label}`}
-                >
-                  <span aria-hidden="true">{emoji}</span>
-                  <span>{label}</span>
-                  <span className="text-[10px] font-normal opacity-60">{interval}</span>
-                </button>
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
+          Back to vocabulary
+        </button>
       </div>
     );
   }
 
-  // Main vocab page
+  /* ═══ Review mode — Flip card ═══ */
+  if (reviewQueue !== null) {
+    const cardId = reviewQueue[reviewIndex];
+    const card = cards.find((c) => c.id === cardId)!;
+    const uv = cardStates.get(cardId);
+    const categoryLabel = card.category.toUpperCase();
+
+    return (
+      <div style={{ background: c.background, color: c.onSurface, fontFamily: font.headline, minHeight: "100vh" }}>
+        {/* Top Nav */}
+        <header style={{
+          position: "fixed", top: 0, width: "100%", zIndex: 50, height: 64,
+          display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 24px",
+          background: "rgba(249,249,247,0.7)", backdropFilter: "blur(24px)",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <button onClick={() => setReviewQueue(null)} style={{ width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 9999, border: "none", background: "transparent", cursor: "pointer" }}>
+              <span className="mso" style={{ color: c.primary, fontSize: 24 }}>arrow_back</span>
+            </button>
+            <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: c.onSurfaceVariant }}>
+              Card {reviewIndex + 1} of {reviewQueue.length}
+            </span>
+          </div>
+          <div style={{ flex: 1, maxWidth: 140, margin: "0 16px" }}>
+            <div style={{ height: 6, width: "100%", background: c.surfaceHighest, borderRadius: 9999, overflow: "hidden" }}>
+              <motion.div
+                animate={{ width: `${((reviewIndex + 1) / reviewQueue.length) * 100}%` }}
+                style={{ height: "100%", background: c.secondary, borderRadius: 9999 }}
+              />
+            </div>
+          </div>
+          <button style={{ width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 9999, border: "none", background: "transparent", cursor: "pointer" }}>
+            <span className="mso" style={{ color: c.primary, fontSize: 24 }}>more_vert</span>
+          </button>
+        </header>
+
+        <main style={{ paddingTop: 80, paddingBottom: 128, padding: "80px 24px 128px", maxWidth: 448, margin: "0 auto", display: "flex", flexDirection: "column", gap: 32 }}>
+          {/* Flip Card */}
+          <section
+            onClick={() => setIsFlipped(!isFlipped)}
+            style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 420, cursor: "pointer" }}
+          >
+            <div style={{ perspective: 1000, width: "100%", height: 420 }}>
+              <motion.div
+                animate={{ rotateY: isFlipped ? 180 : 0 }}
+                transition={{ duration: 0.5 }}
+                style={{ transformStyle: "preserve-3d", width: "100%", height: "100%", position: "relative" }}
+              >
+                {/* Front */}
+                <div style={{
+                  position: "absolute", inset: 0, backfaceVisibility: "hidden", borderRadius: 32,
+                  background: `linear-gradient(135deg, ${c.primary}, ${c.primaryContainer})`,
+                  boxShadow: "0px 12px 32px rgba(0,41,117,0.15)",
+                  borderBottom: `4px solid ${c.primaryContainer}80`,
+                  display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                  padding: 32, textAlign: "center",
+                }}>
+                  <div style={{ position: "absolute", top: 24, right: 24, padding: "4px 12px", background: "rgba(255,255,255,0.1)", backdropFilter: "blur(12px)", borderRadius: 9999 }}>
+                    <span style={{ fontSize: 10, fontWeight: 800, color: "#fff", textTransform: "uppercase", letterSpacing: "0.15em" }}>{categoryLabel}</span>
+                  </div>
+                  <h2 style={{ fontFamily: font.body, fontSize: 36, fontWeight: 700, color: "#fff", marginBottom: 16 }}>{card.dutch}</h2>
+                  <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 12, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.2em", marginTop: 32 }}>Tap to reveal</p>
+                  <div style={{ marginTop: 48, opacity: 0.2 }}>
+                    <span className="mso" style={{ fontSize: 64, color: "#fff" }}>style</span>
+                  </div>
+                </div>
+
+                {/* Back */}
+                <div style={{
+                  position: "absolute", inset: 0, backfaceVisibility: "hidden", transform: "rotateY(180deg)",
+                  borderRadius: 32, background: c.surfaceLowest,
+                  boxShadow: "0px 12px 32px rgba(26,28,27,0.06)",
+                  border: `2px solid ${c.success}33`, display: "flex", flexDirection: "column",
+                  padding: 32,
+                }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 32 }}>
+                    <span style={{ padding: "4px 12px", background: `${c.success}1a`, color: c.success, fontSize: 10, fontWeight: 800, borderRadius: 9999 }}>TRANSLATION</span>
+                    <span className="mso mso-fill" style={{ color: c.success, fontSize: 20 }}>check_circle</span>
+                  </div>
+                  <h3 style={{ fontSize: 28, fontWeight: 800, color: c.success, marginBottom: 24 }}>{card.english}</h3>
+                  {card.example_sentence_nl && (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      <div style={{ padding: 16, background: c.surfaceLow, borderRadius: 16 }}>
+                        <p style={{ fontFamily: font.body, fontSize: 16, fontStyle: "italic", color: c.onSurface, margin: 0 }}>
+                          &ldquo;{card.example_sentence_nl}&rdquo;
+                        </p>
+                      </div>
+                      {card.example_sentence_en && (
+                        <p style={{ fontSize: 14, color: c.onSurfaceVariant, lineHeight: 1.5, margin: 0 }}>{card.example_sentence_en}</p>
+                      )}
+                    </div>
+                  )}
+                  {uv && (
+                    <div style={{ marginTop: "auto", display: "flex", alignItems: "center", gap: 8, color: c.success }}>
+                      <span className="mso" style={{ fontSize: 14 }}>trending_up</span>
+                      <span style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em" }}>
+                        {uv.status === "mastered" ? "Mastered" : `Streak: ${uv.streak}`}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            </div>
+          </section>
+
+          {/* Rating Buttons */}
+          <AnimatePresence>
+            {isFlipped && (
+              <motion.section
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}
+              >
+                {RATING_BUTTONS.map((btn) => (
+                  <button
+                    key={btn.rating}
+                    onClick={(e) => { e.stopPropagation(); handleRating(btn.rating); }}
+                    style={{
+                      display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
+                      padding: 16, background: c.surfaceLowest, borderRadius: 24,
+                      boxShadow: "0 1px 3px rgba(0,0,0,0.05)", border: "none", cursor: "pointer",
+                      fontFamily: font.headline,
+                    }}
+                  >
+                    <span style={{ fontSize: 24 }}>{btn.emoji}</span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: c.onSurface }}>{btn.label}</span>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: btn.color }}>{btn.interval}</span>
+                  </button>
+                ))}
+              </motion.section>
+            )}
+          </AnimatePresence>
+        </main>
+
+        {/* Background decorations */}
+        <div style={{ position: "fixed", top: "-10%", left: "-20%", width: "60%", height: "40%", background: `${c.primary}0d`, borderRadius: 9999, filter: "blur(120px)", zIndex: -1 }} />
+        <div style={{ position: "fixed", bottom: "-5%", right: "-10%", width: "50%", height: "30%", background: `${c.secondary}0d`, borderRadius: 9999, filter: "blur(100px)", zIndex: -1 }} />
+      </div>
+    );
+  }
+
+  /* ═══ Main vocabulary page ═══ */
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Vocabulary</h1>
-          <p className="text-[var(--muted)] text-sm mt-0.5">{cards.length} words · {dueCards.length} due today</p>
+    <div style={{ background: c.background, color: c.onSurface, fontFamily: font.headline, minHeight: "100vh" }}>
+      <main style={{ padding: "24px 24px 128px", maxWidth: 448, margin: "0 auto", display: "flex", flexDirection: "column", gap: 32 }}>
+
+        {/* Header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <div>
+            <h1 style={{ fontSize: 30, fontWeight: 800, color: c.primary, letterSpacing: "-0.025em", margin: 0 }}>Vocabulary</h1>
+            <p style={{ fontSize: 14, color: c.onSurfaceVariant, fontWeight: 600, margin: 0, marginTop: 4 }}>
+              {cards.length} words · {dueCards.length} due today
+            </p>
+          </div>
+          {dueCards.length > 0 && (
+            <button
+              onClick={startReview}
+              style={{
+                padding: "10px 20px", borderRadius: 9999, border: "none", cursor: "pointer",
+                background: c.primary, color: "#fff", fontSize: 14, fontWeight: 700, fontFamily: font.headline,
+                display: "flex", alignItems: "center", gap: 8,
+              }}
+            >
+              <span className="mso" style={{ fontSize: 16 }}>replay</span>
+              Review ({dueCards.length})
+            </button>
+          )}
         </div>
-        {dueCards.length > 0 && (
+
+        {/* Category Filters */}
+        <section style={{ display: "flex", gap: 8, overflowX: "auto", padding: "8px 0" }} className="no-scrollbar">
+          {CATEGORIES.map((cat) => (
+            <button
+              key={cat.value}
+              onClick={() => setCategory(cat.value)}
+              style={{
+                flexShrink: 0, padding: "10px 20px", borderRadius: 9999, border: "none", cursor: "pointer",
+                fontSize: 14, fontWeight: 700, fontFamily: font.headline,
+                background: category === cat.value ? c.primary : c.surfaceLow,
+                color: category === cat.value ? "#fff" : c.onSurfaceVariant,
+                boxShadow: category === cat.value ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
+              }}
+            >
+              {cat.label}
+            </button>
+          ))}
+        </section>
+
+        {/* Mastery Rings */}
+        <section style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+          {catStats.map((ring) => (
+            <div key={ring.value} style={{
+              background: c.surfaceLow, padding: 16, borderRadius: 16,
+              display: "flex", alignItems: "center", gap: 12,
+            }}>
+              <div style={{ position: "relative", width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <svg width={40} height={40} style={{ transform: "rotate(-90deg)" }}>
+                  <circle cx={20} cy={20} r={18} fill="none" stroke={c.surfaceHighest} strokeWidth={3} />
+                  <circle cx={20} cy={20} r={18} fill="none" stroke={c.tertiary} strokeWidth={3}
+                    strokeDasharray={113} strokeDashoffset={ring.dashoffset}
+                    style={{ transition: "all 0.5s" }}
+                  />
+                </svg>
+                <span className="mso mso-fill" style={{ position: "absolute", fontSize: 14, color: c.tertiary }}>{ring.icon}</span>
+              </div>
+              <div>
+                <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: c.onSurfaceVariant, margin: 0 }}>{ring.label}</p>
+                <p style={{ fontSize: 14, fontWeight: 700, color: c.onSurface, margin: 0 }}>{ring.pct}%</p>
+              </div>
+            </div>
+          ))}
+        </section>
+
+        {/* Start learning button (when no due cards) */}
+        {dueCards.length === 0 && (
           <button
             onClick={startReview}
-            className="bg-primary text-white font-semibold px-4 py-2 rounded-xl text-sm tap-target flex items-center gap-2"
+            style={{
+              width: "100%", padding: 16, borderRadius: 16,
+              border: `2px dashed ${c.outlineVariant}`, background: "transparent",
+              color: c.onSurfaceVariant, fontSize: 14, fontWeight: 600,
+              cursor: "pointer", fontFamily: font.headline,
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+            }}
           >
-            <RotateCcw size={14} aria-hidden="true" />
-            Review ({dueCards.length})
+            <span className="mso" style={{ fontSize: 18 }}>menu_book</span>
+            Start learning new words
           </button>
         )}
-      </div>
 
-      {/* Category filter */}
-      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none" role="group" aria-label="Filter by category">
-        {CATEGORIES.map(({ value, label, emoji }) => (
-          <button
-            key={value}
-            onClick={() => setCategory(value)}
-            className={cn(
-              "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors tap-target shrink-0",
-              category === value
-                ? "bg-primary text-white"
-                : "bg-[var(--card-bg)] border border-[var(--border)] text-[var(--muted)] hover:text-[var(--foreground)]"
-            )}
-            aria-pressed={category === value}
-          >
-            <span aria-hidden="true">{emoji}</span> {label}
-          </button>
-        ))}
-      </div>
-
-      {/* Category progress rings */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {catStats.map(({ value, label, emoji, mastered, total }) => {
-          const pct = total > 0 ? (mastered / total) * 100 : 0;
-          const circumference = 2 * Math.PI * 16;
-          const offset = circumference - (pct / 100) * circumference;
-          return (
-            <button
-              key={value}
-              onClick={() => setCategory(value as Category)}
-              className="flex flex-col items-center gap-1 bg-[var(--card-bg)] border border-[var(--border)] rounded-xl p-3 tap-target transition-colors hover:border-primary/30"
-              aria-label={`${label}: ${mastered} of ${total} mastered`}
-            >
-              <span className="text-lg" aria-hidden="true">{emoji}</span>
-              <div className="relative w-14 h-14" aria-hidden="true">
-                <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 40 40">
-                  <circle cx="20" cy="20" r="16" fill="none" stroke="var(--border)" strokeWidth="3" />
-                  <circle cx="20" cy="20" r="16" fill="none" stroke="#00A86B" strokeWidth="3"
-                    strokeDasharray={circumference} strokeDashoffset={offset}
-                    strokeLinecap="round" className="transition-all duration-700" />
-                </svg>
-                <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-success">{mastered}</span>
-              </div>
-              <p className="text-[10px] font-medium text-[var(--muted)]">{label}</p>
-              <p className="text-[10px] text-[var(--muted)]">{Math.round(pct)}%</p>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Start learning button */}
-      {dueCards.length === 0 && (
-        <button
-          onClick={startReview}
-          className="w-full bg-[var(--card-bg)] border-2 border-dashed border-[var(--border)] hover:border-primary/30 rounded-xl py-4 text-sm font-medium text-[var(--muted)] hover:text-[var(--foreground)] transition-colors tap-target flex items-center justify-center gap-2"
-        >
-          <BookMarked size={18} aria-hidden="true" />
-          Start learning new words
-        </button>
-      )}
-
-      {/* Word list */}
-      <div>
-        <h2 className="text-sm font-semibold text-[var(--muted)] uppercase tracking-wide mb-3">
-          {category === "all" ? "All words" : CATEGORIES.find((c) => c.value === category)?.label}
-          <span className="ml-2 font-normal normal-case">({filtered.length})</span>
-        </h2>
-        <div className="space-y-2">
-          {filtered.map((card, i) => {
-            const uv = cardStates.get(card.id);
-            return (
-              <motion.div
-                key={card.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.02 }}
-                className="flex items-center gap-4 bg-[var(--card-bg)] border border-[var(--border)] rounded-xl px-4 py-3"
-                style={{ borderLeft: `3px solid ${CATEGORY_BORDER_COLORS[card.category] ?? "var(--border)"}` }}
-              >
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm">{card.dutch}</p>
-                  <p className="text-xs text-[var(--muted)]">{card.english}</p>
+        {/* Word List */}
+        <div>
+          <h2 style={{ fontSize: 10, fontWeight: 700, color: c.onSurfaceVariant, textTransform: "uppercase", letterSpacing: "0.15em", marginBottom: 12 }}>
+            {category === "all" ? "All words" : CATEGORIES.find((ct) => ct.value === category)?.label} ({filtered.length})
+          </h2>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {filtered.map((card) => {
+              const uv = cardStates.get(card.id);
+              const statusLabel = uv?.status ?? "new";
+              const statusColor = statusLabel === "mastered" ? c.success : statusLabel === "reviewing" ? c.secondary : statusLabel === "learning" ? c.primary : c.outline;
+              return (
+                <div key={card.id} style={{
+                  display: "flex", alignItems: "center", gap: 16,
+                  background: c.surfaceLowest, borderRadius: 16, padding: "12px 16px",
+                  boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+                }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontWeight: 700, fontSize: 14, margin: 0 }}>{card.dutch}</p>
+                    <p style={{ fontSize: 12, color: c.onSurfaceVariant, margin: 0 }}>{card.english}</p>
+                  </div>
+                  <span style={{
+                    fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 9999,
+                    background: `${statusColor}1a`, color: statusColor, textTransform: "uppercase",
+                  }}>
+                    {statusLabel}
+                  </span>
+                  <span className="mso" style={{ fontSize: 16, color: c.outlineVariant }}>chevron_right</span>
                 </div>
-                {uv ? (
-                  <span className={cn("text-xs px-2 py-0.5 rounded-full shrink-0", STATUS_COLORS[uv.status])}>
-                    {uv.status}
-                  </span>
-                ) : (
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 shrink-0">
-                    new
-                  </span>
-                )}
-                <ChevronRight size={14} className="text-[var(--muted)] shrink-0" aria-hidden="true" />
-              </motion.div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
