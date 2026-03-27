@@ -27,29 +27,25 @@ export function TopNav() {
     router.push("/login");
   };
 
-  const glassStyle = {
-    position: "sticky" as const, top: 0, zIndex: 50,
-    background: c.glassBackground, backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)",
-    fontFamily: "'Plus Jakarta Sans', sans-serif",
-    borderBottom: c.glassBorder !== "transparent" ? `1px solid ${c.glassBorder}` : "none",
-    transition: "background 0.3s",
-  };
-
   return (
-    <>
-      {/* ── Mobile Header ── */}
-      <header
-        style={{
-          ...glassStyle,
-          height: 56, display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "0 20px",
-        }}
-        className="md:hidden"
-      >
+    <header
+      style={{
+        position: "sticky", top: 0, zIndex: 50,
+        background: c.glassBackground, backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)",
+        fontFamily: "'Plus Jakarta Sans', sans-serif",
+        borderBottom: c.glassBorder !== "transparent" ? `1px solid ${c.glassBorder}` : "none",
+        transition: "background 0.3s",
+      }}
+    >
+      {/* ── Top row: logo + stats ── */}
+      <div style={{
+        height: 56, padding: "0 16px",
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+      }}>
         <Link href="/dashboard" style={{ textDecoration: "none" }}>
           <span style={{ fontSize: 18, fontWeight: 800, color: c.primary, letterSpacing: "-0.025em" }}>DutchPath</span>
         </Link>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           {profile && (
             <>
               <div style={{
@@ -67,90 +63,52 @@ export function TopNav() {
               </span>
             </>
           )}
-        </div>
-      </header>
-
-      {/* ── Desktop Header ── */}
-      <header
-        style={{
-          ...glassStyle,
-          height: 64, display: "flex", alignItems: "center", justifyContent: "space-between",
-          padding: "0 24px",
-        }}
-        className="hidden md:flex"
-      >
-        {/* Left — hamburger + logo */}
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <button
-            onClick={() => {}}
-            style={{
-              display: "flex", alignItems: "center", justifyContent: "center",
-              width: 40, height: 40, borderRadius: 9999, border: "none",
-              background: "transparent", cursor: "pointer",
-            }}
-          >
-            <span className="mso" style={{ color: c.primary, fontSize: 24 }}>menu</span>
-          </button>
-          <Link href="/dashboard" style={{ textDecoration: "none" }}>
-            <span style={{ fontSize: 20, fontWeight: 800, color: c.primary, letterSpacing: "-0.025em" }}>DutchPath</span>
-          </Link>
-        </div>
-
-        {/* Center — nav links (desktop) */}
-        <nav style={{ display: "flex", alignItems: "center", gap: 4 }} aria-label="Main navigation">
-          {NAV_LINKS.map(({ href, label }) => {
-            const active = pathname.startsWith(href);
-            return (
-              <Link
-                key={href}
-                href={href}
-                style={{
-                  padding: "6px 12px", borderRadius: 8, fontSize: 14, fontWeight: 500,
-                  textDecoration: "none", transition: "all 0.2s",
-                  ...(active
-                    ? { background: `${c.primary}15`, color: c.primary }
-                    : { color: c.onSurfaceVariant }),
-                }}
-                aria-current={active ? "page" : undefined}
-              >
-                {label}
-              </Link>
-            );
-          })}
-        </nav>
-
-        {/* Right — streak, XP, sign out */}
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          {profile && (
-            <>
-              <div style={{
-                display: "flex", alignItems: "center", gap: 6,
-                background: c.surfaceHigh, padding: "4px 12px", borderRadius: 9999,
-              }}>
-                <span className="mso mso-fill" style={{ color: c.secondary, fontSize: 14 }}>bolt</span>
-                <span style={{ fontSize: 12, fontWeight: 700, color: c.onSurface }}>{profile.streak_days}</span>
-              </div>
-              <span style={{
-                fontSize: 11, fontWeight: 700, background: c.primaryContainer, color: "#ffffff",
-                padding: "3px 10px", borderRadius: 9999, textTransform: "uppercase", letterSpacing: "0.05em",
-              }}>
-                {profile.current_level}
-              </span>
-            </>
-          )}
+          {/* Sign out — desktop only */}
           <button
             onClick={handleSignOut}
+            className="hidden md:flex"
             style={{
-              display: "flex", alignItems: "center", justifyContent: "center",
-              width: 40, height: 40, borderRadius: 9999, border: "none",
+              alignItems: "center", justifyContent: "center",
+              width: 36, height: 36, borderRadius: 9999, border: "none",
               background: "transparent", cursor: "pointer",
             }}
             aria-label="Sign out"
           >
-            <span className="mso" style={{ color: c.primary, fontSize: 24 }}>logout</span>
+            <span className="mso" style={{ color: c.primary, fontSize: 20 }}>logout</span>
           </button>
         </div>
-      </header>
-    </>
+      </div>
+
+      {/* ── Nav links row: horizontally scrollable ── */}
+      <nav
+        aria-label="Main navigation"
+        className="no-scrollbar"
+        style={{
+          display: "flex", alignItems: "center", gap: 4,
+          padding: "0 16px 8px",
+          overflowX: "auto", whiteSpace: "nowrap",
+        }}
+      >
+        {NAV_LINKS.map(({ href, label }) => {
+          const active = pathname.startsWith(href);
+          return (
+            <Link
+              key={href}
+              href={href}
+              style={{
+                padding: "6px 14px", borderRadius: 9999, fontSize: 13, fontWeight: 600,
+                textDecoration: "none", transition: "all 0.2s", flexShrink: 0,
+                ...(active
+                  ? { background: `${c.primary}15`, color: c.primary }
+                  : { color: c.onSurfaceVariant }),
+              }}
+              aria-current={active ? "page" : undefined}
+            >
+              {label}
+            </Link>
+          );
+        })}
+      </nav>
+    </header>
   );
 }
