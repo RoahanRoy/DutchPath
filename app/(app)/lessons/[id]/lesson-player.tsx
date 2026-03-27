@@ -135,10 +135,11 @@ export function LessonPlayer({ lesson, progress, userId }: Props) {
     }
 
     await (supabase as any).rpc("increment_xp", { p_user_id: userId, p_amount: totalXP });
-    await (supabase.from("daily_activity") as any).upsert({
-      user_id: userId, date: today, xp_earned: totalXP,
-      minutes_spent: Math.ceil(elapsedSeconds / 60), lessons_completed: 1,
-    }, { onConflict: "user_id,date" });
+    await (supabase as any).rpc("increment_streak", { p_user_id: userId });
+    await (supabase as any).rpc("upsert_daily_activity", {
+      p_user_id: userId, p_date: today, p_xp: totalXP,
+      p_minutes: Math.ceil(elapsedSeconds / 60), p_lessons: 1, p_words: 0,
+    });
 
     updateXP(totalXP);
 

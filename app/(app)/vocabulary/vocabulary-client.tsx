@@ -119,7 +119,13 @@ export function VocabularyClient({ cards, userId }: Props) {
       next_review_at: nextReview.toISOString(),
       correct_count: newCorrect, incorrect_count: newIncorrect, streak: newStreak,
     });
+    const today = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Amsterdam" });
     await (supabase as any).rpc("increment_xp", { p_user_id: userId, p_amount: 2 });
+    await (supabase as any).rpc("increment_streak", { p_user_id: userId });
+    await (supabase as any).rpc("upsert_daily_activity", {
+      p_user_id: userId, p_date: today, p_xp: 2,
+      p_minutes: 0, p_lessons: 0, p_words: 1,
+    });
     updateXP(2);
 
     setCardStates((prev) => {
