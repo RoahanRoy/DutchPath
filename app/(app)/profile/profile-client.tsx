@@ -7,11 +7,11 @@ import type { Profile, DailyActivity } from "@/lib/supabase/types";
 import { createClient } from "@/lib/supabase/client";
 import { useAppStore } from "@/lib/store";
 import { getInitials, getDaysUntilExam } from "@/lib/utils";
-import { DarkModeToggle } from "@/components/ui/dark-mode-toggle";
+import { useTheme, getColors } from "@/lib/use-theme";
 
 /**
- * Profile — Stitch design.
- * All settings/save logic preserved, visual layer replaced with inline-style Stitch design.
+ * Profile — Stitch design with dark mode support.
+ * All settings/save logic preserved, visual layer uses theme-aware colors.
  */
 
 interface AchievementWithStatus {
@@ -33,29 +33,6 @@ interface Props {
   completedCount: number;
 }
 
-/* ── Design tokens ─────────────────────────────────────────────────── */
-const c = {
-  primary: "#002975",
-  primaryContainer: "#003da5",
-  primaryFixed: "#dbe1ff",
-  secondary: "#a04100",
-  secondaryFixed: "#ffdbcc",
-  tertiary: "#452900",
-  tertiaryFixed: "#ffddb8",
-  onTertiaryFixed: "#2a1700",
-  onTertiaryContainer: "#f8a110",
-  error: "#ba1a1a",
-  background: "#f9f9f7",
-  surfaceLowest: "#ffffff",
-  surfaceLow: "#f4f4f2",
-  surfaceHigh: "#e8e8e6",
-  surfaceHighest: "#e2e3e1",
-  onSurface: "#1a1c1b",
-  onSurfaceVariant: "#434653",
-  outline: "#747684",
-  outlineVariant: "#c4c6d5",
-};
-
 const font = {
   headline: "'Plus Jakarta Sans', sans-serif",
   body: "'Noto Serif', serif",
@@ -75,18 +52,20 @@ const LEVEL_CARDS = [
 
 export function ProfileClient({ profile, activity, achievements, userId, avgScore, completedCount }: Props) {
   const router = useRouter();
+  const { isDark, toggle: toggleTheme } = useTheme();
+  const c = getColors(isDark);
   const setProfile = useAppStore((s) => s.setProfile);
   const [examDate, setExamDate] = useState(profile?.exam_target_date ?? "");
   const [goalMinutes, setGoalMinutes] = useState(profile?.daily_goal_minutes ?? 20);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [editingExam, setEditingExam] = useState(false);
 
   if (!profile) return null;
 
   const daysUntilExam = getDaysUntilExam(examDate);
   const unlockedCount = achievements.filter((a) => a.unlocked).length;
 
-  // XP bar chart data from activity
   const xpBars = activity.length > 0
     ? activity.map((a) => a.xp_earned)
     : [0];
@@ -104,6 +83,7 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
     if (data) setProfile(data);
     setSaving(false);
     setSaved(true);
+    setEditingExam(false);
     setTimeout(() => setSaved(false), 2000);
   };
 
@@ -114,7 +94,7 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
   };
 
   return (
-    <div style={{ background: c.background, color: c.onSurface, fontFamily: font.headline, minHeight: "100vh" }}>
+    <div style={{ background: c.background, color: c.onSurface, fontFamily: font.headline, minHeight: "100vh", transition: "background 0.3s, color 0.3s" }}>
       <main style={{ padding: "24px 24px 128px", maxWidth: 448, margin: "0 auto", display: "flex", flexDirection: "column", gap: 32 }}>
 
         {/* ── Hero Section ── */}
@@ -124,7 +104,7 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
             <div style={{
               width: 96, height: 96, borderRadius: 9999, background: c.primary,
               display: "flex", alignItems: "center", justifyContent: "center",
-              color: "#fff", fontSize: 30, fontWeight: 700,
+              color: isDark ? c.background : "#fff", fontSize: 30, fontWeight: 700,
               boxShadow: "0 8px 24px rgba(0,0,0,0.12)", overflow: "hidden",
             }}>
               {profile.avatar_url ? (
@@ -139,7 +119,7 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
               background: c.secondary, border: `4px solid ${c.background}`,
               display: "flex", alignItems: "center", justifyContent: "center",
             }}>
-              <span className="mso mso-fill" style={{ color: "#fff", fontSize: 12 }}>verified</span>
+              <span className="mso mso-fill" style={{ color: isDark ? c.background : "#fff", fontSize: 12 }}>verified</span>
             </div>
           </div>
 
@@ -160,7 +140,7 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
           {/* Stats Row */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", width: "100%", gap: 16, marginTop: 16 }}>
             {[
-              { icon: "stars", iconColor: c.tertiary, value: profile.xp_total.toLocaleString(), label: "Total XP" },
+              { icon: "stars", iconColor: isDark ? c.onTertiaryContainer : c.tertiary, value: profile.xp_total.toLocaleString(), label: "Total XP" },
               { icon: "menu_book", iconColor: c.primary, value: String(completedCount), label: "Lessons" },
               { icon: "local_fire_department", iconColor: c.secondary, value: String(profile.streak_days), label: "Day Streak" },
             ].map((stat, i) => (
@@ -216,7 +196,6 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
 
         {/* ── Accuracy Ring + XP History ── */}
         <section style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          {/* Accuracy Card */}
           <div style={{
             background: c.surfaceLowest, padding: 24, borderRadius: 24,
             display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -241,7 +220,6 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
             </div>
           </div>
 
-          {/* XP History */}
           {activity.length > 0 && (
             <div style={{ background: c.surfaceLow, padding: 24, borderRadius: 24, display: "flex", flexDirection: "column", gap: 16 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
@@ -272,7 +250,7 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
             <span className="mso" style={{ color: c.onSurfaceVariant, fontSize: 24 }}>settings</span>
           </div>
 
-          {/* Exam Date */}
+          {/* Exam Date — always editable */}
           <div style={{
             display: "flex", justifyContent: "space-between", alignItems: "center",
             padding: 16, background: c.surfaceLowest, borderRadius: 16,
@@ -281,19 +259,41 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
               <span className="mso" style={{ color: c.error, fontSize: 20 }}>event</span>
               <span style={{ fontSize: 14, fontWeight: 700 }}>Exam Date</span>
             </div>
-            {daysUntilExam !== null && daysUntilExam > 0 ? (
-              <span style={{ fontSize: 14, fontWeight: 900, color: c.error }}>{daysUntilExam} Days!</span>
-            ) : (
-              <input
-                type="date"
-                value={examDate}
-                onChange={(e) => setExamDate(e.target.value)}
-                min={new Date().toISOString().split("T")[0]}
+            {daysUntilExam !== null && daysUntilExam > 0 && !editingExam ? (
+              <button
+                onClick={() => setEditingExam(true)}
                 style={{
-                  border: "none", background: "transparent", fontSize: 14, fontWeight: 700,
-                  color: c.onSurface, fontFamily: font.headline, outline: "none",
+                  background: "transparent", border: "none", cursor: "pointer",
+                  display: "flex", alignItems: "center", gap: 6, padding: 0,
+                  fontFamily: font.headline,
                 }}
-              />
+              >
+                <span style={{ fontSize: 14, fontWeight: 900, color: c.error }}>{daysUntilExam} Days!</span>
+                <span className="mso" style={{ fontSize: 16, color: c.outline }}>edit</span>
+              </button>
+            ) : (
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <input
+                  type="date"
+                  value={examDate}
+                  onChange={(e) => setExamDate(e.target.value)}
+                  min={new Date().toISOString().split("T")[0]}
+                  style={{
+                    border: "none", background: "transparent", fontSize: 14, fontWeight: 700,
+                    color: c.onSurface, fontFamily: font.headline, outline: "none",
+                  }}
+                />
+                {editingExam && (
+                  <button
+                    onClick={() => setEditingExam(false)}
+                    style={{
+                      background: "transparent", border: "none", cursor: "pointer", padding: 0,
+                    }}
+                  >
+                    <span className="mso" style={{ fontSize: 18, color: c.primary }}>check</span>
+                  </button>
+                )}
+              </div>
             )}
           </div>
 
@@ -325,13 +325,40 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
             </div>
           </div>
 
-          {/* Dark Mode */}
+          {/* Dark Mode Toggle */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 8 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span className="mso" style={{ color: c.primary, fontSize: 20 }}>dark_mode</span>
-              <span style={{ fontSize: 14, fontWeight: 700 }}>Dark Mode</span>
+              <span className="mso" style={{ color: c.primary, fontSize: 20 }}>
+                {isDark ? "dark_mode" : "light_mode"}
+              </span>
+              <span style={{ fontSize: 14, fontWeight: 700 }}>{isDark ? "Dark Mode" : "Light Mode"}</span>
             </div>
-            <DarkModeToggle />
+            {/* Toggle switch */}
+            <button
+              role="switch"
+              aria-checked={isDark}
+              aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+              onClick={toggleTheme}
+              style={{
+                position: "relative", width: 52, height: 28, borderRadius: 9999,
+                border: "none", cursor: "pointer", padding: 0, flexShrink: 0,
+                background: isDark ? c.primary : c.surfaceHighest,
+                transition: "background 0.3s",
+              }}
+            >
+              <div style={{
+                position: "absolute", top: 3, left: isDark ? 27 : 3,
+                width: 22, height: 22, borderRadius: 9999,
+                background: isDark ? c.background : "#ffffff",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                transition: "left 0.3s, background 0.3s",
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}>
+                <span className="mso" style={{ fontSize: 14, color: isDark ? c.primary : c.outline }}>
+                  {isDark ? "dark_mode" : "light_mode"}
+                </span>
+              </div>
+            </button>
           </div>
 
           {/* Save Button */}
@@ -340,7 +367,8 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
             disabled={saving}
             style={{
               width: "100%", padding: 16, borderRadius: 9999, border: "none", cursor: "pointer",
-              background: c.primary, color: "#fff", fontWeight: 700, fontSize: 14,
+              background: `linear-gradient(to bottom, ${c.primary}, ${c.primaryContainer})`,
+              color: "#fff", fontWeight: 700, fontSize: 14,
               fontFamily: font.headline, opacity: saving ? 0.6 : 1,
               boxShadow: "0 10px 20px -5px rgba(0,0,0,0.15)",
             }}
@@ -372,7 +400,6 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
             </span>
           </div>
 
-          {/* Progress bar */}
           <div style={{ height: 8, background: c.surfaceHighest, borderRadius: 9999, overflow: "hidden" }}>
             <motion.div
               initial={{ width: 0 }}

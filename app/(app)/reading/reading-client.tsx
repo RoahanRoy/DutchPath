@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Lesson, LessonContent } from "@/lib/supabase/types";
+import { useTheme, getColors } from "@/lib/use-theme";
 
 /**
  * Reading Practice — Stitch design system.
@@ -15,32 +16,6 @@ interface Props {
 
 type WeekFilter = "all" | 1 | 2 | 3 | 4;
 
-/* ── Design tokens ─────────────────────────────────────── */
-const c = {
-  primary: "#002975",
-  primaryContainer: "#003da5",
-  primaryFixed: "#dbe1ff",
-  onPrimaryFixed: "#00174b",
-  secondary: "#a04100",
-  secondaryContainer: "#fe6b00",
-  secondaryFixed: "#ffdbcc",
-  tertiary: "#452900",
-  tertiaryFixed: "#ffddb8",
-  onTertiaryContainer: "#f8a110",
-  error: "#ba1a1a",
-  errorContainer: "#ffdad6",
-  background: "#f9f9f7",
-  surfaceLowest: "#ffffff",
-  surfaceLow: "#f4f4f2",
-  surfaceContainer: "#eeeeec",
-  surfaceHigh: "#e8e8e6",
-  surfaceHighest: "#e2e3e1",
-  onSurface: "#1a1c1b",
-  onSurfaceVariant: "#434653",
-  outline: "#747684",
-  outlineVariant: "#c4c6d5",
-};
-
 const font = {
   headline: "'Plus Jakarta Sans', sans-serif",
   body: "'Noto Serif', serif",
@@ -48,9 +23,11 @@ const font = {
 
 const typeIcons: Record<string, string> = { reading: "auto_stories", grammar: "description", vocabulary: "translate", listening: "headphones" };
 const typeLabels: Record<string, string> = { reading: "READING", grammar: "GRAMMAR", vocabulary: "VOCAB", listening: "LISTENING" };
-const typeColors: Record<string, string> = { reading: c.primary, grammar: c.tertiary, vocabulary: c.secondary, listening: c.primary };
 
 export function ReadingClient({ lessons }: Props) {
+  const { isDark } = useTheme();
+  const c = getColors(isDark);
+  const typeColors: Record<string, string> = { reading: c.primary, grammar: c.tertiary, vocabulary: c.secondary, listening: c.primary };
   const [weekFilter, setWeekFilter] = useState<WeekFilter>("all");
   const [selectedLesson, setSelectedLesson] = useState<Partial<Lesson> | null>(null);
   const [highlightMode, setHighlightMode] = useState(false);

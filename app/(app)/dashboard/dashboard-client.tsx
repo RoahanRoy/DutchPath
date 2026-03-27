@@ -4,22 +4,7 @@ import Link from "next/link";
 import { useMemo } from "react";
 import type { Profile, DailyActivity, Lesson } from "@/lib/supabase/types";
 import { getDaysUntilExam } from "@/lib/utils";
-
-/* ───── Design Tokens (from DESIGN.md / Stitch) ───── */
-const c = {
-  primary: "#002975",
-  primaryContainer: "#003da5",
-  secondary: "#a04100",
-  secondaryFixed: "#ffdbcc",
-  tertiary: "#452900",
-  tertiaryFixed: "#ffddb8",
-  onTertiaryContainer: "#f8a110",
-  background: "#f9f9f7",
-  surfaceLowest: "#ffffff",
-  surfaceHigh: "#e8e8e6",
-  onSurface: "#1a1c1b",
-  onSurfaceVariant: "#434653",
-};
+import { useTheme, getColors } from "@/lib/use-theme";
 
 const font = {
   headline: "'Plus Jakarta Sans', sans-serif",
@@ -49,13 +34,15 @@ function getIntensity(xp: number) {
   if (xp < 100) return 3;
   return 4;
 }
-const HEAT_COLORS = [
-  c.surfaceHigh,
-  `${c.secondary}1a`,
-  `${c.secondary}4d`,
-  `${c.secondary}99`,
-  c.secondary,
-];
+function getHeatColors(c: ReturnType<typeof getColors>) {
+  return [
+    c.surfaceHigh,
+    `${c.secondary}1a`,
+    `${c.secondary}4d`,
+    `${c.secondary}99`,
+    c.secondary,
+  ];
+}
 const MONTH_NAMES = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
 
 /* ───── Greeting helper ───── */
@@ -83,6 +70,8 @@ export function DashboardClient({
   profile, activity, nextLesson, vocabDueCount,
   completedLessonsCount, masteredVocabCount, todayXP,
 }: Props) {
+  const { isDark } = useTheme();
+  const c = getColors(isDark);
   if (!profile) return null;
 
   const daysUntilExam = getDaysUntilExam(profile.exam_target_date);
@@ -126,6 +115,8 @@ export function DashboardClient({
 
   /* The last 3 unique month labels for the header */
   const displayedMonths = monthLabels.slice(-3);
+
+  const HEAT_COLORS = getHeatColors(c);
 
   const stats = [
     { icon: "bolt", color: c.onTertiaryContainer, value: profile.xp_total.toLocaleString(), label: "Total XP" },

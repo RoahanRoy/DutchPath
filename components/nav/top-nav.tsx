@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { createClient } from "@/lib/supabase/client";
+import { useTheme, getColors } from "@/lib/use-theme";
 
 const NAV_LINKS = [
   { href: "/dashboard", label: "Dashboard" },
@@ -17,6 +18,8 @@ export function TopNav() {
   const pathname = usePathname();
   const router = useRouter();
   const profile = useAppStore((s) => s.profile);
+  const { isDark } = useTheme();
+  const c = getColors(isDark);
 
   const handleSignOut = async () => {
     const supabase = createClient();
@@ -30,8 +33,10 @@ export function TopNav() {
         position: "sticky", top: 0, zIndex: 50, height: 64,
         display: "flex", alignItems: "center", justifyContent: "space-between",
         padding: "0 24px",
-        background: "rgba(249,249,247,0.7)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)",
+        background: c.glassBackground, backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)",
         fontFamily: "'Plus Jakarta Sans', sans-serif",
+        borderBottom: c.glassBorder !== "transparent" ? `1px solid ${c.glassBorder}` : "none",
+        transition: "background 0.3s",
       }}
       className="hidden md:flex"
     >
@@ -45,10 +50,10 @@ export function TopNav() {
             background: "transparent", cursor: "pointer",
           }}
         >
-          <span className="mso" style={{ color: "#002975", fontSize: 24 }}>menu</span>
+          <span className="mso" style={{ color: c.primary, fontSize: 24 }}>menu</span>
         </button>
         <Link href="/dashboard" style={{ textDecoration: "none" }}>
-          <span style={{ fontSize: 20, fontWeight: 800, color: "#002975", letterSpacing: "-0.025em" }}>DutchPath</span>
+          <span style={{ fontSize: 20, fontWeight: 800, color: c.primary, letterSpacing: "-0.025em" }}>DutchPath</span>
         </Link>
       </div>
 
@@ -64,8 +69,8 @@ export function TopNav() {
                 padding: "6px 12px", borderRadius: 8, fontSize: 14, fontWeight: 500,
                 textDecoration: "none", transition: "all 0.2s",
                 ...(active
-                  ? { background: "rgba(0,41,117,0.08)", color: "#002975" }
-                  : { color: "#434653" }),
+                  ? { background: `${c.primary}15`, color: c.primary }
+                  : { color: c.onSurfaceVariant }),
               }}
               aria-current={active ? "page" : undefined}
             >
@@ -79,17 +84,15 @@ export function TopNav() {
       <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
         {profile && (
           <>
-            {/* Streak pill */}
             <div style={{
               display: "flex", alignItems: "center", gap: 6,
-              background: "#e8e8e6", padding: "4px 12px", borderRadius: 9999,
+              background: c.surfaceHigh, padding: "4px 12px", borderRadius: 9999,
             }}>
-              <span className="mso mso-fill" style={{ color: "#a04100", fontSize: 14 }}>bolt</span>
-              <span style={{ fontSize: 12, fontWeight: 700, color: "#1a1c1b" }}>{profile.streak_days}</span>
+              <span className="mso mso-fill" style={{ color: c.secondary, fontSize: 14 }}>bolt</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: c.onSurface }}>{profile.streak_days}</span>
             </div>
-            {/* Level badge */}
             <span style={{
-              fontSize: 11, fontWeight: 700, background: "#003da5", color: "#ffffff",
+              fontSize: 11, fontWeight: 700, background: c.primaryContainer, color: "#ffffff",
               padding: "3px 10px", borderRadius: 9999, textTransform: "uppercase", letterSpacing: "0.05em",
             }}>
               {profile.current_level}
@@ -105,7 +108,7 @@ export function TopNav() {
           }}
           aria-label="Sign out"
         >
-          <span className="mso" style={{ color: "#002975", fontSize: 24 }}>logout</span>
+          <span className="mso" style={{ color: c.primary, fontSize: 24 }}>logout</span>
         </button>
       </div>
     </header>

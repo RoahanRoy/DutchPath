@@ -15,7 +15,10 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="nl" className="h-full antialiased" suppressHydrationWarning>
-      <body className="min-h-full flex flex-col bg-[var(--background)] text-[var(--foreground)]">
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem("theme");if(t==="dark"||(t==null&&matchMedia("(prefers-color-scheme:dark)").matches))document.documentElement.classList.add("dark")}catch(e){}})()` }} />
+      </head>
+      <body className="min-h-full flex flex-col bg-[var(--background)] text-[var(--foreground)]" style={{ transition: "background-color 0.3s, color 0.3s" }}>
         <Providers>
           {children}
           <ToastContainer />

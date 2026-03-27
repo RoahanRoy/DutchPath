@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Lesson } from "@/lib/supabase/types";
 import { getStarRating } from "@/lib/utils";
+import { useTheme, getColors } from "@/lib/use-theme";
 
 /**
  * Lesson Map — Stitch "vertical timeline" design.
@@ -19,26 +20,6 @@ interface LessonWithStatus extends Lesson {
 interface Props {
   lessons: LessonWithStatus[];
 }
-
-/* ── Design tokens ─────────────────────────────────────────────────── */
-const c = {
-  primary: "#002975",
-  primaryContainer: "#003da5",
-  secondary: "#a04100",
-  secondaryFixed: "#ffdbcc",
-  tertiary: "#452900",
-  tertiaryFixed: "#ffddb8",
-  onTertiaryContainer: "#f8a110",
-  background: "#f9f9f7",
-  surfaceLowest: "#ffffff",
-  surfaceLow: "#f4f4f2",
-  surfaceHigh: "#e8e8e6",
-  surfaceHighest: "#e2e3e1",
-  onSurface: "#1a1c1b",
-  onSurfaceVariant: "#434653",
-  outline: "#747684",
-  outlineVariant: "#c4c6d5",
-};
 
 const font = {
   headline: "'Plus Jakarta Sans', sans-serif",
@@ -67,6 +48,8 @@ const TYPE_ICONS: Record<string, string> = {
 };
 
 export function LessonMapClient({ lessons }: Props) {
+  const { isDark } = useTheme();
+  const c = getColors(isDark);
   const [selectedLesson, setSelectedLesson] = useState<LessonWithStatus | null>(null);
 
   const weeks = [1, 2, 3, 4];

@@ -6,6 +6,7 @@ import type { VocabCard, UserVocab } from "@/lib/supabase/types";
 import { createClient } from "@/lib/supabase/client";
 import { useAppStore } from "@/lib/store";
 import { calculateNextReview } from "@/lib/utils";
+import { useTheme, getColors } from "@/lib/use-theme";
 
 /**
  * Vocabulary Review — Stitch "flip card" design.
@@ -22,28 +23,6 @@ interface Props {
 }
 
 type Category = "all" | "forms" | "everyday" | "time" | "people";
-
-/* ── Design tokens ─────────────────────────────────────────────────── */
-const c = {
-  primary: "#002975",
-  primaryContainer: "#003da5",
-  primaryFixed: "#dbe1ff",
-  secondary: "#a04100",
-  tertiary: "#452900",
-  tertiaryFixed: "#ffddb8",
-  onTertiaryContainer: "#f8a110",
-  error: "#ba1a1a",
-  background: "#f9f9f7",
-  surfaceLowest: "#ffffff",
-  surfaceLow: "#f4f4f2",
-  surfaceHigh: "#e8e8e6",
-  surfaceHighest: "#e2e3e1",
-  onSurface: "#1a1c1b",
-  onSurfaceVariant: "#434653",
-  outline: "#747684",
-  outlineVariant: "#c4c6d5",
-  success: "#2e7d32",
-};
 
 const font = {
   headline: "'Plus Jakarta Sans', sans-serif",
@@ -72,6 +51,8 @@ const RATING_BUTTONS = [
 ];
 
 export function VocabularyClient({ cards, userId }: Props) {
+  const { isDark } = useTheme();
+  const c = getColors(isDark);
   const { addToast, updateXP } = useAppStore();
   const [category, setCategory] = useState<Category>("all");
   const [cardStates, setCardStates] = useState<Map<number, UserVocab | null>>(

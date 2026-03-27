@@ -1,33 +1,53 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Sun, Moon } from "lucide-react";
+import { useTheme } from "@/lib/use-theme";
 
+/**
+ * Dark mode toggle switch — Stitch design.
+ * Pill-shaped track with sliding thumb.
+ */
 export function DarkModeToggle() {
-  const [dark, setDark] = useState(false);
-
-  useEffect(() => {
-    const stored = localStorage.getItem("theme");
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const isDark = stored === "dark" || (!stored && prefersDark);
-    setDark(isDark);
-    document.documentElement.classList.toggle("dark", isDark);
-  }, []);
-
-  const toggle = () => {
-    const next = !dark;
-    setDark(next);
-    document.documentElement.classList.toggle("dark", next);
-    localStorage.setItem("theme", next ? "dark" : "light");
-  };
+  const { isDark, toggle } = useTheme();
 
   return (
     <button
+      role="switch"
+      aria-checked={isDark}
+      aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
       onClick={toggle}
-      className="tap-target flex items-center justify-center text-[var(--muted)] hover:text-[var(--foreground)] transition-colors"
-      aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
+      style={{
+        position: "relative",
+        width: 52,
+        height: 28,
+        borderRadius: 9999,
+        border: "none",
+        cursor: "pointer",
+        background: isDark ? "#8aacff" : "#e2e3e1",
+        transition: "background 0.3s",
+        padding: 0,
+        flexShrink: 0,
+      }}
     >
-      {dark ? <Sun size={18} aria-hidden="true" /> : <Moon size={18} aria-hidden="true" />}
+      <div
+        style={{
+          position: "absolute",
+          top: 3,
+          left: isDark ? 27 : 3,
+          width: 22,
+          height: 22,
+          borderRadius: 9999,
+          background: isDark ? "#111318" : "#ffffff",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+          transition: "left 0.3s, background 0.3s",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <span className="mso" style={{ fontSize: 14, color: isDark ? "#8aacff" : "#747684" }}>
+          {isDark ? "dark_mode" : "light_mode"}
+        </span>
+      </div>
     </button>
   );
 }

@@ -7,6 +7,7 @@ import type { Lesson, UserLessonProgress, LessonContent, Question } from "@/lib/
 import { createClient } from "@/lib/supabase/client";
 import { useAppStore } from "@/lib/store";
 import { getAmsterdamHour, getAmsterdamDate, getStarRating } from "@/lib/utils";
+import { useTheme, getColors } from "@/lib/use-theme";
 
 /**
  * Lesson Player — Stitch "focus mode" design.
@@ -21,36 +22,14 @@ interface Props {
 
 type Phase = "intro" | "question" | "result" | "complete";
 
-/* ── Design tokens ─────────────────────────────────────────────────── */
-const c = {
-  primary: "#002975",
-  primaryContainer: "#003da5",
-  primaryFixed: "#dbe1ff",
-  onPrimaryFixed: "#00174b",
-  secondary: "#a04100",
-  tertiary: "#452900",
-  tertiaryFixed: "#ffddb8",
-  onTertiaryContainer: "#f8a110",
-  error: "#ba1a1a",
-  background: "#f9f9f7",
-  surfaceLowest: "#ffffff",
-  surfaceLow: "#f4f4f2",
-  surfaceHigh: "#e8e8e6",
-  surfaceHighest: "#e2e3e1",
-  onSurface: "#1a1c1b",
-  onSurfaceVariant: "#434653",
-  outline: "#747684",
-  outlineVariant: "#c4c6d5",
-  success: "#00A86B",
-  danger: "#D63B3B",
-};
-
 const font = {
   headline: "'Plus Jakarta Sans', sans-serif",
   body: "'Noto Serif', serif",
 };
 
 export function LessonPlayer({ lesson, progress, userId }: Props) {
+  const { isDark } = useTheme();
+  const c = getColors(isDark);
   const router = useRouter();
   const { hearts, loseHeart, unlockedHearts, addToast, updateXP } = useAppStore();
 

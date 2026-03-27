@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTheme, getColors } from "@/lib/use-theme";
 
 const NAV_ITEMS = [
   { href: "/dashboard", icon: "home", label: "Home" },
@@ -12,6 +13,8 @@ const NAV_ITEMS = [
 
 export function MobileNav() {
   const pathname = usePathname();
+  const { isDark } = useTheme();
+  const c = getColors(isDark);
 
   return (
     <nav
@@ -24,10 +27,12 @@ export function MobileNav() {
       aria-label="Main navigation"
     >
       <div style={{
-        background: "rgba(249,249,247,0.7)", backdropFilter: "blur(48px)", WebkitBackdropFilter: "blur(48px)",
+        background: c.glassBackground, backdropFilter: "blur(48px)", WebkitBackdropFilter: "blur(48px)",
         borderRadius: 9999, margin: "0 24px", height: 64, width: "100%",
         display: "flex", justifyContent: "space-around", alignItems: "center",
         boxShadow: "0px 12px 32px rgba(26,28,27,0.06)", pointerEvents: "auto",
+        border: c.glassBorder !== "transparent" ? `1px solid ${c.glassBorder}` : "none",
+        transition: "background 0.3s",
       }}>
         {NAV_ITEMS.map(({ href, icon, label }) => {
           const active = pathname.startsWith(href);
@@ -42,8 +47,8 @@ export function MobileNav() {
                 width: 48, height: 48, borderRadius: 9999, border: "none", textDecoration: "none",
                 transition: "all 0.3s",
                 ...(active
-                  ? { background: "#002975", color: "#ffffff", boxShadow: "0 10px 15px -3px rgba(0,0,0,.1)" }
-                  : { background: "transparent", color: "rgba(26,28,27,0.5)" }),
+                  ? { background: c.navActiveBg, color: c.navActiveText, boxShadow: "0 10px 15px -3px rgba(0,0,0,.1)" }
+                  : { background: "transparent", color: c.navInactiveText }),
               }}
             >
               <span
