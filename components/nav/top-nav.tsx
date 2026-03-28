@@ -7,11 +7,11 @@ import { createClient } from "@/lib/supabase/client";
 import { useTheme, getColors } from "@/lib/use-theme";
 
 const NAV_LINKS = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/lessons", label: "Lessons" },
-  { href: "/vocabulary", label: "Vocabulary" },
-  { href: "/reading", label: "Reading" },
-  { href: "/profile", label: "Profile" },
+  { href: "/dashboard", label: "Overzicht" },
+  { href: "/lessons", label: "Lessen" },
+  { href: "/vocabulary", label: "Woordenschat" },
+  { href: "/reading", label: "Lezen" },
+  { href: "/profile", label: "Profiel" },
 ];
 
 export function TopNav() {
