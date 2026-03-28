@@ -124,9 +124,10 @@ export function LessonPlayer({ lesson, progress, userId }: Props) {
     const today = getAmsterdamDate();
     const hour = getAmsterdamHour();
 
+    const bestScore = Math.max(score, progress?.score ?? 0);
     await (supabase.from("user_lesson_progress") as any).upsert({
       user_id: userId, lesson_id: lesson.id, status: "completed",
-      score, attempts: (progress?.attempts ?? 0) + 1,
+      score: bestScore, attempts: (progress?.attempts ?? 0) + 1,
       time_spent_seconds: elapsedSeconds, completed_at: now, last_attempt_at: now,
     });
 
