@@ -48,17 +48,17 @@ const MONTH_NAMES = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT"
 /* ───── Greeting helper ───── */
 function getGreeting(): string {
   const h = new Date().getHours();
-  if (h < 12) return "Goedemorgen";
-  if (h < 18) return "Goedemiddag";
-  return "Goedenavond";
+  if (h < 12) return "Good morning";
+  if (h < 18) return "Good afternoon";
+  return "Good evening";
 }
 
 function lessonTypeLabel(type: string) {
   switch (type) {
-    case "reading": return "Lezen";
-    case "vocabulary": return "Woorden";
-    case "grammar": return "Grammatica";
-    case "listening": return "Luisteren";
+    case "reading": return "Reading";
+    case "vocabulary": return "Vocab";
+    case "grammar": return "Grammar";
+    case "listening": return "Listening";
     default: return type;
   }
 }
@@ -119,10 +119,10 @@ export function DashboardClient({
   const HEAT_COLORS = getHeatColors(c);
 
   const stats = [
-    { icon: "bolt", color: c.onTertiaryContainer, value: profile.xp_total.toLocaleString(), label: "Totale XP" },
-    { icon: "menu_book", color: c.primary, value: masteredVocabCount, label: "Woorden" },
-    { icon: "local_fire_department", color: c.secondary, value: profile.streak_days, label: "Dagelijkse reeks" },
-    { icon: "check_circle", color: "#16a34a", value: completedLessonsCount, label: "Lessen" },
+    { icon: "bolt", color: c.onTertiaryContainer, value: profile.xp_total.toLocaleString(), label: "Total XP" },
+    { icon: "menu_book", color: c.primary, value: masteredVocabCount, label: "Words" },
+    { icon: "local_fire_department", color: c.secondary, value: profile.streak_days, label: "Day Streak" },
+    { icon: "check_circle", color: "#16a34a", value: completedLessonsCount, label: "Lessons" },
   ];
 
   return (
@@ -137,7 +137,7 @@ export function DashboardClient({
             {getGreeting()}, {profile.username} 👋
           </h1>
           <p style={{ fontSize: 14, fontWeight: 500, color: `${c.onSurfaceVariant}b3`, marginTop: 4, fontFamily: font.headline }}>
-            {profile.current_level} · {daysUntilExam !== null && daysUntilExam > 0 ? `${daysUntilExam} dagen tot je examen` : "Ga zo door!"}
+            {profile.current_level} · {daysUntilExam !== null && daysUntilExam > 0 ? `${daysUntilExam} days until your exam` : "Keep going!"}
           </p>
         </section>
 
@@ -153,7 +153,7 @@ export function DashboardClient({
               </div>
               <div>
                 <div style={{ fontSize: 30, fontWeight: 800, color: c.onSurface }}>{profile.streak_days}</div>
-                <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700, color: `${c.onSurfaceVariant}99` }}>dagen reeks</div>
+                <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700, color: `${c.onSurfaceVariant}99` }}>day streak</div>
               </div>
             </div>
             {/* XP Ring */}
@@ -177,14 +177,14 @@ export function DashboardClient({
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 8 }}>
               <span style={{ fontSize: 12, fontWeight: 700, color: c.onSurface }}>{todayXP} / {DAILY_XP_GOAL} XP today</span>
               <span style={{ fontSize: 10, fontWeight: 700, color: c.secondary, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                {Math.round(xpProgress)}% Voltooid
+                {Math.round(xpProgress)}% Complete
               </span>
             </div>
             <div style={{ height: 8, width: "100%", background: c.surfaceHigh, borderRadius: 9999, overflow: "hidden" }}>
               <div style={{ height: "100%", width: `${xpProgress}%`, background: c.secondary, borderRadius: 9999, transition: "width 0.8s ease-out" }} />
             </div>
             {xpProgress >= 100 && (
-              <p style={{ fontSize: 12, fontWeight: 600, color: "#16a34a", marginTop: 6 }}>✓ Dagelijks doel bereikt! Geweldig!</p>
+              <p style={{ fontSize: 12, fontWeight: 600, color: "#16a34a", marginTop: 6 }}>✓ Daily goal reached! Amazing!</p>
             )}
           </div>
         </section>
@@ -197,7 +197,7 @@ export function DashboardClient({
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <span style={{ fontSize: 18 }}>🇳🇱</span>
-              <span style={{ fontSize: 14, fontWeight: 700, color: c.primary, letterSpacing: "-0.025em" }}>{daysUntilExam} dagen tot je examen</span>
+              <span style={{ fontSize: 14, fontWeight: 700, color: c.primary, letterSpacing: "-0.025em" }}>{daysUntilExam} days to your exam</span>
             </div>
             <Link href="/profile" aria-label="Edit exam date">
               <span className="mso" style={{ color: c.primary, fontSize: 20 }}>calendar_today</span>
@@ -241,8 +241,8 @@ export function DashboardClient({
             borderRadius: 20, padding: 24, textAlign: "center", marginBottom: 32,
           }}>
             <p style={{ fontSize: 28, marginBottom: 8 }}>🎉</p>
-            <p style={{ fontWeight: 700, color: "#16a34a", fontSize: 16 }}>Alle lessen voltooid!</p>
-            <p style={{ fontSize: 14, color: c.onSurfaceVariant, marginTop: 4 }}>Gefeliciteerd! Je hebt alle 30 lessen afgerond.</p>
+            <p style={{ fontWeight: 700, color: "#16a34a", fontSize: 16 }}>All lessons completed!</p>
+            <p style={{ fontSize: 14, color: c.onSurfaceVariant, marginTop: 4 }}>Congratulations! You finished all 30 lessons.</p>
           </div>
         )}
 
@@ -274,9 +274,9 @@ export function DashboardClient({
                 <span className="mso mso-fill" style={{ color: "#15803d", fontSize: 24 }}>bookmark</span>
               </div>
               <div>
-                <h4 style={{ fontWeight: 700, color: "#14532d", margin: 0, fontSize: 16 }}>Woordenschat herhalen</h4>
+                <h4 style={{ fontWeight: 700, color: "#14532d", margin: 0, fontSize: 16 }}>Vocabulary Review</h4>
                 <p style={{ color: "rgba(21,128,61,0.8)", fontSize: 14, fontWeight: 500, margin: 0, marginTop: 2 }}>
-                  {vocabDueCount === 1 ? "1 woord" : `${vocabDueCount} woorden`} te herhalen
+                  {vocabDueCount} word{vocabDueCount !== 1 ? "s" : ""} due for review
                 </p>
               </div>
             </section>
@@ -286,7 +286,7 @@ export function DashboardClient({
         {/* ─── Activity Heatmap ─── */}
         <section style={{ marginBottom: 32 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 16 }}>
-            <h2 style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: `${c.onSurfaceVariant}99`, margin: 0 }}>Activiteit</h2>
+            <h2 style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: `${c.onSurfaceVariant}99`, margin: 0 }}>Activity</h2>
             <div style={{ display: "flex", gap: 16, fontSize: 10, fontWeight: 700, color: `${c.onSurfaceVariant}66` }}>
               {displayedMonths.map((m) => <span key={m.label}>{m.label}</span>)}
             </div>
