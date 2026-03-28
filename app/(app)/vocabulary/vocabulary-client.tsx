@@ -30,11 +30,11 @@ const font = {
 };
 
 const CATEGORIES: { value: Category; label: string }[] = [
-  { value: "all", label: "All" },
-  { value: "forms", label: "📝 Forms" },
-  { value: "everyday", label: "🏠 Everyday" },
-  { value: "time", label: "⏰ Time" },
-  { value: "people", label: "👥 People" },
+  { value: "all", label: "Alle" },
+  { value: "forms", label: "📝 Formulieren" },
+  { value: "everyday", label: "🏠 Dagelijks" },
+  { value: "time", label: "⏰ Tijd" },
+  { value: "people", label: "👥 Mensen" },
 ];
 
 const CATEGORY_ICONS: Record<string, string> = {
@@ -45,9 +45,9 @@ const CATEGORY_ICONS: Record<string, string> = {
 };
 
 const RATING_BUTTONS = [
-  { rating: "hard" as const, emoji: "😅", label: "Hard", interval: "+1d", color: "#ba1a1a" },
+  { rating: "hard" as const, emoji: "😅", label: "Moeilijk", interval: "+1d", color: "#ba1a1a" },
   { rating: "ok" as const, emoji: "😊", label: "OK", interval: "+3d", color: "#a04100" },
-  { rating: "easy" as const, emoji: "😎", label: "Easy", interval: "+7d", color: "#2e7d32" },
+  { rating: "easy" as const, emoji: "😎", label: "Makkelijk", interval: "+7d", color: "#2e7d32" },
 ];
 
 export function VocabularyClient({ cards, userId }: Props) {
@@ -139,7 +139,7 @@ export function VocabularyClient({ cards, userId }: Props) {
     });
 
     if (newStatus === "mastered") {
-      addToast({ type: "success", title: "Word mastered! 📖", message: cards.find((c) => c.id === cardId)?.dutch });
+      addToast({ type: "success", title: "Woord geleerd! 📖", message: cards.find((c) => c.id === cardId)?.dutch });
     }
 
     if (reviewIndex + 1 >= reviewQueue.length) {
@@ -155,8 +155,8 @@ export function VocabularyClient({ cards, userId }: Props) {
     return (
       <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: c.background, fontFamily: font.headline, padding: 24 }}>
         <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} style={{ fontSize: 48, marginBottom: 16 }}>🎉</motion.div>
-        <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 8, color: c.onSurface }}>Review complete!</h2>
-        <p style={{ fontSize: 14, color: c.onSurfaceVariant, marginBottom: 24 }}>{reviewQueue.length} cards reviewed</p>
+        <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 8, color: c.onSurface }}>Herhaling voltooid!</h2>
+        <p style={{ fontSize: 14, color: c.onSurfaceVariant, marginBottom: 24 }}>{reviewQueue.length} kaarten herhaald</p>
         <button
           onClick={() => setReviewQueue(null)}
           style={{
@@ -165,7 +165,7 @@ export function VocabularyClient({ cards, userId }: Props) {
             color: "#fff", fontWeight: 700, fontSize: 16, fontFamily: font.headline,
           }}
         >
-          Back to vocabulary
+          Terug naar woordenschat
         </button>
       </div>
     );
@@ -191,7 +191,7 @@ export function VocabularyClient({ cards, userId }: Props) {
               <span className="mso" style={{ color: c.primary, fontSize: 24 }}>arrow_back</span>
             </button>
             <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: c.onSurfaceVariant }}>
-              Card {reviewIndex + 1} of {reviewQueue.length}
+              Kaart {reviewIndex + 1} van {reviewQueue.length}
             </span>
           </div>
           <div style={{ flex: 1, maxWidth: 140, margin: "0 16px" }}>
@@ -232,7 +232,7 @@ export function VocabularyClient({ cards, userId }: Props) {
                     <span style={{ fontSize: 10, fontWeight: 800, color: "#fff", textTransform: "uppercase", letterSpacing: "0.15em" }}>{categoryLabel}</span>
                   </div>
                   <h2 style={{ fontFamily: font.body, fontSize: 36, fontWeight: 700, color: "#fff", marginBottom: 16 }}>{card.dutch}</h2>
-                  <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 12, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.2em", marginTop: 32 }}>Tap to reveal</p>
+                  <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 12, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.2em", marginTop: 32 }}>Tik om te onthullen</p>
                   <div style={{ marginTop: 48, opacity: 0.2 }}>
                     <span className="mso" style={{ fontSize: 64, color: "#fff" }}>style</span>
                   </div>
@@ -247,7 +247,7 @@ export function VocabularyClient({ cards, userId }: Props) {
                   padding: 32,
                 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 32 }}>
-                    <span style={{ padding: "4px 12px", background: `${c.success}1a`, color: c.success, fontSize: 10, fontWeight: 800, borderRadius: 9999 }}>TRANSLATION</span>
+                    <span style={{ padding: "4px 12px", background: `${c.success}1a`, color: c.success, fontSize: 10, fontWeight: 800, borderRadius: 9999 }}>VERTALING</span>
                     <span className="mso mso-fill" style={{ color: c.success, fontSize: 20 }}>check_circle</span>
                   </div>
                   <h3 style={{ fontSize: 28, fontWeight: 800, color: c.success, marginBottom: 24 }}>{card.english}</h3>
@@ -267,7 +267,7 @@ export function VocabularyClient({ cards, userId }: Props) {
                     <div style={{ marginTop: "auto", display: "flex", alignItems: "center", gap: 8, color: c.success }}>
                       <span className="mso" style={{ fontSize: 14 }}>trending_up</span>
                       <span style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em" }}>
-                        {uv.status === "mastered" ? "Mastered" : `Streak: ${uv.streak}`}
+                        {uv.status === "mastered" ? "Geleerd" : `Reeks: ${uv.streak}`}
                       </span>
                     </div>
                   )}
@@ -320,9 +320,9 @@ export function VocabularyClient({ cards, userId }: Props) {
         {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <div>
-            <h1 style={{ fontSize: 30, fontWeight: 800, color: c.primary, letterSpacing: "-0.025em", margin: 0 }}>Vocabulary</h1>
+            <h1 style={{ fontSize: 30, fontWeight: 800, color: c.primary, letterSpacing: "-0.025em", margin: 0 }}>Woordenschat</h1>
             <p style={{ fontSize: 14, color: c.onSurfaceVariant, fontWeight: 600, margin: 0, marginTop: 4 }}>
-              {cards.length} words · {dueCards.length} due today
+              {cards.length} woorden · {dueCards.length} vandaag te herhalen
             </p>
           </div>
           {dueCards.length > 0 && (
@@ -335,7 +335,7 @@ export function VocabularyClient({ cards, userId }: Props) {
               }}
             >
               <span className="mso" style={{ fontSize: 16 }}>replay</span>
-              Review ({dueCards.length})
+              Herhalen ({dueCards.length})
             </button>
           )}
         </div>
@@ -397,20 +397,21 @@ export function VocabularyClient({ cards, userId }: Props) {
             }}
           >
             <span className="mso" style={{ fontSize: 18 }}>menu_book</span>
-            Start learning new words
+            Begin met nieuwe woorden leren
           </button>
         )}
 
         {/* Word List */}
         <div>
           <h2 style={{ fontSize: 10, fontWeight: 700, color: c.onSurfaceVariant, textTransform: "uppercase", letterSpacing: "0.15em", marginBottom: 12 }}>
-            {category === "all" ? "All words" : CATEGORIES.find((ct) => ct.value === category)?.label} ({filtered.length})
+            {category === "all" ? "Alle woorden" : CATEGORIES.find((ct) => ct.value === category)?.label} ({filtered.length})
           </h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {filtered.map((card) => {
               const uv = cardStates.get(card.id);
-              const statusLabel = uv?.status ?? "new";
-              const statusColor = statusLabel === "mastered" ? c.success : statusLabel === "reviewing" ? c.secondary : statusLabel === "learning" ? c.primary : c.outline;
+              const statusRaw = uv?.status ?? "new";
+              const statusColor = statusRaw === "mastered" ? c.success : statusRaw === "reviewing" ? c.secondary : statusRaw === "learning" ? c.primary : c.outline;
+              const statusLabel = statusRaw === "mastered" ? "geleerd" : statusRaw === "reviewing" ? "herhaling" : statusRaw === "learning" ? "leren" : "nieuw";
               return (
                 <div key={card.id} style={{
                   display: "flex", alignItems: "center", gap: 16,
