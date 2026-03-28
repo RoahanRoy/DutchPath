@@ -104,7 +104,7 @@ export function LessonPlayer({ lesson, progress, userId }: Props) {
       setIsCorrect(null);
       setFillWords([]);
     }
-  }, [isLastQuestion, heartsLeft]);
+  }, [isLastQuestion, heartsLeft, completeLesson]);
 
   const completeLesson = useCallback(async () => {
     if (timerRef.current) clearInterval(timerRef.current);
