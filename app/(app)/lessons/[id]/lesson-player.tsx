@@ -42,6 +42,7 @@ export function LessonPlayer({ lesson, progress, userId }: Props) {
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [isShaking, setIsShaking] = useState(false);
   const [correctCount, setCorrectCount] = useState(0);
+  const correctCountRef = useRef(0);
   const [heartsLeft, setHeartsLeft] = useState(unlockedHearts ? 999 : hearts);
   const [xpEarned, setXpEarned] = useState(0);
   const [startTime] = useState(Date.now());
@@ -80,7 +81,8 @@ export function LessonPlayer({ lesson, progress, userId }: Props) {
     setIsCorrect(correct);
 
     if (correct) {
-      setCorrectCount((c) => c + 1);
+      correctCountRef.current += 1;
+      setCorrectCount(correctCountRef.current);
       const earnedXP = 2;
       setXpAmount(earnedXP);
       setShowXP(true);
@@ -104,12 +106,12 @@ export function LessonPlayer({ lesson, progress, userId }: Props) {
       setIsCorrect(null);
       setFillWords([]);
     }
-  }, [isLastQuestion, heartsLeft, completeLesson]);
+  }, [isLastQuestion, heartsLeft, completeLesson]); // completeLesson is stable (no correctCount dep)
 
   const completeLesson = useCallback(async () => {
     if (timerRef.current) clearInterval(timerRef.current);
     const total = questions.length;
-    const score = Math.round((correctCount / total) * 100);
+    const score = Math.round((correctCountRef.current / total) * 100);
     const baseXP = Math.round((score / 100) * lesson.xp_reward);
     const perfectBonus = score === 100 ? 10 : 0;
     const totalXP = baseXP + perfectBonus;
@@ -151,7 +153,7 @@ export function LessonPlayer({ lesson, progress, userId }: Props) {
     if (lesson.type === "reading" && elapsedSeconds < 180) {
       addToast({ type: "achievement", title: "⚡ Snelle lezer!", message: "Klaar in minder dan 3 minuten", xp: 20 });
     }
-  }, [questions.length, correctCount, lesson, progress, elapsedSeconds, userId, heartsLeft, unlockedHearts, addToast, updateXP]);
+  }, [questions.length, lesson, progress, elapsedSeconds, userId, heartsLeft, unlockedHearts, addToast, updateXP]);
 
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
