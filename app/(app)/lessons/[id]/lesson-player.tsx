@@ -144,12 +144,12 @@ export function LessonPlayer({ lesson, progress, userId }: Props) {
     updateXP(totalXP);
 
     if (score === 100 && heartsLeft === (unlockedHearts ? 999 : 5)) {
-      addToast({ type: "achievement", title: "💚 Geen fouten!", message: "Afgerond met alle harten!", xp: 30 });
+      addToast({ type: "achievement", title: "💚 Geen fouten!", message: "Completed with all hearts!", xp: 30 });
     }
-    if (hour < 8) addToast({ type: "achievement", title: "🌅 Vroege vogel!", message: "Les voor 8 uur", xp: 15 });
-    if (hour >= 21) addToast({ type: "achievement", title: "🌙 Avondleerder!", message: "Les na 21 uur", xp: 15 });
+    if (hour < 8) addToast({ type: "achievement", title: "🌅 Vroege vogel!", message: "Lesson before 8am", xp: 15 });
+    if (hour >= 21) addToast({ type: "achievement", title: "🌙 Avondleerder!", message: "Lesson after 9pm", xp: 15 });
     if (lesson.type === "reading" && elapsedSeconds < 180) {
-      addToast({ type: "achievement", title: "⚡ Snelle lezer!", message: "Klaar in minder dan 3 minuten", xp: 20 });
+      addToast({ type: "achievement", title: "⚡ Snelle lezer!", message: "Finished in under 3 minutes", xp: 20 });
     }
   }, [questions.length, correctCount, lesson, progress, elapsedSeconds, userId, heartsLeft, unlockedHearts, addToast, updateXP]);
 
@@ -186,11 +186,11 @@ export function LessonPlayer({ lesson, progress, userId }: Props) {
             </div>
             <div style={{ background: c.surfaceLow, padding: 12, borderRadius: 16, display: "flex", flexDirection: "column", alignItems: "center" }}>
               <span style={{ fontSize: 24, fontWeight: 900, color: c.tertiary }}>+{xpEarned}</span>
-              <span style={{ fontSize: 10, fontWeight: 700, color: c.onSurfaceVariant, textTransform: "uppercase" }}>XP Verdiend</span>
+              <span style={{ fontSize: 10, fontWeight: 700, color: c.onSurfaceVariant, textTransform: "uppercase" }}>XP Earned</span>
             </div>
             <div style={{ background: c.surfaceLow, padding: 12, borderRadius: 16, display: "flex", flexDirection: "column", alignItems: "center" }}>
               <span style={{ fontSize: 24, fontWeight: 900, color: c.onSurface }}>{formatTime(elapsedSeconds)}</span>
-              <span style={{ fontSize: 10, fontWeight: 700, color: c.onSurfaceVariant, textTransform: "uppercase" }}>Tijd</span>
+              <span style={{ fontSize: 10, fontWeight: 700, color: c.onSurfaceVariant, textTransform: "uppercase" }}>Time</span>
             </div>
           </div>
 
@@ -199,13 +199,13 @@ export function LessonPlayer({ lesson, progress, userId }: Props) {
               onClick={() => router.push("/lessons")}
               style={{ flex: 1, padding: 14, borderRadius: 9999, border: `1.5px solid ${c.outlineVariant}`, background: "transparent", fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: font.headline, color: c.onSurface }}
             >
-              Terug naar kaart
+              Back to map
             </button>
             <button
               onClick={() => { setPhase("intro"); setCurrentQ(0); setCorrectCount(0); setSelectedAnswer(null); setIsCorrect(null); setHeartsLeft(unlockedHearts ? 999 : 5); }}
               style={{ flex: 1, padding: 14, borderRadius: 9999, border: "none", background: c.primary, color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: font.headline }}
             >
-              Probeer opnieuw
+              Try again
             </button>
           </div>
         </motion.div>
@@ -250,11 +250,11 @@ export function LessonPlayer({ lesson, progress, userId }: Props) {
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: c.onSurfaceVariant, marginBottom: 24 }}>
-            <span>{questions.length} vragen</span>
+            <span>{questions.length} questions</span>
             <span>·</span>
             <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
               {unlockedHearts ? (
-                <span>♾️ Onbeperkte harten</span>
+                <span>♾️ Unlimited hearts</span>
               ) : (
                 Array.from({ length: 5 }).map((_, i) => (
                   <span key={i} className="mso mso-fill" style={{ fontSize: 14, color: i < heartsLeft ? c.error : c.outlineVariant }}>favorite</span>
@@ -273,7 +273,7 @@ export function LessonPlayer({ lesson, progress, userId }: Props) {
               display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
             }}
           >
-            Start vragen
+            Start Questions
             <span className="mso" style={{ fontSize: 20 }}>arrow_forward</span>
           </button>
         </div>
@@ -360,7 +360,7 @@ export function LessonPlayer({ lesson, progress, userId }: Props) {
       {/* Question area */}
       <div style={{ flex: 1, padding: "20px 24px 200px", maxWidth: 672, margin: "0 auto", width: "100%" }}>
         <p style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 800, color: c.onSurfaceVariant, marginBottom: 8 }}>
-          Vraag {currentQ + 1} van {questions.length}
+          Question {currentQ + 1} of {questions.length}
         </p>
 
         <AnimatePresence mode="wait">
@@ -441,7 +441,7 @@ export function LessonPlayer({ lesson, progress, userId }: Props) {
                 display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
               }}
             >
-              Controleer antwoord
+              Check Answer
             </button>
           )
         ) : (
@@ -455,7 +455,7 @@ export function LessonPlayer({ lesson, progress, userId }: Props) {
               display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
             }}
           >
-            {isLastQuestion || heartsLeft === 0 ? "Bekijk resultaten" : "Doorgaan"}
+            {isLastQuestion || heartsLeft === 0 ? "See Results" : "Continue"}
             <span className="mso" style={{ fontSize: 20 }}>arrow_forward</span>
           </button>
         )}
@@ -572,7 +572,7 @@ function QuestionRenderer({
                   fontFamily: font.headline, transition: "all 0.2s",
                 }}
               >
-                {val ? "Waar" : "Onwaar"}
+                {val ? "True" : "False"}
               </button>
             );
           })}
@@ -587,7 +587,7 @@ function QuestionRenderer({
     return (
       <div>
         <h1 style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.025em", marginBottom: 20, color: c.primary, lineHeight: 1.2, fontFamily: font.headline }}>
-          Vul de ontbrekende woorden in
+          Fill in the blanks
         </h1>
         <div style={{ background: "#FFFBF5", borderRadius: 16, padding: 16, marginBottom: 20, fontFamily: font.body, fontSize: 16, lineHeight: 1.8, color: c.onSurface }}>
           {parts.map((part: string, i: number) => (
@@ -606,7 +606,7 @@ function QuestionRenderer({
           ))}
         </div>
 
-        <p style={{ fontSize: 12, color: c.onSurfaceVariant, marginBottom: 8 }}>Tik op woorden om de lege plekken in te vullen:</p>
+        <p style={{ fontSize: 12, color: c.onSurfaceVariant, marginBottom: 8 }}>Tap words to fill in the blanks:</p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
           {q.word_bank.map((word: string) => {
             const usedIdx = fillWords.indexOf(word);
@@ -639,7 +639,7 @@ function QuestionRenderer({
             onClick={() => setFillWords([])}
             style={{ marginTop: 12, fontSize: 12, color: c.onSurfaceVariant, background: "none", border: "none", cursor: "pointer", textDecoration: "underline", fontFamily: font.headline }}
           >
-            Alles wissen
+            Clear all
           </button>
         )}
       </div>

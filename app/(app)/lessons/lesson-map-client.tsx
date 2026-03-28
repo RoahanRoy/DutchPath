@@ -27,10 +27,10 @@ const font = {
 };
 
 const WEEK_SUBTITLES: Record<number, string> = {
-  1: "Borden & Dagelijks Nederlands",
-  2: "Gezondheid & Wonen",
-  3: "Belasting, Werk & Burgerschap",
-  4: "Gevorderde Teksten & Proefexamen",
+  1: "Signs & Everyday Dutch",
+  2: "Health & Housing",
+  3: "Tax, Work & Civic Life",
+  4: "Advanced Texts & Mock Exam",
 };
 
 const TYPE_COLORS: Record<string, string> = {
@@ -69,11 +69,11 @@ export function LessonMapClient({ lessons }: Props) {
         {/* ── Hero Header ── */}
         <section style={{ marginBottom: 40 }}>
           <h2 style={{ fontSize: 30, fontWeight: 800, color: c.primary, letterSpacing: "-0.025em", margin: 0 }}>
-            Lespad
+            Lesson Path
           </h2>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 8, marginTop: 4 }}>
             <p style={{ fontSize: 14, fontWeight: 700, color: c.onSurfaceVariant, textTransform: "uppercase", letterSpacing: "0.1em", margin: 0 }}>
-              {completedCount} van {totalCount} lessen voltooid
+              {completedCount} of {totalCount} lessons complete
             </p>
             <p style={{ fontSize: 12, fontWeight: 700, color: c.primary, margin: 0 }}>{pct}%</p>
           </div>
@@ -164,7 +164,7 @@ export function LessonMapClient({ lessons }: Props) {
                               {lesson.title}
                             </span>
                             <p style={{ fontSize: 10, color: c.onSurfaceVariant, margin: 0, marginTop: 2 }}>
-                              Dag {lesson.day} · {lesson.estimated_minutes} min
+                              Day {lesson.day} · {lesson.estimated_minutes} min
                             </p>
                             {isCompleted && stars > 0 && (
                               <div style={{ display: "flex", gap: 2, marginTop: 4, justifyContent: "flex-end" }}>
@@ -286,7 +286,7 @@ export function LessonMapClient({ lessons }: Props) {
                           {selectedLesson.type.toUpperCase()}
                         </span>
                         <span style={{ fontSize: 12, fontWeight: 700, color: c.onSurfaceVariant }}>
-                          Dag {selectedLesson.day}
+                          Day {selectedLesson.day}
                         </span>
                       </div>
                       <h3 style={{ fontSize: 20, fontWeight: 800, color: c.onSurface, lineHeight: 1.2, margin: 0 }}>
@@ -311,7 +311,7 @@ export function LessonMapClient({ lessons }: Props) {
                   }}>
                     <span className="mso mso-fill" style={{ color: "#00A86B", fontSize: 20 }}>check_circle</span>
                     <div>
-                      <span style={{ fontSize: 14, fontWeight: 700, color: "#00A86B" }}>Voltooid!</span>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: "#00A86B" }}>Completed!</span>
                       <div style={{ display: "flex", alignItems: "center", gap: 2, marginTop: 2 }}>
                         {[1, 2, 3].map((s) => (
                           <span
@@ -331,8 +331,8 @@ export function LessonMapClient({ lessons }: Props) {
                 {/* Info grid */}
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 32 }}>
                   {[
-                    { label: "Duur", value: `~${selectedLesson.estimated_minutes} min` },
-                    { label: "Beste score", value: selectedLesson.score !== null ? `${selectedLesson.score}%` : "--" },
+                    { label: "Duration", value: `~${selectedLesson.estimated_minutes} min` },
+                    { label: "Best Score", value: selectedLesson.score !== null ? `${selectedLesson.score}%` : "--" },
                     { label: "Type", value: selectedLesson.type.charAt(0).toUpperCase() + selectedLesson.type.slice(1) },
                   ].map((item, i) => (
                     <div key={i} style={{
@@ -358,7 +358,7 @@ export function LessonMapClient({ lessons }: Props) {
                     boxShadow: "0 10px 15px -3px rgba(0,0,0,.1)", textDecoration: "none",
                   }}
                 >
-                  {selectedLesson.status === "completed" ? "Opnieuw oefenen" : "Start les"}
+                  {selectedLesson.status === "completed" ? "Practice Again" : "Start Lesson"}
                 </Link>
               </div>
             </motion.div>

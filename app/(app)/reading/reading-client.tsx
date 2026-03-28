@@ -22,7 +22,7 @@ const font = {
 };
 
 const typeIcons: Record<string, string> = { reading: "auto_stories", grammar: "description", vocabulary: "translate", listening: "headphones" };
-const typeLabels: Record<string, string> = { reading: "LEZEN", grammar: "GRAMMATICA", vocabulary: "WOORDEN", listening: "LUISTEREN" };
+const typeLabels: Record<string, string> = { reading: "READING", grammar: "GRAMMAR", vocabulary: "VOCAB", listening: "LISTENING" };
 
 export function ReadingClient({ lessons }: Props) {
   const { isDark } = useTheme();
@@ -171,14 +171,14 @@ export function ReadingClient({ lessons }: Props) {
                 background: timerRunning ? c.surfaceHigh : c.primary, color: timerRunning ? c.onSurface : "#ffffff",
                 fontSize: 12, fontWeight: 700, fontFamily: font.headline,
               }}>
-                {timerRunning ? "Pauze" : "Start"}
+                {timerRunning ? "Pause" : "Start"}
               </button>
               <button onClick={() => { setTimeLeft(45 * 60); setTimerRunning(false); }} style={{
                 padding: "6px 12px", borderRadius: 9999, border: "none", cursor: "pointer",
                 background: "transparent", color: c.onSurfaceVariant, fontSize: 12, fontWeight: 600,
                 fontFamily: font.headline,
               }}>
-                Opnieuw
+                Reset
               </button>
             </div>
           )}
@@ -187,11 +187,11 @@ export function ReadingClient({ lessons }: Props) {
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
             <span className="mso" style={{ fontSize: 16, color: c.secondary }}>auto_stories</span>
             <span style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.15em", fontWeight: 800, color: c.onSurfaceVariant }}>
-              {selectedLesson.estimated_minutes ?? "?"} min lezen
+              {selectedLesson.estimated_minutes ?? "?"} min read
             </span>
             <span style={{ width: 4, height: 4, borderRadius: 9999, background: c.outlineVariant }} />
             <span style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.15em", fontWeight: 800, color: c.onSurfaceVariant }}>
-              {questions.length === 1 ? "1 vraag" : `${questions.length} vragen`}
+              {questions.length} question{questions.length !== 1 ? "s" : ""}
             </span>
           </div>
 
@@ -234,7 +234,7 @@ export function ReadingClient({ lessons }: Props) {
             {highlightMode && (
               <p style={{ marginTop: 16, fontSize: 11, color: c.outline, fontFamily: font.headline, display: "flex", alignItems: "center", gap: 6 }}>
                 <span className="mso" style={{ fontSize: 14 }}>info</span>
-                Tik op woorden om vertalingen te zien
+                Tap words to see translations
               </p>
             )}
           </section>
@@ -242,7 +242,7 @@ export function ReadingClient({ lessons }: Props) {
           {/* Questions */}
           {questions.length > 0 && (
             <h2 style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.025em", marginBottom: 16, color: c.primary }}>
-              Begrip
+              Comprehension
             </h2>
           )}
 
@@ -252,7 +252,7 @@ export function ReadingClient({ lessons }: Props) {
             const isCorrect = answered && selectedAnswers[qi] === correctIdx;
             const opts: string[] = q.options ?? [];
             const isTrueFalse = q.type === "true_false";
-            const displayOpts = isTrueFalse ? ["Waar", "Onwaar"] : opts;
+            const displayOpts = isTrueFalse ? ["True", "False"] : opts;
 
             return (
               <div key={qi} style={{
@@ -338,7 +338,7 @@ export function ReadingClient({ lessons }: Props) {
                 {totalCorrect}/{questions.length}
               </p>
               <p style={{ fontSize: 14, fontWeight: 600, color: c.onSurfaceVariant, marginTop: 4 }}>
-                {totalCorrect === questions.length ? "Uitstekend! Perfecte score!" : "Goed gedaan! Blijf oefenen."}
+                {totalCorrect === questions.length ? "Uitstekend! Perfect score!" : "Goed gedaan! Keep practicing."}
               </p>
               <div style={{
                 display: "inline-flex", alignItems: "center", gap: 6, marginTop: 12,
@@ -373,7 +373,7 @@ export function ReadingClient({ lessons }: Props) {
                   display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
                 }}
               >
-                Controleer antwoorden
+                Check Answers
                 <span className="mso" style={{ fontSize: 20 }}>check</span>
               </button>
             ) : (
@@ -384,7 +384,7 @@ export function ReadingClient({ lessons }: Props) {
                 boxShadow: "0 10px 15px -3px rgba(0,0,0,.1)",
                 display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
               }}>
-                Terug naar teksten
+                Back to Texts
                 <span className="mso" style={{ fontSize: 20 }}>arrow_forward</span>
               </button>
             )}
@@ -406,7 +406,7 @@ export function ReadingClient({ lessons }: Props) {
               }}
             >
               <p style={{ fontWeight: 700, fontSize: 14 }}>{tooltip.word}</p>
-              <p style={{ opacity: 0.7, fontSize: 10, fontFamily: font.headline }}>Tik voor vertaling</p>
+              <p style={{ opacity: 0.7, fontSize: 10, fontFamily: font.headline }}>Tap for translation</p>
             </motion.div>
           )}
         </AnimatePresence>
@@ -425,10 +425,10 @@ export function ReadingClient({ lessons }: Props) {
         {/* Hero */}
         <div style={{ marginBottom: 28 }}>
           <h1 style={{ fontSize: 28, fontWeight: 800, letterSpacing: "-0.025em", color: c.primary }}>
-            Leesoefening
+            Reading Practice
           </h1>
           <p style={{ fontSize: 14, color: c.onSurfaceVariant, marginTop: 4, fontWeight: 500 }}>
-            Authentieke Nederlandse teksten — {lessons.length === 1 ? "1 tekst" : `${lessons.length} teksten`} beschikbaar
+            Authentic Dutch civic texts — {lessons.length} text{lessons.length !== 1 ? "s" : ""} available
           </p>
         </div>
 
@@ -440,7 +440,7 @@ export function ReadingClient({ lessons }: Props) {
           }}>search</span>
           <input
             type="search"
-            placeholder="Zoek teksten..."
+            placeholder="Search texts..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             aria-label="Search reading texts"
@@ -469,7 +469,7 @@ export function ReadingClient({ lessons }: Props) {
                 transition: "all 0.2s", fontFamily: font.headline, flexShrink: 0,
               }}
             >
-              {w === "all" ? "Alle" : `Week ${w}`}
+              {w === "all" ? "All" : `Week ${w}`}
             </button>
           ))}
         </div>
@@ -547,7 +547,7 @@ export function ReadingClient({ lessons }: Props) {
         {filtered.length === 0 && (
           <div style={{ textAlign: "center", padding: "48px 0", color: c.outline }}>
             <span className="mso" style={{ fontSize: 48, opacity: 0.3 }}>search_off</span>
-            <p style={{ marginTop: 12, fontSize: 14, fontWeight: 600 }}>Geen teksten gevonden voor dit filter.</p>
+            <p style={{ marginTop: 12, fontSize: 14, fontWeight: 600 }}>No texts found for this filter.</p>
           </div>
         )}
       </div>
