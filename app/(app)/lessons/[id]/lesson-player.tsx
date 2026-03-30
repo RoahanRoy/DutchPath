@@ -97,17 +97,6 @@ export function LessonPlayer({ lesson, progress, userId }: Props) {
     }
   }, [question, fillWords, isCorrect, unlockedHearts, loseHeart]);
 
-  const advance = useCallback(async () => {
-    if (isLastQuestion || heartsLeft === 0) {
-      await completeLesson();
-    } else {
-      setCurrentQ((q) => q + 1);
-      setSelectedAnswer(null);
-      setIsCorrect(null);
-      setFillWords([]);
-    }
-  }, [isLastQuestion, heartsLeft, completeLesson]); // completeLesson is stable (no correctCount dep)
-
   const completeLesson = useCallback(async () => {
     if (timerRef.current) clearInterval(timerRef.current);
     const total = questions.length;
@@ -155,6 +144,17 @@ export function LessonPlayer({ lesson, progress, userId }: Props) {
       addToast({ type: "achievement", title: "⚡ Snelle lezer!", message: "Klaar in minder dan 3 minuten", xp: 20 });
     }
   }, [questions.length, lesson, progress, elapsedSeconds, userId, heartsLeft, unlockedHearts, addToast, updateXP]);
+
+  const advance = useCallback(async () => {
+    if (isLastQuestion || heartsLeft === 0) {
+      await completeLesson();
+    } else {
+      setCurrentQ((q) => q + 1);
+      setSelectedAnswer(null);
+      setIsCorrect(null);
+      setFillWords([]);
+    }
+  }, [isLastQuestion, heartsLeft, completeLesson]);
 
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 
