@@ -39,7 +39,8 @@
       "Bash(grep -rn streak /Users/roahanroy/DutchPath/app --include=*.tsx --include=*.ts)",
       "Bash(grep -B5 -A5 \"upsert.*daily_activity\" /Users/roahanroy/DutchPath/app/\\\\\\(app\\\\\\)/lessons/[id]/lesson-player.tsx)",
       "Bash(find /Users/roahanroy/DutchPath -type f \\\\\\(-name *.test.ts -o -name *.spec.ts -o -name README* \\\\\\))",
-      "Bash(find /Users/roahanroy/DutchPath -type f -name *.sql)"
+      "Bash(find /Users/roahanroy/DutchPath -type f -name *.sql)",
+      "Bash(node_modules/.bin/next build:*)"
     ]
   }
 }
