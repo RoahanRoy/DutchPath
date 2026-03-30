@@ -413,10 +413,10 @@ export function VocabularyClient({ cards, userId }: Props) {
               const statusColor = statusRaw === "mastered" ? c.success : statusRaw === "reviewing" ? c.secondary : statusRaw === "learning" ? c.primary : c.outline;
               const statusLabel = statusRaw === "mastered" ? "geleerd" : statusRaw === "reviewing" ? "herhaling" : statusRaw === "learning" ? "leren" : "nieuw";
               return (
-                <div key={card.id} style={{
+                <div key={card.id} onClick={() => { setReviewQueue([card.id]); setReviewIndex(0); setIsFlipped(false); setReviewDone(false); }} style={{
                   display: "flex", alignItems: "center", gap: 16,
                   background: c.surfaceLowest, borderRadius: 16, padding: "12px 16px",
-                  boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+                  boxShadow: "0 1px 2px rgba(0,0,0,0.04)", cursor: "pointer",
                 }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <p style={{ fontWeight: 700, fontSize: 14, margin: 0 }}>{card.dutch}</p>
