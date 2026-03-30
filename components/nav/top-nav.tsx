@@ -34,6 +34,7 @@ export function TopNav() {
         background: c.glassBackground, backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)",
         fontFamily: "'Plus Jakarta Sans', sans-serif",
         borderBottom: c.glassBorder !== "transparent" ? `1px solid ${c.glassBorder}` : "none",
+        boxShadow: isDark ? "0px 4px 30px 0px rgba(0,0,0,0.1)" : "none",
         transition: "background 0.3s",
       }}
     >

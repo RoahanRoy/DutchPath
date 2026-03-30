@@ -27,10 +27,12 @@ export function MobileNav() {
       aria-label="Main navigation"
     >
       <div style={{
-        background: c.glassBackground, backdropFilter: "blur(48px)", WebkitBackdropFilter: "blur(48px)",
+        background: isDark ? "rgba(26,28,27,0.6)" : c.glassBackground,
+        backdropFilter: "blur(48px)", WebkitBackdropFilter: "blur(48px)",
         borderRadius: 9999, margin: "0 24px", height: 64, width: "100%",
         display: "flex", justifyContent: "space-around", alignItems: "center",
-        boxShadow: "0px 12px 32px rgba(26,28,27,0.06)", pointerEvents: "auto",
+        boxShadow: isDark ? "0px 24px 48px rgba(0,0,0,0.4)" : "0px 12px 32px rgba(26,28,27,0.06)",
+        pointerEvents: "auto",
         border: c.glassBorder !== "transparent" ? `1px solid ${c.glassBorder}` : "none",
         transition: "background 0.3s",
       }}>
@@ -47,7 +49,7 @@ export function MobileNav() {
                 width: 48, height: 48, borderRadius: 9999, border: "none", textDecoration: "none",
                 transition: "all 0.3s",
                 ...(active
-                  ? { background: c.navActiveBg, color: c.navActiveText, boxShadow: "0 10px 15px -3px rgba(0,0,0,.1)" }
+                  ? { background: c.navActiveBg, color: c.navActiveText, boxShadow: isDark ? "0 0 15px 0 rgba(71,133,255,0.4)" : "0 10px 15px -3px rgba(0,0,0,.1)" }
                   : { background: "transparent", color: c.navInactiveText }),
               }}
             >
