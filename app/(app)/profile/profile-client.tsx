@@ -44,6 +44,24 @@ const GOAL_OPTIONS = [
   { value: 30, emoji: "🔥", label: "30min" },
 ];
 
+const ACHIEVEMENT_TITLES: Record<string, string> = {
+  eerste_stap: "First Step",
+  woordenschat_beginner: "Vocab Beginner",
+  lezer: "Reader",
+  week_1_kampioen: "Week 1 Champion",
+  consistent: "Consistent",
+  halverwege: "Halfway",
+  woordenboek: "Dictionary",
+  maand_van_staal: "Month of Steel",
+  examenklaar: "Exam Ready",
+  perfectionist: "Perfectionist",
+  vroege_vogel: "Early Bird",
+  avondleerder: "Night Learner",
+  snelle_lezer: "Fast Reader",
+  geen_fouten: "No Mistakes",
+  doorzetter: "Perseverer",
+};
+
 const LEVEL_CARDS = [
   { code: "A2", name: "Basic Dutch", available: true },
   { code: "B1", name: "Intermediate", available: false },
@@ -331,7 +349,7 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
               <span className="mso" style={{ color: c.primary, fontSize: 20 }}>
                 {isDark ? "dark_mode" : "light_mode"}
               </span>
-              <span style={{ fontSize: 14, fontWeight: 700 }}>{isDark ? "Donkere modus" : "Lichte modus"}</span>
+              <span style={{ fontSize: 14, fontWeight: 700 }}>{isDark ? "Dark mode" : "Light mode"}</span>
             </div>
             {/* Toggle switch */}
             <button
@@ -373,7 +391,7 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
               boxShadow: "0 10px 20px -5px rgba(0,0,0,0.15)",
             }}
           >
-            {saving ? "Opslaan..." : saved ? "Opgeslagen! ✓" : "Wijzigingen opslaan"}
+            {saving ? "Saving..." : saved ? "Saved! ✓" : "Save changes"}
           </button>
 
           {/* Sign Out */}
@@ -387,16 +405,16 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
             }}
           >
             <span className="mso" style={{ fontSize: 18 }}>logout</span>
-            Uitloggen
+            Sign out
           </button>
         </section>
 
         {/* ── Achievements ── */}
         <section style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", padding: "0 4px" }}>
-            <h3 style={{ fontSize: 18, fontWeight: 800, margin: 0 }}>Prestaties</h3>
+            <h3 style={{ fontSize: 18, fontWeight: 800, margin: 0 }}>Achievements</h3>
             <span style={{ fontSize: 10, fontWeight: 700, color: c.onSurfaceVariant, textTransform: "uppercase", letterSpacing: "0.15em" }}>
-              {unlockedCount}/{achievements.length} Ontgrendeld
+              {unlockedCount}/{achievements.length} Unlocked
             </span>
           </div>
 
@@ -425,7 +443,7 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
                   <span style={{ fontSize: 20 }}>{ach.icon}</span>
                 </div>
                 <span style={{ fontSize: 8, fontWeight: 900, textTransform: "uppercase", textAlign: "center", lineHeight: 1.1 }}>
-                  {ach.title}
+                  {ACHIEVEMENT_TITLES[ach.key] ?? ach.title}
                 </span>
               </div>
             ))}
