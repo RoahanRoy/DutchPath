@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
-import type { Profile, DailyActivity, Lesson } from "@/lib/supabase/types";
+import type { Profile, DailyActivity, Lesson, WritingTask } from "@/lib/supabase/types";
 import { getDaysUntilExam } from "@/lib/utils";
 import { useTheme, getColors } from "@/lib/use-theme";
 
@@ -11,14 +11,16 @@ const font = {
   body: "'Noto Serif', serif",
 };
 
-/* ───── Props (unchanged from server component) ───── */
+/* ───── Props ───── */
 interface Props {
   profile: Profile | null;
   activity: DailyActivity[];
   nextLesson: Lesson | null;
+  nextWritingTask: WritingTask | null;
   vocabDueCount: number;
   completedLessonsCount: number;
   masteredVocabCount: number;
+  completedWritingCount: number;
   todayXP: number;
 }
 
@@ -66,19 +68,23 @@ function lessonTypeLabel(type: string) {
 /* ═══════════════════════════════════════════════════════
    Dashboard Client — Stitch "Modern Scholastic" design
    ═══════════════════════════════════════════════════════ */
+const WRITING_TYPE_LABELS: Record<string, string> = {
+  form: "Formulier",
+  note: "Briefje",
+  informal_email: "Informele mail",
+  formal_email: "Formele mail",
+  sentence_complete: "Zin aanvullen",
+};
+
 export function DashboardClient({
-  profile, activity, nextLesson, vocabDueCount,
-  completedLessonsCount, masteredVocabCount, todayXP,
+  profile, activity, nextLesson, nextWritingTask, vocabDueCount,
+  completedLessonsCount, masteredVocabCount, completedWritingCount, todayXP,
 }: Props) {
   const { isDark } = useTheme();
   const c = getColors(isDark);
-  if (!profile) return null;
 
-  const daysUntilExam = getDaysUntilExam(profile.exam_target_date);
   const xpProgress = Math.min(100, (todayXP / DAILY_XP_GOAL) * 100);
-
-  /* XP ring math */
-  const circumference = 2 * Math.PI * 28; // ~175.9
+  const circumference = 2 * Math.PI * 28;
   const xpDashoffset = circumference - (circumference * xpProgress) / 100;
 
   /* Build heatmap grid */
@@ -113,6 +119,11 @@ export function DashboardClient({
     return { grid: cells, monthLabels: months };
   }, [activity]);
 
+  if (!profile) return null;
+
+  const daysUntilExam = getDaysUntilExam(profile.exam_target_date);
+  const daysUntilWritingExam = getDaysUntilExam(profile.writing_exam_target_date ?? null);
+
   /* The last 3 unique month labels for the header */
   const displayedMonths = monthLabels.slice(-3);
 
@@ -123,6 +134,8 @@ export function DashboardClient({
     { icon: "menu_book", color: c.primary, value: masteredVocabCount, label: "Words" },
     { icon: "local_fire_department", color: c.secondary, value: profile.streak_days, label: "Day Streak" },
     { icon: "check_circle", color: "#16a34a", value: completedLessonsCount, label: "Lessons" },
+    { icon: "edit_note", color: c.secondaryContainer, value: completedWritingCount, label: "Writing" },
+    { icon: "trending_up", color: c.primary, value: `A2`, label: "Level" },
   ];
 
   return (
@@ -189,21 +202,45 @@ export function DashboardClient({
           </div>
         </section>
 
-        {/* ─── Exam Countdown Banner ─── */}
-        {daysUntilExam !== null && daysUntilExam > 0 && (
-          <div style={{
-            background: `${c.primary}0d`, padding: 16, borderRadius: 12,
-            display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 32,
-          }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <span style={{ fontSize: 18 }}>🇳🇱</span>
-              <span style={{ fontSize: 14, fontWeight: 700, color: c.primary, letterSpacing: "-0.025em" }}>{daysUntilExam} days to your exam</span>
-            </div>
-            <Link href="/profile" aria-label="Edit exam date">
-              <span className="mso" style={{ color: c.primary, fontSize: 20 }}>calendar_today</span>
-            </Link>
+        {/* ─── Exam Countdown Banners ─── */}
+        {(daysUntilExam !== null && daysUntilExam > 0) || (daysUntilWritingExam !== null && daysUntilWritingExam > 0) ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 32 }}>
+            {daysUntilExam !== null && daysUntilExam > 0 && (
+              <div style={{
+                background: `${c.primary}0d`, padding: 16, borderRadius: 12,
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <span style={{ fontSize: 18 }}>📖</span>
+                  <div>
+                    <div style={{ fontSize: 10, textTransform: "uppercase", fontWeight: 700, color: c.onSurfaceVariant, letterSpacing: "0.05em" }}>Leesvaardigheid</div>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: c.primary, letterSpacing: "-0.025em" }}>{daysUntilExam} days to your exam</span>
+                  </div>
+                </div>
+                <Link href="/profile" aria-label="Edit exam date">
+                  <span className="mso" style={{ color: c.primary, fontSize: 20 }}>calendar_today</span>
+                </Link>
+              </div>
+            )}
+            {daysUntilWritingExam !== null && daysUntilWritingExam > 0 && (
+              <div style={{
+                background: `${c.secondary}0d`, padding: 16, borderRadius: 12,
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                  <span style={{ fontSize: 18 }}>✍️</span>
+                  <div>
+                    <div style={{ fontSize: 10, textTransform: "uppercase", fontWeight: 700, color: c.onSurfaceVariant, letterSpacing: "0.05em" }}>Schrijfvaardigheid</div>
+                    <span style={{ fontSize: 14, fontWeight: 700, color: c.secondary, letterSpacing: "-0.025em" }}>{daysUntilWritingExam} days to your exam</span>
+                  </div>
+                </div>
+                <Link href="/profile" aria-label="Edit writing exam date">
+                  <span className="mso" style={{ color: c.secondary, fontSize: 20 }}>calendar_today</span>
+                </Link>
+              </div>
+            )}
           </div>
-        )}
+        ) : null}
 
         {/* ─── Continue Learning Hero CTA ─── */}
         {nextLesson ? (
@@ -246,18 +283,52 @@ export function DashboardClient({
           </div>
         )}
 
-        {/* ─── Stats Grid ─── */}
-        <section style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 32 }}>
+        {/* ─── Writing Continue CTA ─── */}
+        {nextWritingTask && (
+          <Link href={`/writing/${nextWritingTask.id}`} style={{ textDecoration: "none" }}>
+            <button style={{
+              width: "100%", textAlign: "left",
+              background: `linear-gradient(to bottom, ${c.secondary}, ${c.secondaryContainer})`,
+              padding: 24, borderRadius: 32,
+              boxShadow: "0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -4px rgba(0,0,0,.1)",
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              border: "none", cursor: "pointer", marginBottom: 16,
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+                <div style={{ width: 48, height: 48, background: "rgba(255,255,255,0.1)", borderRadius: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <span className="mso" style={{ color: "#ffffff", fontSize: 24 }}>edit_note</span>
+                </div>
+                <div>
+                  <h3 style={{ color: "#ffffff", fontWeight: 700, fontSize: 18, lineHeight: 1.25, margin: 0, fontFamily: font.headline }}>
+                    Week {nextWritingTask.week} · Dag {nextWritingTask.day}:{" "}
+                    <span style={{ fontFamily: font.body, fontStyle: "italic", marginLeft: 4 }}>{nextWritingTask.title}</span>
+                  </h3>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, color: "rgba(255,255,255,0.7)", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", marginTop: 4 }}>
+                    <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                      <span className="mso" style={{ fontSize: 12, color: "rgba(255,255,255,0.7)" }}>edit_note</span>
+                      {WRITING_TYPE_LABELS[nextWritingTask.task_type] ?? nextWritingTask.task_type}
+                    </span>
+                    <span>· {nextWritingTask.estimated_minutes} min · +{nextWritingTask.xp_reward} XP</span>
+                  </div>
+                </div>
+              </div>
+              <span className="mso" style={{ color: "rgba(255,255,255,0.5)", fontSize: 24 }}>chevron_right</span>
+            </button>
+          </Link>
+        )}
+
+        {/* ─── Stats Grid 2×3 ─── */}
+        <section style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 32 }}>
           {stats.map((stat, i) => (
             <div key={i} style={{
-              background: c.surfaceLowest, padding: 20, borderRadius: 16,
+              background: c.surfaceLowest, padding: 16, borderRadius: 16,
               boxShadow: "0px 4px 16px rgba(26,28,27,0.04)",
-              display: "flex", alignItems: "center", gap: 16,
+              display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 6,
             }}>
-              <span className="mso mso-fill" style={{ color: stat.color, fontSize: 24 }}>{stat.icon}</span>
+              <span className="mso mso-fill" style={{ color: stat.color, fontSize: 20 }}>{stat.icon}</span>
               <div>
-                <div style={{ fontSize: 18, fontWeight: 700 }}>{stat.value}</div>
-                <div style={{ fontSize: 10, color: `${c.onSurfaceVariant}99`, textTransform: "uppercase", fontWeight: 700, letterSpacing: "-0.025em" }}>{stat.label}</div>
+                <div style={{ fontSize: 16, fontWeight: 700 }}>{stat.value}</div>
+                <div style={{ fontSize: 9, color: `${c.onSurfaceVariant}99`, textTransform: "uppercase", fontWeight: 700, letterSpacing: "-0.01em" }}>{stat.label}</div>
               </div>
             </div>
           ))}

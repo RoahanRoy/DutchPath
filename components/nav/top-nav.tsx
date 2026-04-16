@@ -9,6 +9,7 @@ import { useTheme, getColors } from "@/lib/use-theme";
 const NAV_LINKS = [
   { href: "/dashboard", label: "Overzicht" },
   { href: "/lessons", label: "Lessen" },
+  { href: "/writing", label: "Schrijven" },
   { href: "/vocabulary", label: "Woordenschat" },
   { href: "/reading", label: "Lezen" },
   { href: "/profile", label: "Profiel" },
