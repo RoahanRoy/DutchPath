@@ -7,6 +7,7 @@ import { useTheme, getColors } from "@/lib/use-theme";
 const NAV_ITEMS = [
   { href: "/dashboard", icon: "home", label: "Home" },
   { href: "/lessons", icon: "menu_book", label: "Lessons" },
+  { href: "/writing", icon: "edit_note", label: "Writing" },
   { href: "/vocabulary", icon: "format_list_bulleted", label: "Vocab" },
   { href: "/profile", icon: "person", label: "Profile" },
 ];
@@ -55,19 +56,10 @@ export function MobileNav() {
             >
               <span
                 className={active ? "mso mso-fill" : "mso"}
-                style={{ fontSize: 20 }}
+                style={{ fontSize: 22 }}
               >
                 {icon}
               </span>
-              {!active && (
-                <span style={{
-                  fontFamily: "'Plus Jakarta Sans', sans-serif",
-                  fontSize: 10, textTransform: "uppercase", letterSpacing: "0.05em",
-                  fontWeight: 700, marginTop: 2,
-                }}>
-                  {label}
-                </span>
-              )}
             </Link>
           );
         })}

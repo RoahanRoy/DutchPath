@@ -31,18 +31,9 @@ interface Props {
   userId: string;
   avgScore: number;
   completedCount: number;
+  writingAvgScore: number;
+  writingCompletedCount: number;
 }
-
-const font = {
-  headline: "'Plus Jakarta Sans', sans-serif",
-  body: "'Noto Serif', serif",
-};
-
-const GOAL_OPTIONS = [
-  { value: 10, emoji: "🌱", label: "10min" },
-  { value: 20, emoji: "⚡", label: "20min" },
-  { value: 30, emoji: "🔥", label: "30min" },
-];
 
 const ACHIEVEMENT_TITLES: Record<string, string> = {
   eerste_stap: "First Step",
@@ -60,7 +51,23 @@ const ACHIEVEMENT_TITLES: Record<string, string> = {
   snelle_lezer: "Fast Reader",
   geen_fouten: "No Mistakes",
   doorzetter: "Perseverer",
+  eerste_brief: "First Letter",
+  perfecte_vorm: "Perfect Form",
+  schrijver: "Writer",
+  formele_meester: "Formal Master",
+  schrijf_streak_7: "Writing Streak 7",
 };
+
+const font = {
+  headline: "'Plus Jakarta Sans', sans-serif",
+  body: "'Noto Serif', serif",
+};
+
+const GOAL_OPTIONS = [
+  { value: 10, emoji: "🌱", label: "10min" },
+  { value: 20, emoji: "⚡", label: "20min" },
+  { value: 30, emoji: "🔥", label: "30min" },
+];
 
 const LEVEL_CARDS = [
   { code: "A2", name: "Basic Dutch", available: true },
@@ -68,20 +75,23 @@ const LEVEL_CARDS = [
   { code: "B2", name: "Upper Intermediate", available: false },
 ];
 
-export function ProfileClient({ profile, activity, achievements, userId, avgScore, completedCount }: Props) {
+export function ProfileClient({ profile, activity, achievements, userId, avgScore, completedCount, writingAvgScore, writingCompletedCount }: Props) {
   const router = useRouter();
   const { isDark, toggle: toggleTheme } = useTheme();
   const c = getColors(isDark);
   const setProfile = useAppStore((s) => s.setProfile);
   const [examDate, setExamDate] = useState(profile?.exam_target_date ?? "");
+  const [writingExamDate, setWritingExamDate] = useState(profile?.writing_exam_target_date ?? "");
   const [goalMinutes, setGoalMinutes] = useState(profile?.daily_goal_minutes ?? 20);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [editingExam, setEditingExam] = useState(false);
+  const [editingWritingExam, setEditingWritingExam] = useState(false);
 
   if (!profile) return null;
 
   const daysUntilExam = getDaysUntilExam(examDate);
+  const daysUntilWritingExam = getDaysUntilExam(writingExamDate);
   const unlockedCount = achievements.filter((a) => a.unlocked).length;
 
   const xpBars = activity.length > 0
@@ -94,7 +104,11 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
     const supabase = createClient();
     const { data } = await (supabase as any)
       .from("profiles")
-      .update({ exam_target_date: examDate || null, daily_goal_minutes: goalMinutes })
+      .update({
+        exam_target_date: examDate || null,
+        writing_exam_target_date: writingExamDate || null,
+        daily_goal_minutes: goalMinutes,
+      })
       .eq("id", userId)
       .select()
       .single();
@@ -102,6 +116,7 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
     setSaving(false);
     setSaved(true);
     setEditingExam(false);
+    setEditingWritingExam(false);
     setTimeout(() => setSaved(false), 2000);
   };
 
@@ -212,29 +227,50 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
           </div>
         </section>
 
-        {/* ── Accuracy Ring + XP History ── */}
+        {/* ── Accuracy Rings + XP History ── */}
         <section style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <div style={{
-            background: c.surfaceLowest, padding: 24, borderRadius: 24,
-            display: "flex", alignItems: "center", justifyContent: "space-between",
-            boxShadow: "0px 12px 32px rgba(26,28,27,0.06)",
-          }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-              <span style={{ fontSize: 30, fontWeight: 900, color: c.primary }}>{avgScore}%</span>
-              <p style={{ fontSize: 12, fontWeight: 500, color: c.onSurfaceVariant, lineHeight: 1.4, margin: 0 }}>
-                Average score<br />
-                <span style={{ opacity: 0.6, fontSize: 10, fontWeight: 700, textTransform: "uppercase" }}>Over {completedCount} lessons</span>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            {/* Reading ring */}
+            <div style={{
+              background: c.surfaceLowest, padding: 20, borderRadius: 24,
+              display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
+              boxShadow: "0px 12px 32px rgba(26,28,27,0.06)",
+            }}>
+              <div style={{ position: "relative", width: 72, height: 72 }}>
+                <svg width={72} height={72} style={{ transform: "rotate(-90deg)" }}>
+                  <circle cx={36} cy={36} r={28} fill="transparent" stroke={c.surfaceHighest} strokeWidth={6} />
+                  <circle cx={36} cy={36} r={28} fill="transparent" stroke={c.primary} strokeWidth={6}
+                    strokeDasharray={176} strokeDashoffset={176 - (avgScore / 100) * 176} />
+                </svg>
+                <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <span className="mso" style={{ fontSize: 16, color: c.primary }}>menu_book</span>
+                </div>
+              </div>
+              <span style={{ fontSize: 22, fontWeight: 900, color: c.primary }}>{avgScore}%</span>
+              <p style={{ fontSize: 10, fontWeight: 700, color: c.onSurfaceVariant, margin: 0, textTransform: "uppercase", letterSpacing: "0.05em", textAlign: "center" }}>
+                Lezen gem.<br />{completedCount} lessen
               </p>
             </div>
-            <div style={{ position: "relative", width: 80, height: 80 }}>
-              <svg width={80} height={80} style={{ transform: "rotate(-90deg)" }}>
-                <circle cx={40} cy={40} r={32} fill="transparent" stroke={c.surfaceHighest} strokeWidth={6} />
-                <circle cx={40} cy={40} r={32} fill="transparent" stroke={c.secondary} strokeWidth={6}
-                  strokeDasharray={201} strokeDashoffset={201 - (avgScore / 100) * 201} />
-              </svg>
-              <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <span className="mso" style={{ fontSize: 20, color: c.secondary }}>bolt</span>
+            {/* Writing ring */}
+            <div style={{
+              background: c.surfaceLowest, padding: 20, borderRadius: 24,
+              display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
+              boxShadow: "0px 12px 32px rgba(26,28,27,0.06)",
+            }}>
+              <div style={{ position: "relative", width: 72, height: 72 }}>
+                <svg width={72} height={72} style={{ transform: "rotate(-90deg)" }}>
+                  <circle cx={36} cy={36} r={28} fill="transparent" stroke={c.surfaceHighest} strokeWidth={6} />
+                  <circle cx={36} cy={36} r={28} fill="transparent" stroke={c.secondary} strokeWidth={6}
+                    strokeDasharray={176} strokeDashoffset={176 - (writingAvgScore / 100) * 176} />
+                </svg>
+                <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <span className="mso" style={{ fontSize: 16, color: c.secondary }}>edit_note</span>
+                </div>
               </div>
+              <span style={{ fontSize: 22, fontWeight: 900, color: c.secondary }}>{writingAvgScore}%</span>
+              <p style={{ fontSize: 10, fontWeight: 700, color: c.onSurfaceVariant, margin: 0, textTransform: "uppercase", letterSpacing: "0.05em", textAlign: "center" }}>
+                Schrijven gem.<br />{writingCompletedCount} opdrachten
+              </p>
             </div>
           </div>
 
@@ -268,14 +304,14 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
             <span className="mso" style={{ color: c.onSurfaceVariant, fontSize: 24 }}>settings</span>
           </div>
 
-          {/* Exam Date — always editable */}
+          {/* Reading Exam Date */}
           <div style={{
             display: "flex", justifyContent: "space-between", alignItems: "center",
             padding: 16, background: c.surfaceLowest, borderRadius: 16,
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <span className="mso" style={{ color: c.error, fontSize: 20 }}>event</span>
-              <span style={{ fontSize: 14, fontWeight: 700 }}>Exam date</span>
+              <span className="mso" style={{ color: c.primary, fontSize: 20 }}>menu_book</span>
+              <span style={{ fontSize: 14, fontWeight: 700 }}>Leesexamendatum</span>
             </div>
             {daysUntilExam !== null && daysUntilExam > 0 && !editingExam ? (
               <button
@@ -302,13 +338,50 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
                   }}
                 />
                 {editingExam && (
-                  <button
-                    onClick={() => setEditingExam(false)}
-                    style={{
-                      background: "transparent", border: "none", cursor: "pointer", padding: 0,
-                    }}
-                  >
+                  <button onClick={() => setEditingExam(false)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 0 }}>
                     <span className="mso" style={{ fontSize: 18, color: c.primary }}>check</span>
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Writing Exam Date */}
+          <div style={{
+            display: "flex", justifyContent: "space-between", alignItems: "center",
+            padding: 16, background: c.surfaceLowest, borderRadius: 16,
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <span className="mso" style={{ color: c.secondary, fontSize: 20 }}>edit_note</span>
+              <span style={{ fontSize: 14, fontWeight: 700 }}>Schrijfexamendatum</span>
+            </div>
+            {daysUntilWritingExam !== null && daysUntilWritingExam > 0 && !editingWritingExam ? (
+              <button
+                onClick={() => setEditingWritingExam(true)}
+                style={{
+                  background: "transparent", border: "none", cursor: "pointer",
+                  display: "flex", alignItems: "center", gap: 6, padding: 0,
+                  fontFamily: font.headline,
+                }}
+              >
+                <span style={{ fontSize: 14, fontWeight: 900, color: c.secondary }}>{daysUntilWritingExam} Dagen!</span>
+                <span className="mso" style={{ fontSize: 16, color: c.outline }}>edit</span>
+              </button>
+            ) : (
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <input
+                  type="date"
+                  value={writingExamDate}
+                  onChange={(e) => setWritingExamDate(e.target.value)}
+                  min={new Date().toISOString().split("T")[0]}
+                  style={{
+                    border: "none", background: "transparent", fontSize: 14, fontWeight: 700,
+                    color: c.onSurface, fontFamily: font.headline, outline: "none",
+                  }}
+                />
+                {editingWritingExam && (
+                  <button onClick={() => setEditingWritingExam(false)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 0 }}>
+                    <span className="mso" style={{ fontSize: 18, color: c.secondary }}>check</span>
                   </button>
                 )}
               </div>
@@ -429,11 +502,15 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12 }}>
             {achievements.map((ach) => (
-              <div key={ach.id} style={{
-                display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
-                opacity: ach.unlocked ? 1 : 0.3,
-                filter: ach.unlocked ? "none" : "grayscale(1)",
-              }}>
+              <div
+                key={ach.id}
+                title={ACHIEVEMENT_TITLES[ach.key] ?? ach.title}
+                style={{
+                  display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
+                  opacity: ach.unlocked ? 1 : 0.3,
+                  filter: ach.unlocked ? "none" : "grayscale(1)",
+                }}
+              >
                 <div style={{
                   aspectRatio: "1", width: "100%", borderRadius: 16,
                   display: "flex", alignItems: "center", justifyContent: "center",

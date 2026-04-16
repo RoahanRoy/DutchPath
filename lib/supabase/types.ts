@@ -15,6 +15,9 @@ export type Profile = {
   leaderboard_opt_in: boolean;
   role: "user" | "admin";
   created_at: string;
+  writing_exam_target_date: string | null;
+  writing_xp_total: number;
+  writing_completed_count: number;
 };
 
 export type Lesson = {
@@ -88,13 +91,119 @@ export type UserAchievement = {
   unlocked_at: string;
 };
 
+/* ── Writing (Schrijven) track ─────────────────────────────────── */
+
+export type WritingTaskType =
+  | "form"
+  | "note"
+  | "informal_email"
+  | "formal_email"
+  | "sentence_complete";
+
+export type RequiredElement = {
+  key: string;
+  label_nl: string;
+  label_en: string;
+  hint?: string | null;
+};
+
+export type UsefulPhrase = {
+  nl: string;
+  en: string;
+  when_to_use?: string | null;
+};
+
+export type WritingRubric = {
+  task_completion?: { weight: number; criteria: string };
+  structure?: { weight: number; criteria: string };
+  vocabulary?: { weight: number; criteria: string };
+  grammar?: { weight: number; criteria: string };
+};
+
+export type WritingTask = {
+  id: number;
+  level: string;
+  week: number;
+  day: number;
+  task_type: WritingTaskType;
+  title: string;
+  scenario_nl: string;
+  scenario_en: string | null;
+  instructions_nl: string;
+  required_elements: RequiredElement[];
+  word_count_min: number | null;
+  word_count_max: number | null;
+  model_answer_nl: string;
+  model_answer_notes: string | null;
+  rubric: WritingRubric;
+  useful_phrases: UsefulPhrase[] | null;
+  xp_reward: number;
+  estimated_minutes: number;
+  unlock_after_task_id: number | null;
+};
+
+export type SelfScore = {
+  task_completion: number;
+  structure: number;
+  vocabulary: number;
+  grammar: number;
+  total: number;
+};
+
+export type UserWritingSubmission = {
+  id: string;
+  user_id: string;
+  task_id: number;
+  submission_text: string;
+  form_fields: Record<string, string> | null;
+  word_count: number | null;
+  time_spent_seconds: number | null;
+  status: "draft" | "submitted" | "self_graded" | "completed";
+  self_score: SelfScore | null;
+  checklist_results: Record<string, boolean> | null;
+  submitted_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type UserWritingProgress = {
+  user_id: string;
+  task_id: number;
+  status: "locked" | "available" | "in_progress" | "completed";
+  best_score: number | null;
+  attempts: number;
+  last_attempt_at: string | null;
+  completed_at: string | null;
+};
+
+export type WritingPhraseCategory =
+  | "greeting_formal"
+  | "greeting_informal"
+  | "closing_formal"
+  | "closing_informal"
+  | "connector"
+  | "request"
+  | "complaint"
+  | "apology"
+  | "invitation"
+  | "thanks";
+
+export type WritingPhrase = {
+  id: number;
+  category: WritingPhraseCategory;
+  phrase_nl: string;
+  phrase_en: string;
+  example_nl: string | null;
+  formality: "formal" | "informal" | "both";
+};
+
 export interface Database {
   public: {
     Tables: {
       profiles: {
         Row: Profile;
-        Insert: { id: string; username?: string | null; avatar_url?: string | null; current_level?: string; xp_total?: number; streak_days?: number; streak_last_date?: string | null; daily_goal_minutes?: number; exam_target_date?: string | null; streak_freeze_available?: boolean; leaderboard_opt_in?: boolean; role?: string; created_at?: string };
-        Update: { id?: string; username?: string | null; avatar_url?: string | null; current_level?: string; xp_total?: number; streak_days?: number; streak_last_date?: string | null; daily_goal_minutes?: number; exam_target_date?: string | null; streak_freeze_available?: boolean; leaderboard_opt_in?: boolean; role?: string; created_at?: string };
+        Insert: { id: string; username?: string | null; avatar_url?: string | null; current_level?: string; xp_total?: number; streak_days?: number; streak_last_date?: string | null; daily_goal_minutes?: number; exam_target_date?: string | null; streak_freeze_available?: boolean; leaderboard_opt_in?: boolean; role?: string; created_at?: string; writing_exam_target_date?: string | null; writing_xp_total?: number; writing_completed_count?: number };
+        Update: { id?: string; username?: string | null; avatar_url?: string | null; current_level?: string; xp_total?: number; streak_days?: number; streak_last_date?: string | null; daily_goal_minutes?: number; exam_target_date?: string | null; streak_freeze_available?: boolean; leaderboard_opt_in?: boolean; role?: string; created_at?: string; writing_exam_target_date?: string | null; writing_xp_total?: number; writing_completed_count?: number };
       };
       lessons: {
         Row: Lesson;
@@ -130,6 +239,26 @@ export interface Database {
         Row: UserAchievement;
         Insert: { user_id: string; achievement_id: number; unlocked_at?: string };
         Update: { user_id?: string; achievement_id?: number; unlocked_at?: string };
+      };
+      writing_tasks: {
+        Row: WritingTask;
+        Insert: { level?: string; week: number; day: number; task_type: string; title: string; scenario_nl: string; scenario_en?: string | null; instructions_nl: string; required_elements?: Json; word_count_min?: number | null; word_count_max?: number | null; model_answer_nl: string; model_answer_notes?: string | null; rubric?: Json; useful_phrases?: Json; xp_reward?: number; estimated_minutes?: number; unlock_after_task_id?: number | null };
+        Update: { id?: number; level?: string; week?: number; day?: number; task_type?: string; title?: string; scenario_nl?: string; scenario_en?: string | null; instructions_nl?: string; required_elements?: Json; word_count_min?: number | null; word_count_max?: number | null; model_answer_nl?: string; model_answer_notes?: string | null; rubric?: Json; useful_phrases?: Json; xp_reward?: number; estimated_minutes?: number; unlock_after_task_id?: number | null };
+      };
+      user_writing_submissions: {
+        Row: UserWritingSubmission;
+        Insert: { id?: string; user_id: string; task_id: number; submission_text?: string; form_fields?: Json | null; word_count?: number | null; time_spent_seconds?: number | null; status?: string; self_score?: Json | null; checklist_results?: Json | null; submitted_at?: string | null; created_at?: string; updated_at?: string };
+        Update: { id?: string; user_id?: string; task_id?: number; submission_text?: string; form_fields?: Json | null; word_count?: number | null; time_spent_seconds?: number | null; status?: string; self_score?: Json | null; checklist_results?: Json | null; submitted_at?: string | null; created_at?: string; updated_at?: string };
+      };
+      user_writing_progress: {
+        Row: UserWritingProgress;
+        Insert: { user_id: string; task_id: number; status?: string; best_score?: number | null; attempts?: number; last_attempt_at?: string | null; completed_at?: string | null };
+        Update: { user_id?: string; task_id?: number; status?: string; best_score?: number | null; attempts?: number; last_attempt_at?: string | null; completed_at?: string | null };
+      };
+      writing_phrases: {
+        Row: WritingPhrase;
+        Insert: { category: string; phrase_nl: string; phrase_en: string; example_nl?: string | null; formality: string };
+        Update: { id?: number; category?: string; phrase_nl?: string; phrase_en?: string; example_nl?: string | null; formality?: string };
       };
     };
   };
