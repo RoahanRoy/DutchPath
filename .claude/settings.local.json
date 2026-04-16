@@ -40,7 +40,8 @@
       "Bash(grep -B5 -A5 \"upsert.*daily_activity\" /Users/roahanroy/DutchPath/app/\\\\\\(app\\\\\\)/lessons/[id]/lesson-player.tsx)",
       "Bash(find /Users/roahanroy/DutchPath -type f \\\\\\(-name *.test.ts -o -name *.spec.ts -o -name README* \\\\\\))",
       "Bash(find /Users/roahanroy/DutchPath -type f -name *.sql)",
-      "Bash(node_modules/.bin/next build:*)"
+      "Bash(node_modules/.bin/next build:*)",
+      "Bash(grep -n \"passage\\\\|reading_comp\\\\|SMS\\\\|comprehension\\\\|passage-accent\\\\|passage_text\\\\|passageText\" app/\\\\\\(app\\\\\\)/lessons/[id]/lesson-player.tsx)"
     ]
   }
 }

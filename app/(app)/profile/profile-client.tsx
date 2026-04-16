@@ -36,6 +36,21 @@ interface Props {
 }
 
 const ACHIEVEMENT_TITLES: Record<string, string> = {
+  eerste_stap: "First Step",
+  woordenschat_beginner: "Vocab Beginner",
+  lezer: "Reader",
+  week_1_kampioen: "Week 1 Champion",
+  consistent: "Consistent",
+  halverwege: "Halfway",
+  woordenboek: "Dictionary",
+  maand_van_staal: "Month of Steel",
+  examenklaar: "Exam Ready",
+  perfectionist: "Perfectionist",
+  vroege_vogel: "Early Bird",
+  avondleerder: "Night Learner",
+  snelle_lezer: "Fast Reader",
+  geen_fouten: "No Mistakes",
+  doorzetter: "Perseverer",
   eerste_brief: "First Letter",
   perfecte_vorm: "Perfect Form",
   schrijver: "Writer",
@@ -55,9 +70,9 @@ const GOAL_OPTIONS = [
 ];
 
 const LEVEL_CARDS = [
-  { code: "A2", name: "Basis Nederlands", available: true },
-  { code: "B1", name: "Gevorderd", available: false },
-  { code: "B2", name: "Hoger Gevorderd", available: false },
+  { code: "A2", name: "Basic Dutch", available: true },
+  { code: "B1", name: "Intermediate", available: false },
+  { code: "B2", name: "Upper Intermediate", available: false },
 ];
 
 export function ProfileClient({ profile, activity, achievements, userId, avgScore, completedCount, writingAvgScore, writingCompletedCount }: Props) {
@@ -151,16 +166,16 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
               borderRadius: 9999, background: c.primaryContainer, color: "#fff",
               fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em",
             }}>
-              Niveau {profile.current_level}
+              Level {profile.current_level}
             </span>
           </div>
 
           {/* Stats Row */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", width: "100%", gap: 16, marginTop: 16 }}>
             {[
-              { icon: "stars", iconColor: isDark ? c.onTertiaryContainer : c.tertiary, value: profile.xp_total.toLocaleString(), label: "Totale XP" },
-              { icon: "menu_book", iconColor: c.primary, value: String(completedCount), label: "Lessen" },
-              { icon: "local_fire_department", iconColor: c.secondary, value: String(profile.streak_days), label: "Dagelijkse reeks" },
+              { icon: "stars", iconColor: isDark ? c.onTertiaryContainer : c.tertiary, value: profile.xp_total.toLocaleString(), label: "Total XP" },
+              { icon: "menu_book", iconColor: c.primary, value: String(completedCount), label: "Lessons" },
+              { icon: "local_fire_department", iconColor: c.secondary, value: String(profile.streak_days), label: "Daily streak" },
             ].map((stat, i) => (
               <div key={i} style={{
                 background: c.surfaceLow, padding: 16, borderRadius: 16,
@@ -177,7 +192,7 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
         {/* ── Level Path Cards ── */}
         <section>
           <h3 style={{ fontSize: 10, textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.2em", color: c.onSurfaceVariant, marginBottom: 16, marginLeft: 4 }}>
-            Huidige leerpad
+            Current learning path
           </h3>
           <div style={{ display: "flex", gap: 16, overflowX: "auto", paddingBottom: 16 }} className="no-scrollbar">
             {LEVEL_CARDS.map((lvl, i) => {
@@ -204,7 +219,7 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
                       <div style={{ height: "100%", width: `${pct}%`, background: c.primary }} />
                     </div>
                   ) : (
-                    <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: c.outline }}>Binnenkort beschikbaar</span>
+                    <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: c.outline }}>Coming soon</span>
                   )}
                 </div>
               );
@@ -262,8 +277,8 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
           {activity.length > 0 && (
             <div style={{ background: c.surfaceLow, padding: 24, borderRadius: 24, display: "flex", flexDirection: "column", gap: 16 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
-                <h4 style={{ fontSize: 10, textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.15em", margin: 0 }}>XP Geschiedenis</h4>
-                <span style={{ fontSize: 12, fontWeight: 700, color: c.onSurfaceVariant }}>Laatste 30 dagen</span>
+                <h4 style={{ fontSize: 10, textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.15em", margin: 0 }}>XP History</h4>
+                <span style={{ fontSize: 12, fontWeight: 700, color: c.onSurfaceVariant }}>Last 30 days</span>
               </div>
               <div style={{ height: 128, width: "100%", display: "flex", alignItems: "flex-end", gap: 3 }}>
                 {xpBars.map((xp, i) => {
@@ -285,7 +300,7 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
         {/* ── Settings Card ── */}
         <section style={{ background: c.surfaceLow, padding: 24, borderRadius: 24, display: "flex", flexDirection: "column", gap: 24 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <h3 style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.025em", margin: 0 }}>Leerdoelen</h3>
+            <h3 style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.025em", margin: 0 }}>Learning goals</h3>
             <span className="mso" style={{ color: c.onSurfaceVariant, fontSize: 24 }}>settings</span>
           </div>
 
@@ -307,7 +322,7 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
                   fontFamily: font.headline,
                 }}
               >
-                <span style={{ fontSize: 14, fontWeight: 900, color: c.error }}>{daysUntilExam} Dagen!</span>
+                <span style={{ fontSize: 14, fontWeight: 900, color: c.error }}>{daysUntilExam} Days!</span>
                 <span className="mso" style={{ fontSize: 16, color: c.outline }}>edit</span>
               </button>
             ) : (
@@ -376,7 +391,7 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
           {/* Daily Goal */}
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             <label style={{ fontSize: 10, textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.15em", color: c.onSurfaceVariant }}>
-              Dagelijks doel
+              Daily goal
             </label>
             <div style={{ display: "flex", gap: 8 }}>
               {GOAL_OPTIONS.map((goal) => (
@@ -407,7 +422,7 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
               <span className="mso" style={{ color: c.primary, fontSize: 20 }}>
                 {isDark ? "dark_mode" : "light_mode"}
               </span>
-              <span style={{ fontSize: 14, fontWeight: 700 }}>{isDark ? "Donkere modus" : "Lichte modus"}</span>
+              <span style={{ fontSize: 14, fontWeight: 700 }}>{isDark ? "Dark mode" : "Light mode"}</span>
             </div>
             {/* Toggle switch */}
             <button
@@ -449,7 +464,7 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
               boxShadow: "0 10px 20px -5px rgba(0,0,0,0.15)",
             }}
           >
-            {saving ? "Opslaan..." : saved ? "Opgeslagen! ✓" : "Wijzigingen opslaan"}
+            {saving ? "Saving..." : saved ? "Saved! ✓" : "Save changes"}
           </button>
 
           {/* Sign Out */}
@@ -463,16 +478,16 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
             }}
           >
             <span className="mso" style={{ fontSize: 18 }}>logout</span>
-            Uitloggen
+            Sign out
           </button>
         </section>
 
         {/* ── Achievements ── */}
         <section style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", padding: "0 4px" }}>
-            <h3 style={{ fontSize: 18, fontWeight: 800, margin: 0 }}>Prestaties</h3>
+            <h3 style={{ fontSize: 18, fontWeight: 800, margin: 0 }}>Achievements</h3>
             <span style={{ fontSize: 10, fontWeight: 700, color: c.onSurfaceVariant, textTransform: "uppercase", letterSpacing: "0.15em" }}>
-              {unlockedCount}/{achievements.length} Ontgrendeld
+              {unlockedCount}/{achievements.length} Unlocked
             </span>
           </div>
 
@@ -505,7 +520,7 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
                   <span style={{ fontSize: 20 }}>{ach.icon}</span>
                 </div>
                 <span style={{ fontSize: 8, fontWeight: 900, textTransform: "uppercase", textAlign: "center", lineHeight: 1.1 }}>
-                  {ach.title}
+                  {ACHIEVEMENT_TITLES[ach.key] ?? ach.title}
                 </span>
               </div>
             ))}

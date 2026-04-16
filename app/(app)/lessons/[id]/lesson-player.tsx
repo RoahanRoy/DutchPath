@@ -224,7 +224,7 @@ export function LessonPlayer({ lesson, progress, userId }: Props) {
         <nav style={{
           position: "sticky", top: 0, zIndex: 50, height: 64,
           display: "flex", alignItems: "center", gap: 16, padding: "0 16px",
-          background: "rgba(249,249,247,0.7)", backdropFilter: "blur(24px)",
+          background: isDark ? "rgba(18,20,19,0.8)" : "rgba(249,249,247,0.7)", backdropFilter: "blur(24px)",
         }}>
           <button onClick={() => router.back()} style={{ width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 9999, border: "none", background: "transparent", cursor: "pointer" }}>
             <span className="mso" style={{ color: c.onSurface, fontSize: 24 }}>close</span>
@@ -246,7 +246,7 @@ export function LessonPlayer({ lesson, progress, userId }: Props) {
           </div>
 
           {/* Passage */}
-          <div style={{ background: "#FFFBF5", borderRadius: 32, padding: 24, borderLeft: `4px solid ${c.primaryContainer}`, marginBottom: 24, boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
+          <div style={{ background: isDark ? c.surfaceContainer : "#FFFBF5", borderRadius: 32, padding: 24, borderLeft: `4px solid ${c.primaryContainer}`, marginBottom: 24, boxShadow: isDark ? "0 1px 3px rgba(0,0,0,0.3)" : "0 1px 3px rgba(0,0,0,0.05)" }}>
             <pre style={{ fontFamily: font.body, whiteSpace: "pre-wrap", fontSize: 16, lineHeight: 1.8, color: c.onSurface, margin: 0 }}>
               {content.passage?.text}
             </pre>
@@ -295,7 +295,7 @@ export function LessonPlayer({ lesson, progress, userId }: Props) {
       <nav style={{
         position: "sticky", top: 0, zIndex: 50, height: 64,
         display: "flex", alignItems: "center", gap: 16, padding: "0 16px",
-        background: "rgba(249,249,247,0.7)", backdropFilter: "blur(24px)",
+        background: isDark ? "rgba(18,20,19,0.8)" : "rgba(249,249,247,0.7)", backdropFilter: "blur(24px)",
       }}>
         <button onClick={() => router.back()} style={{ width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 9999, border: "none", background: "transparent", cursor: "pointer" }}>
           <span className="mso" style={{ color: c.onSurface, fontSize: 24 }}>close</span>
@@ -345,7 +345,7 @@ export function LessonPlayer({ lesson, progress, userId }: Props) {
         <div style={{ maxWidth: 672, margin: "0 auto" }}>
           <div style={{
             maxHeight: "28vh", overflowY: "auto", borderRadius: 16, padding: 12,
-            background: "#FFFBF5", borderLeft: `3px solid ${c.primaryContainer}`,
+            background: isDark ? c.surfaceContainer : "#FFFBF5", borderLeft: `3px solid ${c.primaryContainer}`,
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
               <span className="mso" style={{ fontSize: 12, color: c.onSurfaceVariant }}>description</span>
@@ -483,11 +483,8 @@ function QuestionRenderer({
   onAnswer: (a: number | boolean | string[]) => void;
 }) {
   const font = { headline: "'Plus Jakarta Sans', sans-serif", body: "'Noto Serif', serif" };
-  const c = {
-    primary: "#002975", onSurface: "#1a1c1b", onSurfaceVariant: "#434653",
-    surfaceLowest: "#ffffff", surfaceHighest: "#e2e3e1", outlineVariant: "#c4c6d5",
-    success: "#00A86B", danger: "#D63B3B",
-  };
+  const { isDark } = useTheme();
+  const c = getColors(isDark);
 
   if (question.type === "multiple_choice" || question.type === "reading_comp") {
     const q = question as any;
@@ -592,7 +589,7 @@ function QuestionRenderer({
         <h1 style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.025em", marginBottom: 20, color: c.primary, lineHeight: 1.2, fontFamily: font.headline }}>
           Vul de ontbrekende woorden in
         </h1>
-        <div style={{ background: "#FFFBF5", borderRadius: 16, padding: 16, marginBottom: 20, fontFamily: font.body, fontSize: 16, lineHeight: 1.8, color: c.onSurface }}>
+        <div style={{ background: isDark ? c.surfaceContainer : "#FFFBF5", borderRadius: 16, padding: 16, marginBottom: 20, fontFamily: font.body, fontSize: 16, lineHeight: 1.8, color: c.onSurface }}>
           {parts.map((part: string, i: number) => (
             <span key={i}>
               {part}
