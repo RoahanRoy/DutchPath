@@ -18,6 +18,7 @@ export type Profile = {
   writing_exam_target_date: string | null;
   writing_xp_total: number;
   writing_completed_count: number;
+  knm_exam_target_date: string | null;
 };
 
 export type Lesson = {
@@ -202,8 +203,8 @@ export interface Database {
     Tables: {
       profiles: {
         Row: Profile;
-        Insert: { id: string; username?: string | null; avatar_url?: string | null; current_level?: string; xp_total?: number; streak_days?: number; streak_last_date?: string | null; daily_goal_minutes?: number; exam_target_date?: string | null; streak_freeze_available?: boolean; leaderboard_opt_in?: boolean; role?: string; created_at?: string; writing_exam_target_date?: string | null; writing_xp_total?: number; writing_completed_count?: number };
-        Update: { id?: string; username?: string | null; avatar_url?: string | null; current_level?: string; xp_total?: number; streak_days?: number; streak_last_date?: string | null; daily_goal_minutes?: number; exam_target_date?: string | null; streak_freeze_available?: boolean; leaderboard_opt_in?: boolean; role?: string; created_at?: string; writing_exam_target_date?: string | null; writing_xp_total?: number; writing_completed_count?: number };
+        Insert: { id: string; username?: string | null; avatar_url?: string | null; current_level?: string; xp_total?: number; streak_days?: number; streak_last_date?: string | null; daily_goal_minutes?: number; exam_target_date?: string | null; streak_freeze_available?: boolean; leaderboard_opt_in?: boolean; role?: string; created_at?: string; writing_exam_target_date?: string | null; writing_xp_total?: number; writing_completed_count?: number; knm_exam_target_date?: string | null };
+        Update: { id?: string; username?: string | null; avatar_url?: string | null; current_level?: string; xp_total?: number; streak_days?: number; streak_last_date?: string | null; daily_goal_minutes?: number; exam_target_date?: string | null; streak_freeze_available?: boolean; leaderboard_opt_in?: boolean; role?: string; created_at?: string; writing_exam_target_date?: string | null; writing_xp_total?: number; writing_completed_count?: number; knm_exam_target_date?: string | null };
       };
       lessons: {
         Row: Lesson;

@@ -82,16 +82,19 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
   const setProfile = useAppStore((s) => s.setProfile);
   const [examDate, setExamDate] = useState(profile?.exam_target_date ?? "");
   const [writingExamDate, setWritingExamDate] = useState(profile?.writing_exam_target_date ?? "");
+  const [knmExamDate, setKnmExamDate] = useState(profile?.knm_exam_target_date ?? "");
   const [goalMinutes, setGoalMinutes] = useState(profile?.daily_goal_minutes ?? 20);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [editingExam, setEditingExam] = useState(false);
   const [editingWritingExam, setEditingWritingExam] = useState(false);
+  const [editingKnmExam, setEditingKnmExam] = useState(false);
 
   if (!profile) return null;
 
   const daysUntilExam = getDaysUntilExam(examDate);
   const daysUntilWritingExam = getDaysUntilExam(writingExamDate);
+  const daysUntilKnmExam = getDaysUntilExam(knmExamDate);
   const unlockedCount = achievements.filter((a) => a.unlocked).length;
 
   const xpBars = activity.length > 0
@@ -107,6 +110,7 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
       .update({
         exam_target_date: examDate || null,
         writing_exam_target_date: writingExamDate || null,
+        knm_exam_target_date: knmExamDate || null,
         daily_goal_minutes: goalMinutes,
       })
       .eq("id", userId)
@@ -117,6 +121,7 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
     setSaved(true);
     setEditingExam(false);
     setEditingWritingExam(false);
+    setEditingKnmExam(false);
     setTimeout(() => setSaved(false), 2000);
   };
 
@@ -382,6 +387,48 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
                 {editingWritingExam && (
                   <button onClick={() => setEditingWritingExam(false)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 0 }}>
                     <span className="mso" style={{ fontSize: 18, color: c.secondary }}>check</span>
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* KNM Exam Date */}
+          <div style={{
+            display: "flex", justifyContent: "space-between", alignItems: "center",
+            padding: 16, background: c.surfaceLowest, borderRadius: 16,
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <span className="mso" style={{ color: c.tertiary, fontSize: 20 }}>public</span>
+              <span style={{ fontSize: 14, fontWeight: 700 }}>KNM-examendatum</span>
+            </div>
+            {daysUntilKnmExam !== null && daysUntilKnmExam > 0 && !editingKnmExam ? (
+              <button
+                onClick={() => setEditingKnmExam(true)}
+                style={{
+                  background: "transparent", border: "none", cursor: "pointer",
+                  display: "flex", alignItems: "center", gap: 6, padding: 0,
+                  fontFamily: font.headline,
+                }}
+              >
+                <span style={{ fontSize: 14, fontWeight: 900, color: c.tertiary }}>{daysUntilKnmExam} Dagen!</span>
+                <span className="mso" style={{ fontSize: 16, color: c.outline }}>edit</span>
+              </button>
+            ) : (
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <input
+                  type="date"
+                  value={knmExamDate}
+                  onChange={(e) => setKnmExamDate(e.target.value)}
+                  min={new Date().toISOString().split("T")[0]}
+                  style={{
+                    border: "none", background: "transparent", fontSize: 14, fontWeight: 700,
+                    color: c.onSurface, fontFamily: font.headline, outline: "none",
+                  }}
+                />
+                {editingKnmExam && (
+                  <button onClick={() => setEditingKnmExam(false)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 0 }}>
+                    <span className="mso" style={{ fontSize: 18, color: c.tertiary }}>check</span>
                   </button>
                 )}
               </div>
