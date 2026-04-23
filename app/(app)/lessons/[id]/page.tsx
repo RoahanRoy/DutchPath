@@ -8,6 +8,9 @@ export default async function LessonPage({ params }: { params: Promise<{ id: str
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
+  const { data: profile } = await supabase.from("profiles").select("exam_completed").eq("id", user.id).single();
+  if ((profile as { exam_completed: boolean } | null)?.exam_completed) redirect("/dashboard");
+
   const lessonId = parseInt(id);
   if (isNaN(lessonId)) notFound();
 

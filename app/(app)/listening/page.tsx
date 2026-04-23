@@ -14,6 +14,8 @@ export default async function ListeningPage() {
     supabase.from("profiles").select("*").eq("id", user.id).single(),
   ]);
 
+  if ((profile as Profile | null)?.listening_exam_completed) redirect("/dashboard");
+
   const tasks = (tasksRaw ?? []) as unknown as ListeningTask[];
   const progress = (progressRaw ?? []) as UserListeningProgress[];
   const progressMap = new Map(progress.map((p) => [p.task_id, p]));

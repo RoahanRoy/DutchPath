@@ -14,6 +14,8 @@ export default async function WritingPage() {
     supabase.from("profiles").select("*").eq("id", user.id).single(),
   ]);
 
+  if ((profile as Profile | null)?.writing_exam_completed) redirect("/dashboard");
+
   const tasks = (tasksRaw ?? []) as unknown as WritingTask[];
   const progress = (progressRaw ?? []) as UserWritingProgress[];
   const progressMap = new Map(progress.map((p) => [p.task_id, p]));

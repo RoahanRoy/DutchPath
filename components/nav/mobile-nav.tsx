@@ -2,20 +2,22 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAppStore } from "@/lib/store";
 import { useTheme, getColors } from "@/lib/use-theme";
 
-const NAV_ITEMS = [
+const NAV_ITEMS: { href: string; icon: string; label: string; hideWhen?: "writing_exam_completed" | "listening_exam_completed" | "knm_exam_completed" | "exam_completed" }[] = [
   { href: "/dashboard", icon: "home", label: "Home" },
-  { href: "/lessons", icon: "menu_book", label: "Lessons" },
-  { href: "/writing", icon: "edit_note", label: "Writing" },
-  { href: "/listening", icon: "headphones", label: "Listening" },
-  { href: "/knm", icon: "public", label: "KNM" },
+  { href: "/lessons", icon: "menu_book", label: "Lessons", hideWhen: "exam_completed" },
+  { href: "/writing", icon: "edit_note", label: "Writing", hideWhen: "writing_exam_completed" },
+  { href: "/listening", icon: "headphones", label: "Listening", hideWhen: "listening_exam_completed" },
+  { href: "/knm", icon: "public", label: "KNM", hideWhen: "knm_exam_completed" },
   { href: "/vocabulary", icon: "format_list_bulleted", label: "Vocab" },
   { href: "/profile", icon: "person", label: "Profile" },
 ];
 
 export function MobileNav() {
   const pathname = usePathname();
+  const profile = useAppStore((s) => s.profile);
   const { isDark } = useTheme();
   const c = getColors(isDark);
 
@@ -39,7 +41,7 @@ export function MobileNav() {
         border: c.glassBorder !== "transparent" ? `1px solid ${c.glassBorder}` : "none",
         transition: "background 0.3s",
       }}>
-        {NAV_ITEMS.map(({ href, icon, label }) => {
+        {NAV_ITEMS.filter(({ hideWhen }) => !(hideWhen && profile && (profile as any)[hideWhen])).map(({ href, icon, label }) => {
           const active = pathname.startsWith(href);
           return (
             <Link

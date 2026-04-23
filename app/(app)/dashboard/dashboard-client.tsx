@@ -254,7 +254,7 @@ export function DashboardClient({
         ) : null}
 
         {/* ─── Continue Learning Hero CTA ─── */}
-        {nextLesson ? (
+        {profile.exam_completed ? null : nextLesson ? (
           <Link href={`/lessons/${nextLesson.id}`} style={{ textDecoration: "none" }}>
             <button style={{
               width: "100%", textAlign: "left", background: c.primary, padding: 24, borderRadius: 32,
@@ -295,7 +295,7 @@ export function DashboardClient({
         )}
 
         {/* ─── Writing Continue CTA ─── */}
-        {nextWritingTask && (
+        {nextWritingTask && !profile.writing_exam_completed && (
           <Link href={`/writing/${nextWritingTask.id}`} style={{ textDecoration: "none" }}>
             <button style={{
               width: "100%", textAlign: "left",
@@ -329,7 +329,7 @@ export function DashboardClient({
         )}
 
         {/* ─── Listening Continue CTA ─── */}
-        {nextListeningTask && (
+        {nextListeningTask && !profile.listening_exam_completed && (
           <Link href={`/listening/${nextListeningTask.id}`} style={{ textDecoration: "none" }}>
             <button style={{
               width: "100%", textAlign: "left",

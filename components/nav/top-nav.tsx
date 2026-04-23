@@ -6,14 +6,14 @@ import { useAppStore } from "@/lib/store";
 import { createClient } from "@/lib/supabase/client";
 import { useTheme, getColors } from "@/lib/use-theme";
 
-const NAV_LINKS = [
+const NAV_LINKS: { href: string; label: string; hideWhen?: "writing_exam_completed" | "listening_exam_completed" | "exam_completed" | "knm_exam_completed" }[] = [
   { href: "/dashboard", label: "Overzicht" },
-  { href: "/lessons", label: "Lessen" },
-  { href: "/writing", label: "Schrijven" },
-  { href: "/listening", label: "Luisteren" },
+  { href: "/lessons", label: "Lessen", hideWhen: "exam_completed" },
+  { href: "/writing", label: "Schrijven", hideWhen: "writing_exam_completed" },
+  { href: "/listening", label: "Luisteren", hideWhen: "listening_exam_completed" },
   { href: "/vocabulary", label: "Woordenschat" },
-  { href: "/reading", label: "Lezen" },
-  { href: "/knm", label: "KNM" },
+  { href: "/reading", label: "Lezen", hideWhen: "exam_completed" },
+  { href: "/knm", label: "KNM", hideWhen: "knm_exam_completed" },
   { href: "/profile", label: "Profiel" },
 ];
 
@@ -93,7 +93,7 @@ export function TopNav() {
           overflowX: "auto", whiteSpace: "nowrap",
         }}
       >
-        {NAV_LINKS.map(({ href, label }) => {
+        {NAV_LINKS.filter(({ hideWhen }) => !(hideWhen && profile && (profile as any)[hideWhen])).map(({ href, label }) => {
           const active = pathname.startsWith(href);
           return (
             <Link
