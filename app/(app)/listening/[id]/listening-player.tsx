@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
 import { useAppStore } from "@/lib/store";
 import { useTheme, getColors } from "@/lib/use-theme";
+import { checkAndUnlockAchievements } from "@/lib/achievements";
 import type {
   ListeningTask,
   ListeningQuestion,
@@ -246,9 +247,24 @@ export function ListeningPlayer({ task, progress, draft, userId }: Props) {
     }
 
     updateXP(xpAwarded);
-    if (score === 100) {
-      addToast({ type: "achievement", title: "✨ Perfect gehoor!", message: "Alle antwoorden goed!", xp: 10 });
-    } else if (score >= 80) {
+
+    const unlocked = await checkAndUnlockAchievements(supabase as any, userId, {
+      track: "listening",
+      score,
+      timeSpentSeconds: elapsedSeconds,
+    });
+    let bonusXP = 0;
+    for (const a of unlocked) {
+      bonusXP += a.xp_reward;
+      addToast({ type: "achievement", title: `${a.icon} ${a.title}`, xp: a.xp_reward });
+    }
+    if (bonusXP > 0) {
+      await (supabase as unknown as {
+        rpc: (fn: string, args: Record<string, unknown>) => Promise<unknown>;
+      }).rpc("increment_xp", { p_user_id: userId, p_amount: bonusXP });
+      updateXP(bonusXP);
+    }
+    if (unlocked.length === 0 && score >= 80 && score < 100) {
       addToast({ type: "success", title: "Goed gedaan!", message: `Score: ${score}%`, xp: xpAwarded });
     }
 

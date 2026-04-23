@@ -15,6 +15,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useAppStore } from "@/lib/store";
 import { getAmsterdamDate, getAmsterdamHour } from "@/lib/utils";
 import { useTheme, getColors } from "@/lib/use-theme";
+import { checkAndUnlockAchievements } from "@/lib/achievements";
 
 interface Props {
   task: WritingTask;
@@ -316,8 +317,23 @@ export function WritingEditor({ task, progress, draft, phrases, userId }: Props)
 
     updateXP(totalXP);
 
-    if (total >= 11) addToast({ type: "achievement", title: "✨ Perfecte tekst!", message: "Bijna perfecte score!", xp: 10 });
-    if (hour < 8) addToast({ type: "achievement", title: "🌅 Vroege schrijver!", message: "Opdracht voor 8 uur gedaan", xp: 15 });
+    const unlocked = await checkAndUnlockAchievements(supabase as any, userId, {
+      track: "writing",
+      score: scorePercent,
+      scoreRaw: total,
+      timeSpentSeconds: elapsedSeconds,
+      writingTaskType: task.task_type,
+    });
+    let bonusXP = 0;
+    for (const a of unlocked) {
+      bonusXP += a.xp_reward;
+      addToast({ type: "achievement", title: `${a.icon} ${a.title}`, xp: a.xp_reward });
+    }
+    if (bonusXP > 0) {
+      await (supabase as any).rpc("increment_xp", { p_user_id: userId, p_amount: bonusXP });
+      updateXP(bonusXP);
+    }
+    void hour;
 
     setPhase("complete");
   };
