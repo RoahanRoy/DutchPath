@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
-import type { Profile, DailyActivity, Lesson, WritingTask } from "@/lib/supabase/types";
+import type { Profile, DailyActivity, Lesson, WritingTask, ListeningTask } from "@/lib/supabase/types";
 import { getDaysUntilExam } from "@/lib/utils";
 import { useTheme, getColors } from "@/lib/use-theme";
 
@@ -17,10 +17,12 @@ interface Props {
   activity: DailyActivity[];
   nextLesson: Lesson | null;
   nextWritingTask: WritingTask | null;
+  nextListeningTask: ListeningTask | null;
   vocabDueCount: number;
   completedLessonsCount: number;
   masteredVocabCount: number;
   completedWritingCount: number;
+  completedListeningCount: number;
   todayXP: number;
 }
 
@@ -76,9 +78,17 @@ const WRITING_TYPE_LABELS: Record<string, string> = {
   sentence_complete: "Zin aanvullen",
 };
 
+const LISTENING_TYPE_LABELS: Record<string, string> = {
+  announcement: "Aankondiging",
+  phone_message: "Voicemail",
+  dialogue: "Dialoog",
+  radio_snippet: "Radio",
+  instructions: "Instructies",
+};
+
 export function DashboardClient({
-  profile, activity, nextLesson, nextWritingTask, vocabDueCount,
-  completedLessonsCount, masteredVocabCount, completedWritingCount, todayXP,
+  profile, activity, nextLesson, nextWritingTask, nextListeningTask, vocabDueCount,
+  completedLessonsCount, masteredVocabCount, completedWritingCount, completedListeningCount, todayXP,
 }: Props) {
   const { isDark } = useTheme();
   const c = getColors(isDark);
@@ -135,6 +145,7 @@ export function DashboardClient({
     { icon: "local_fire_department", color: c.secondary, value: profile.streak_days, label: "Day Streak" },
     { icon: "check_circle", color: "#16a34a", value: completedLessonsCount, label: "Lessons" },
     { icon: "edit_note", color: c.secondaryContainer, value: completedWritingCount, label: "Writing" },
+    { icon: "headphones", color: c.tertiary, value: completedListeningCount, label: "Listening" },
     { icon: "trending_up", color: c.primary, value: `A2`, label: "Level" },
   ];
 
@@ -313,6 +324,40 @@ export function DashboardClient({
                 </div>
               </div>
               <span className="mso" style={{ color: "rgba(255,255,255,0.5)", fontSize: 24 }}>chevron_right</span>
+            </button>
+          </Link>
+        )}
+
+        {/* ─── Listening Continue CTA ─── */}
+        {nextListeningTask && (
+          <Link href={`/listening/${nextListeningTask.id}`} style={{ textDecoration: "none" }}>
+            <button style={{
+              width: "100%", textAlign: "left",
+              background: `linear-gradient(to bottom, ${c.tertiary}, ${c.tertiaryContainer ?? c.tertiary})`,
+              padding: 24, borderRadius: 32,
+              boxShadow: "0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -4px rgba(0,0,0,.1)",
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              border: "none", cursor: "pointer", marginBottom: 16,
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+                <div style={{ width: 48, height: 48, background: "rgba(255,255,255,0.15)", borderRadius: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <span className="mso" style={{ color: "#ffffff", fontSize: 24 }}>headphones</span>
+                </div>
+                <div>
+                  <h3 style={{ color: "#ffffff", fontWeight: 700, fontSize: 18, lineHeight: 1.25, margin: 0, fontFamily: font.headline }}>
+                    Week {nextListeningTask.week} · Dag {nextListeningTask.day}:{" "}
+                    <span style={{ fontFamily: font.body, fontStyle: "italic", marginLeft: 4 }}>{nextListeningTask.title}</span>
+                  </h3>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, color: "rgba(255,255,255,0.8)", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", marginTop: 4 }}>
+                    <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                      <span className="mso" style={{ fontSize: 12, color: "rgba(255,255,255,0.8)" }}>headphones</span>
+                      {LISTENING_TYPE_LABELS[nextListeningTask.task_type] ?? nextListeningTask.task_type}
+                    </span>
+                    <span>· {nextListeningTask.estimated_minutes} min · +{nextListeningTask.xp_reward} XP</span>
+                  </div>
+                </div>
+              </div>
+              <span className="mso" style={{ color: "rgba(255,255,255,0.6)", fontSize: 24 }}>chevron_right</span>
             </button>
           </Link>
         )}

@@ -30,8 +30,18 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# env files — never commit. .env.example is the opt-in (safe) template.
+.env
+.env.*
+.env.local
+.env.*.local
+!.env.example
+
+# Google Cloud service-account key (used by scripts/generate-listening-audio.ts)
+gcp-key.json
+*gcp*key*.json
+*-service-account*.json
+*service_account*.json
 
 # vercel
 .vercel
