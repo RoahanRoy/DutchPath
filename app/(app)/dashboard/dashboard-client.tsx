@@ -131,8 +131,8 @@ export function DashboardClient({
 
   if (!profile) return null;
 
-  const daysUntilExam = getDaysUntilExam(profile.exam_target_date);
-  const daysUntilWritingExam = getDaysUntilExam(profile.writing_exam_target_date ?? null);
+  const daysUntilExam = profile.exam_completed ? null : getDaysUntilExam(profile.exam_target_date);
+  const daysUntilWritingExam = profile.writing_exam_completed ? null : getDaysUntilExam(profile.writing_exam_target_date ?? null);
 
   /* The last 3 unique month labels for the header */
   const displayedMonths = monthLabels.slice(-3);

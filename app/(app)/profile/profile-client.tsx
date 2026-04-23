@@ -89,6 +89,10 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
   const [writingExamDate, setWritingExamDate] = useState(profile?.writing_exam_target_date ?? "");
   const [knmExamDate, setKnmExamDate] = useState(profile?.knm_exam_target_date ?? "");
   const [listeningExamDate, setListeningExamDate] = useState(profile?.listening_exam_target_date ?? "");
+  const [examCompleted, setExamCompleted] = useState(profile?.exam_completed ?? false);
+  const [writingExamCompleted, setWritingExamCompleted] = useState(profile?.writing_exam_completed ?? false);
+  const [knmExamCompleted, setKnmExamCompleted] = useState(profile?.knm_exam_completed ?? false);
+  const [listeningExamCompleted, setListeningExamCompleted] = useState(profile?.listening_exam_completed ?? false);
   const [goalMinutes, setGoalMinutes] = useState(profile?.daily_goal_minutes ?? 20);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -133,6 +137,27 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
     setEditingKnmExam(false);
     setEditingListeningExam(false);
     setTimeout(() => setSaved(false), 2000);
+  };
+
+  const toggleExamCompleted = async (
+    column: "exam_completed" | "writing_exam_completed" | "knm_exam_completed" | "listening_exam_completed",
+    next: boolean,
+  ) => {
+    const setters: Record<typeof column, (v: boolean) => void> = {
+      exam_completed: setExamCompleted,
+      writing_exam_completed: setWritingExamCompleted,
+      knm_exam_completed: setKnmExamCompleted,
+      listening_exam_completed: setListeningExamCompleted,
+    };
+    setters[column](next);
+    const supabase = createClient();
+    const { data } = await (supabase as any)
+      .from("profiles")
+      .update({ [column]: next })
+      .eq("id", userId)
+      .select()
+      .single();
+    if (data) setProfile(data);
   };
 
   const handleSignOut = async () => {
@@ -342,170 +367,238 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
 
           {/* Reading Exam Date */}
           <div style={{
-            display: "flex", justifyContent: "space-between", alignItems: "center",
+            display: "flex", flexDirection: "column", gap: 8,
             padding: 16, background: c.surfaceLowest, borderRadius: 16,
           }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <span className="mso" style={{ color: c.primary, fontSize: 20 }}>menu_book</span>
-              <span style={{ fontSize: 14, fontWeight: 700 }}>Leesexamendatum</span>
-            </div>
-            {daysUntilExam !== null && daysUntilExam > 0 && !editingExam ? (
-              <button
-                onClick={() => setEditingExam(true)}
-                style={{
-                  background: "transparent", border: "none", cursor: "pointer",
-                  display: "flex", alignItems: "center", gap: 6, padding: 0,
-                  fontFamily: font.headline,
-                }}
-              >
-                <span style={{ fontSize: 14, fontWeight: 900, color: c.error }}>{daysUntilExam} Days!</span>
-                <span className="mso" style={{ fontSize: 16, color: c.outline }}>edit</span>
-              </button>
-            ) : (
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <input
-                  type="date"
-                  value={examDate}
-                  onChange={(e) => setExamDate(e.target.value)}
-                  min={new Date().toISOString().split("T")[0]}
-                  style={{
-                    border: "none", background: "transparent", fontSize: 14, fontWeight: 700,
-                    color: c.onSurface, fontFamily: font.headline, outline: "none",
-                  }}
-                />
-                {editingExam && (
-                  <button onClick={() => setEditingExam(false)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 0 }}>
-                    <span className="mso" style={{ fontSize: 18, color: c.primary }}>check</span>
-                  </button>
-                )}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <span className="mso" style={{ color: c.primary, fontSize: 20 }}>menu_book</span>
+                <span style={{ fontSize: 14, fontWeight: 700 }}>Leesexamendatum</span>
               </div>
-            )}
+              {examCompleted ? (
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 800, color: "#16a34a", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+                  <span className="mso mso-fill" style={{ fontSize: 16 }}>check_circle</span>
+                  Completed
+                </span>
+              ) : daysUntilExam !== null && daysUntilExam > 0 && !editingExam ? (
+                <button
+                  onClick={() => setEditingExam(true)}
+                  style={{
+                    background: "transparent", border: "none", cursor: "pointer",
+                    display: "flex", alignItems: "center", gap: 6, padding: 0,
+                    fontFamily: font.headline,
+                  }}
+                >
+                  <span style={{ fontSize: 14, fontWeight: 900, color: c.error }}>{daysUntilExam} Days!</span>
+                  <span className="mso" style={{ fontSize: 16, color: c.outline }}>edit</span>
+                </button>
+              ) : (
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <input
+                    type="date"
+                    value={examDate}
+                    onChange={(e) => setExamDate(e.target.value)}
+                    min={new Date().toISOString().split("T")[0]}
+                    style={{
+                      border: "none", background: "transparent", fontSize: 14, fontWeight: 700,
+                      color: c.onSurface, fontFamily: font.headline, outline: "none",
+                    }}
+                  />
+                  {editingExam && (
+                    <button onClick={() => setEditingExam(false)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 0 }}>
+                      <span className="mso" style={{ fontSize: 18, color: c.primary }}>check</span>
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+            <button
+              onClick={() => toggleExamCompleted("exam_completed", !examCompleted)}
+              style={{
+                alignSelf: "flex-start", background: "transparent", border: "none", cursor: "pointer",
+                padding: 0, fontSize: 11, fontWeight: 700, color: c.primary, fontFamily: font.headline,
+                textTransform: "uppercase", letterSpacing: "0.05em",
+              }}
+            >
+              {examCompleted ? "Undo completion" : "Mark as completed"}
+            </button>
           </div>
 
           {/* Writing Exam Date */}
           <div style={{
-            display: "flex", justifyContent: "space-between", alignItems: "center",
+            display: "flex", flexDirection: "column", gap: 8,
             padding: 16, background: c.surfaceLowest, borderRadius: 16,
           }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <span className="mso" style={{ color: c.secondary, fontSize: 20 }}>edit_note</span>
-              <span style={{ fontSize: 14, fontWeight: 700 }}>Schrijfexamendatum</span>
-            </div>
-            {daysUntilWritingExam !== null && daysUntilWritingExam > 0 && !editingWritingExam ? (
-              <button
-                onClick={() => setEditingWritingExam(true)}
-                style={{
-                  background: "transparent", border: "none", cursor: "pointer",
-                  display: "flex", alignItems: "center", gap: 6, padding: 0,
-                  fontFamily: font.headline,
-                }}
-              >
-                <span style={{ fontSize: 14, fontWeight: 900, color: c.secondary }}>{daysUntilWritingExam} Dagen!</span>
-                <span className="mso" style={{ fontSize: 16, color: c.outline }}>edit</span>
-              </button>
-            ) : (
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <input
-                  type="date"
-                  value={writingExamDate}
-                  onChange={(e) => setWritingExamDate(e.target.value)}
-                  min={new Date().toISOString().split("T")[0]}
-                  style={{
-                    border: "none", background: "transparent", fontSize: 14, fontWeight: 700,
-                    color: c.onSurface, fontFamily: font.headline, outline: "none",
-                  }}
-                />
-                {editingWritingExam && (
-                  <button onClick={() => setEditingWritingExam(false)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 0 }}>
-                    <span className="mso" style={{ fontSize: 18, color: c.secondary }}>check</span>
-                  </button>
-                )}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <span className="mso" style={{ color: c.secondary, fontSize: 20 }}>edit_note</span>
+                <span style={{ fontSize: 14, fontWeight: 700 }}>Schrijfexamendatum</span>
               </div>
-            )}
+              {writingExamCompleted ? (
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 800, color: "#16a34a", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+                  <span className="mso mso-fill" style={{ fontSize: 16 }}>check_circle</span>
+                  Completed
+                </span>
+              ) : daysUntilWritingExam !== null && daysUntilWritingExam > 0 && !editingWritingExam ? (
+                <button
+                  onClick={() => setEditingWritingExam(true)}
+                  style={{
+                    background: "transparent", border: "none", cursor: "pointer",
+                    display: "flex", alignItems: "center", gap: 6, padding: 0,
+                    fontFamily: font.headline,
+                  }}
+                >
+                  <span style={{ fontSize: 14, fontWeight: 900, color: c.secondary }}>{daysUntilWritingExam} Dagen!</span>
+                  <span className="mso" style={{ fontSize: 16, color: c.outline }}>edit</span>
+                </button>
+              ) : (
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <input
+                    type="date"
+                    value={writingExamDate}
+                    onChange={(e) => setWritingExamDate(e.target.value)}
+                    min={new Date().toISOString().split("T")[0]}
+                    style={{
+                      border: "none", background: "transparent", fontSize: 14, fontWeight: 700,
+                      color: c.onSurface, fontFamily: font.headline, outline: "none",
+                    }}
+                  />
+                  {editingWritingExam && (
+                    <button onClick={() => setEditingWritingExam(false)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 0 }}>
+                      <span className="mso" style={{ fontSize: 18, color: c.secondary }}>check</span>
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+            <button
+              onClick={() => toggleExamCompleted("writing_exam_completed", !writingExamCompleted)}
+              style={{
+                alignSelf: "flex-start", background: "transparent", border: "none", cursor: "pointer",
+                padding: 0, fontSize: 11, fontWeight: 700, color: c.secondary, fontFamily: font.headline,
+                textTransform: "uppercase", letterSpacing: "0.05em",
+              }}
+            >
+              {writingExamCompleted ? "Undo completion" : "Mark as completed"}
+            </button>
           </div>
 
           {/* KNM Exam Date */}
           <div style={{
-            display: "flex", justifyContent: "space-between", alignItems: "center",
+            display: "flex", flexDirection: "column", gap: 8,
             padding: 16, background: c.surfaceLowest, borderRadius: 16,
           }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <span className="mso" style={{ color: c.tertiary, fontSize: 20 }}>public</span>
-              <span style={{ fontSize: 14, fontWeight: 700 }}>KNM-examendatum</span>
-            </div>
-            {daysUntilKnmExam !== null && daysUntilKnmExam > 0 && !editingKnmExam ? (
-              <button
-                onClick={() => setEditingKnmExam(true)}
-                style={{
-                  background: "transparent", border: "none", cursor: "pointer",
-                  display: "flex", alignItems: "center", gap: 6, padding: 0,
-                  fontFamily: font.headline,
-                }}
-              >
-                <span style={{ fontSize: 14, fontWeight: 900, color: c.tertiary }}>{daysUntilKnmExam} Dagen!</span>
-                <span className="mso" style={{ fontSize: 16, color: c.outline }}>edit</span>
-              </button>
-            ) : (
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <input
-                  type="date"
-                  value={knmExamDate}
-                  onChange={(e) => setKnmExamDate(e.target.value)}
-                  min={new Date().toISOString().split("T")[0]}
-                  style={{
-                    border: "none", background: "transparent", fontSize: 14, fontWeight: 700,
-                    color: c.onSurface, fontFamily: font.headline, outline: "none",
-                  }}
-                />
-                {editingKnmExam && (
-                  <button onClick={() => setEditingKnmExam(false)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 0 }}>
-                    <span className="mso" style={{ fontSize: 18, color: c.tertiary }}>check</span>
-                  </button>
-                )}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <span className="mso" style={{ color: c.tertiary, fontSize: 20 }}>public</span>
+                <span style={{ fontSize: 14, fontWeight: 700 }}>KNM-examendatum</span>
               </div>
-            )}
+              {knmExamCompleted ? (
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 800, color: "#16a34a", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+                  <span className="mso mso-fill" style={{ fontSize: 16 }}>check_circle</span>
+                  Completed
+                </span>
+              ) : daysUntilKnmExam !== null && daysUntilKnmExam > 0 && !editingKnmExam ? (
+                <button
+                  onClick={() => setEditingKnmExam(true)}
+                  style={{
+                    background: "transparent", border: "none", cursor: "pointer",
+                    display: "flex", alignItems: "center", gap: 6, padding: 0,
+                    fontFamily: font.headline,
+                  }}
+                >
+                  <span style={{ fontSize: 14, fontWeight: 900, color: c.tertiary }}>{daysUntilKnmExam} Dagen!</span>
+                  <span className="mso" style={{ fontSize: 16, color: c.outline }}>edit</span>
+                </button>
+              ) : (
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <input
+                    type="date"
+                    value={knmExamDate}
+                    onChange={(e) => setKnmExamDate(e.target.value)}
+                    min={new Date().toISOString().split("T")[0]}
+                    style={{
+                      border: "none", background: "transparent", fontSize: 14, fontWeight: 700,
+                      color: c.onSurface, fontFamily: font.headline, outline: "none",
+                    }}
+                  />
+                  {editingKnmExam && (
+                    <button onClick={() => setEditingKnmExam(false)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 0 }}>
+                      <span className="mso" style={{ fontSize: 18, color: c.tertiary }}>check</span>
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+            <button
+              onClick={() => toggleExamCompleted("knm_exam_completed", !knmExamCompleted)}
+              style={{
+                alignSelf: "flex-start", background: "transparent", border: "none", cursor: "pointer",
+                padding: 0, fontSize: 11, fontWeight: 700, color: c.tertiary, fontFamily: font.headline,
+                textTransform: "uppercase", letterSpacing: "0.05em",
+              }}
+            >
+              {knmExamCompleted ? "Undo completion" : "Mark as completed"}
+            </button>
           </div>
 
           {/* Listening Exam Date */}
           <div style={{
-            display: "flex", justifyContent: "space-between", alignItems: "center",
+            display: "flex", flexDirection: "column", gap: 8,
             padding: 16, background: c.surfaceLowest, borderRadius: 16,
           }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <span className="mso" style={{ color: c.primary, fontSize: 20 }}>headphones</span>
-              <span style={{ fontSize: 14, fontWeight: 700 }}>Luisterexamendatum</span>
-            </div>
-            {daysUntilListeningExam !== null && daysUntilListeningExam > 0 && !editingListeningExam ? (
-              <button
-                onClick={() => setEditingListeningExam(true)}
-                style={{
-                  background: "transparent", border: "none", cursor: "pointer",
-                  display: "flex", alignItems: "center", gap: 6, padding: 0,
-                  fontFamily: font.headline,
-                }}
-              >
-                <span style={{ fontSize: 14, fontWeight: 900, color: c.primary }}>{daysUntilListeningExam} Dagen!</span>
-                <span className="mso" style={{ fontSize: 16, color: c.outline }}>edit</span>
-              </button>
-            ) : (
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <input
-                  type="date"
-                  value={listeningExamDate}
-                  onChange={(e) => setListeningExamDate(e.target.value)}
-                  min={new Date().toISOString().split("T")[0]}
-                  style={{
-                    border: "none", background: "transparent", fontSize: 14, fontWeight: 700,
-                    color: c.onSurface, fontFamily: font.headline, outline: "none",
-                  }}
-                />
-                {editingListeningExam && (
-                  <button onClick={() => setEditingListeningExam(false)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 0 }}>
-                    <span className="mso" style={{ fontSize: 18, color: c.primary }}>check</span>
-                  </button>
-                )}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <span className="mso" style={{ color: c.primary, fontSize: 20 }}>headphones</span>
+                <span style={{ fontSize: 14, fontWeight: 700 }}>Luisterexamendatum</span>
               </div>
-            )}
+              {listeningExamCompleted ? (
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 800, color: "#16a34a", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+                  <span className="mso mso-fill" style={{ fontSize: 16 }}>check_circle</span>
+                  Completed
+                </span>
+              ) : daysUntilListeningExam !== null && daysUntilListeningExam > 0 && !editingListeningExam ? (
+                <button
+                  onClick={() => setEditingListeningExam(true)}
+                  style={{
+                    background: "transparent", border: "none", cursor: "pointer",
+                    display: "flex", alignItems: "center", gap: 6, padding: 0,
+                    fontFamily: font.headline,
+                  }}
+                >
+                  <span style={{ fontSize: 14, fontWeight: 900, color: c.primary }}>{daysUntilListeningExam} Dagen!</span>
+                  <span className="mso" style={{ fontSize: 16, color: c.outline }}>edit</span>
+                </button>
+              ) : (
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <input
+                    type="date"
+                    value={listeningExamDate}
+                    onChange={(e) => setListeningExamDate(e.target.value)}
+                    min={new Date().toISOString().split("T")[0]}
+                    style={{
+                      border: "none", background: "transparent", fontSize: 14, fontWeight: 700,
+                      color: c.onSurface, fontFamily: font.headline, outline: "none",
+                    }}
+                  />
+                  {editingListeningExam && (
+                    <button onClick={() => setEditingListeningExam(false)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 0 }}>
+                      <span className="mso" style={{ fontSize: 18, color: c.primary }}>check</span>
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+            <button
+              onClick={() => toggleExamCompleted("listening_exam_completed", !listeningExamCompleted)}
+              style={{
+                alignSelf: "flex-start", background: "transparent", border: "none", cursor: "pointer",
+                padding: 0, fontSize: 11, fontWeight: 700, color: c.primary, fontFamily: font.headline,
+                textTransform: "uppercase", letterSpacing: "0.05em",
+              }}
+            >
+              {listeningExamCompleted ? "Undo completion" : "Mark as completed"}
+            </button>
           </div>
 
           {/* Daily Goal */}
