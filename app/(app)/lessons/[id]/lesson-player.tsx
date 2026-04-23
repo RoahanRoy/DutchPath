@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useAppStore } from "@/lib/store";
 import { getAmsterdamHour, getAmsterdamDate, getStarRating } from "@/lib/utils";
 import { useTheme, getColors } from "@/lib/use-theme";
+import { checkAndUnlockAchievements } from "@/lib/achievements";
 
 /**
  * Lesson Player — Stitch "focus mode" design.
@@ -135,14 +136,25 @@ export function LessonPlayer({ lesson, progress, userId }: Props) {
 
     updateXP(totalXP);
 
-    if (score === 100 && heartsLeft === (unlockedHearts ? 999 : 5)) {
-      addToast({ type: "achievement", title: "💚 Geen fouten!", message: "Afgerond met alle harten!", xp: 30 });
+    const unlocked = await checkAndUnlockAchievements(supabase as any, userId, {
+      track: "reading",
+      score,
+      timeSpentSeconds: elapsedSeconds,
+      heartsRemaining: unlockedHearts ? undefined : heartsLeft,
+      unlockedHearts,
+      lessonType: lesson.type,
+    });
+    let bonusXP = 0;
+    for (const a of unlocked) {
+      bonusXP += a.xp_reward;
+      addToast({ type: "achievement", title: `${a.icon} ${a.title}`, xp: a.xp_reward });
     }
-    if (hour < 8) addToast({ type: "achievement", title: "🌅 Vroege vogel!", message: "Les voor 8 uur", xp: 15 });
-    if (hour >= 21) addToast({ type: "achievement", title: "🌙 Avondleerder!", message: "Les na 21 uur", xp: 15 });
-    if (lesson.type === "reading" && elapsedSeconds < 180) {
-      addToast({ type: "achievement", title: "⚡ Snelle lezer!", message: "Klaar in minder dan 3 minuten", xp: 20 });
+    if (bonusXP > 0) {
+      await (supabase as any).rpc("increment_xp", { p_user_id: userId, p_amount: bonusXP });
+      updateXP(bonusXP);
     }
+    // Suppress unused-var warning for legacy hour reference
+    void hour;
   }, [questions.length, lesson, progress, elapsedSeconds, userId, heartsLeft, unlockedHearts, addToast, updateXP]);
 
   const advance = useCallback(async () => {
