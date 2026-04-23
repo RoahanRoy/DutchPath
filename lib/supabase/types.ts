@@ -18,6 +18,10 @@ export type Profile = {
   writing_exam_target_date: string | null;
   writing_xp_total: number;
   writing_completed_count: number;
+  knm_exam_target_date: string | null;
+  listening_exam_target_date: string | null;
+  listening_xp_total: number;
+  listening_completed_count: number;
 };
 
 export type Lesson = {
@@ -197,13 +201,91 @@ export type WritingPhrase = {
   formality: "formal" | "informal" | "both";
 };
 
+/* ── Listening (Luisteren) track ───────────────────────────────── */
+
+export type ListeningTaskType =
+  | "announcement"
+  | "phone_message"
+  | "dialogue"
+  | "radio_snippet"
+  | "instructions";
+
+export type ListeningVoiceTurn = {
+  speaker: string;
+  voice: string;
+  text: string;
+  speakingRate?: number;
+  pitch?: number;
+  pauseAfterMs?: number;
+};
+
+export type ListeningVoiceConfig =
+  | { mode: "single"; voice: string; speakingRate?: number; pitch?: number }
+  | { mode: "dialogue"; turns: ListeningVoiceTurn[] };
+
+export type ListeningQuestion = {
+  id: string;
+  prompt_nl: string;
+  prompt_en: string;
+  options: { id: string; text_nl: string; text_en: string }[];
+  correct_option_id: string;
+  explanation_nl: string;
+};
+
+export type ListeningTask = {
+  id: number;
+  level: string;
+  week: number;
+  day: number;
+  task_type: ListeningTaskType;
+  title: string;
+  scenario_nl: string;
+  scenario_en: string | null;
+  transcript_nl: string;
+  transcript_en: string | null;
+  audio_url: string | null;
+  audio_duration_seconds: number | null;
+  voice_config: ListeningVoiceConfig;
+  questions: ListeningQuestion[];
+  xp_reward: number;
+  estimated_minutes: number;
+  allow_replays: number;
+  unlock_after_task_id: number | null;
+};
+
+export type UserListeningSubmission = {
+  id: string;
+  user_id: string;
+  task_id: number;
+  answers: Record<string, string>;
+  score: number | null;
+  correct_count: number | null;
+  total_questions: number | null;
+  replays_used: number;
+  time_spent_seconds: number | null;
+  status: "draft" | "submitted" | "completed";
+  submitted_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type UserListeningProgress = {
+  user_id: string;
+  task_id: number;
+  status: "locked" | "available" | "in_progress" | "completed";
+  best_score: number | null;
+  attempts: number;
+  last_attempt_at: string | null;
+  completed_at: string | null;
+};
+
 export interface Database {
   public: {
     Tables: {
       profiles: {
         Row: Profile;
-        Insert: { id: string; username?: string | null; avatar_url?: string | null; current_level?: string; xp_total?: number; streak_days?: number; streak_last_date?: string | null; daily_goal_minutes?: number; exam_target_date?: string | null; streak_freeze_available?: boolean; leaderboard_opt_in?: boolean; role?: string; created_at?: string; writing_exam_target_date?: string | null; writing_xp_total?: number; writing_completed_count?: number };
-        Update: { id?: string; username?: string | null; avatar_url?: string | null; current_level?: string; xp_total?: number; streak_days?: number; streak_last_date?: string | null; daily_goal_minutes?: number; exam_target_date?: string | null; streak_freeze_available?: boolean; leaderboard_opt_in?: boolean; role?: string; created_at?: string; writing_exam_target_date?: string | null; writing_xp_total?: number; writing_completed_count?: number };
+        Insert: { id: string; username?: string | null; avatar_url?: string | null; current_level?: string; xp_total?: number; streak_days?: number; streak_last_date?: string | null; daily_goal_minutes?: number; exam_target_date?: string | null; streak_freeze_available?: boolean; leaderboard_opt_in?: boolean; role?: string; created_at?: string; writing_exam_target_date?: string | null; writing_xp_total?: number; writing_completed_count?: number; knm_exam_target_date?: string | null; listening_exam_target_date?: string | null; listening_xp_total?: number; listening_completed_count?: number };
+        Update: { id?: string; username?: string | null; avatar_url?: string | null; current_level?: string; xp_total?: number; streak_days?: number; streak_last_date?: string | null; daily_goal_minutes?: number; exam_target_date?: string | null; streak_freeze_available?: boolean; leaderboard_opt_in?: boolean; role?: string; created_at?: string; writing_exam_target_date?: string | null; writing_xp_total?: number; writing_completed_count?: number; knm_exam_target_date?: string | null; listening_exam_target_date?: string | null; listening_xp_total?: number; listening_completed_count?: number };
       };
       lessons: {
         Row: Lesson;
@@ -259,6 +341,21 @@ export interface Database {
         Row: WritingPhrase;
         Insert: { category: string; phrase_nl: string; phrase_en: string; example_nl?: string | null; formality: string };
         Update: { id?: number; category?: string; phrase_nl?: string; phrase_en?: string; example_nl?: string | null; formality?: string };
+      };
+      listening_tasks: {
+        Row: ListeningTask;
+        Insert: { level?: string; week: number; day: number; task_type: string; title: string; scenario_nl: string; scenario_en?: string | null; transcript_nl: string; transcript_en?: string | null; audio_url?: string | null; audio_duration_seconds?: number | null; voice_config: Json; questions: Json; xp_reward?: number; estimated_minutes?: number; allow_replays?: number; unlock_after_task_id?: number | null };
+        Update: { id?: number; level?: string; week?: number; day?: number; task_type?: string; title?: string; scenario_nl?: string; scenario_en?: string | null; transcript_nl?: string; transcript_en?: string | null; audio_url?: string | null; audio_duration_seconds?: number | null; voice_config?: Json; questions?: Json; xp_reward?: number; estimated_minutes?: number; allow_replays?: number; unlock_after_task_id?: number | null };
+      };
+      user_listening_submissions: {
+        Row: UserListeningSubmission;
+        Insert: { id?: string; user_id: string; task_id: number; answers?: Json; score?: number | null; correct_count?: number | null; total_questions?: number | null; replays_used?: number; time_spent_seconds?: number | null; status?: string; submitted_at?: string | null; created_at?: string; updated_at?: string };
+        Update: { id?: string; user_id?: string; task_id?: number; answers?: Json; score?: number | null; correct_count?: number | null; total_questions?: number | null; replays_used?: number; time_spent_seconds?: number | null; status?: string; submitted_at?: string | null; created_at?: string; updated_at?: string };
+      };
+      user_listening_progress: {
+        Row: UserListeningProgress;
+        Insert: { user_id: string; task_id: number; status?: string; best_score?: number | null; attempts?: number; last_attempt_at?: string | null; completed_at?: string | null };
+        Update: { user_id?: string; task_id?: number; status?: string; best_score?: number | null; attempts?: number; last_attempt_at?: string | null; completed_at?: string | null };
       };
     };
   };

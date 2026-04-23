@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "generate:listening-audio": "tsx scripts/generate-listening-audio.ts",
+    "seed:listening": "tsx scripts/seed-listening-tasks.ts"
   },
   "dependencies": {
     "@fontsource/noto-serif": "^5.2.9",
@@ -15,19 +17,23 @@
     "@supabase/supabase-js": "^2.100.0",
     "framer-motion": "^12.38.0",
     "lucide-react": "^1.6.0",
-    "next": "16.2.1",
+    "next": "^16.2.4",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "zustand": "^5.0.12"
   },
   "devDependencies": {
+    "@google-cloud/text-to-speech": "^5.6.0",
     "@tailwindcss/postcss": "^4",
+    "@types/fluent-ffmpeg": "^2.1.27",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.1",
+    "fluent-ffmpeg": "^2.1.3",
     "tailwindcss": "^4",
+    "tsx": "^4.19.2",
     "typescript": "^5"
   }
 }

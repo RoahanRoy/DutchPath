@@ -8,6 +8,8 @@ const NAV_ITEMS = [
   { href: "/dashboard", icon: "home", label: "Home" },
   { href: "/lessons", icon: "menu_book", label: "Lessons" },
   { href: "/writing", icon: "edit_note", label: "Writing" },
+  { href: "/listening", icon: "headphones", label: "Listening" },
+  { href: "/knm", icon: "public", label: "KNM" },
   { href: "/vocabulary", icon: "format_list_bulleted", label: "Vocab" },
   { href: "/profile", icon: "person", label: "Profile" },
 ];

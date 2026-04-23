@@ -10,8 +10,10 @@ const NAV_LINKS = [
   { href: "/dashboard", label: "Overzicht" },
   { href: "/lessons", label: "Lessen" },
   { href: "/writing", label: "Schrijven" },
+  { href: "/listening", label: "Luisteren" },
   { href: "/vocabulary", label: "Woordenschat" },
   { href: "/reading", label: "Lezen" },
+  { href: "/knm", label: "KNM" },
   { href: "/profile", label: "Profiel" },
 ];
 

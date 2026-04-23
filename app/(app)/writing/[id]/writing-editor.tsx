@@ -461,7 +461,7 @@ export function WritingEditor({ task, progress, draft, phrases, userId }: Props)
             <div>
               <p style={{ fontSize: 10, textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.1em", color: c.onSurfaceVariant, marginBottom: 8 }}>Jouw antwoord</p>
               <div style={{ background: "#FFFBF5", borderRadius: 16, padding: 16, borderLeft: `4px solid ${c.secondary}`, minHeight: 120 }}>
-                <pre style={{ fontFamily: font.body, fontSize: 12, lineHeight: 1.7, color: c.onSurface, margin: 0, whiteSpace: "pre-wrap" }}>
+                <pre style={{ fontFamily: font.body, fontSize: 12, lineHeight: 1.7, color: "#1C1B1A", margin: 0, whiteSpace: "pre-wrap" }}>
                   {submissionDisplay || "—"}
                 </pre>
               </div>
@@ -469,7 +469,7 @@ export function WritingEditor({ task, progress, draft, phrases, userId }: Props)
             <div>
               <p style={{ fontSize: 10, textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.1em", color: c.onSurfaceVariant, marginBottom: 8 }}>Voorbeeldantwoord</p>
               <div style={{ background: "#FFFBF5", borderRadius: 16, padding: 16, borderLeft: `4px solid ${c.primary}`, minHeight: 120 }}>
-                <pre style={{ fontFamily: font.body, fontSize: 12, lineHeight: 1.7, color: c.onSurface, margin: 0, whiteSpace: "pre-wrap" }}>
+                <pre style={{ fontFamily: font.body, fontSize: 12, lineHeight: 1.7, color: "#1C1B1A", margin: 0, whiteSpace: "pre-wrap" }}>
                   {task.model_answer_nl}
                 </pre>
               </div>
@@ -566,15 +566,15 @@ export function WritingEditor({ task, progress, draft, phrases, userId }: Props)
         {/* Scenario card */}
         <div style={{ background: "#FFFBF5", borderRadius: 20, padding: 20, borderLeft: `4px solid ${c.primaryContainer}`, marginBottom: 20, boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
-            <span style={{ fontSize: 10, textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.1em", color: c.onSurfaceVariant }}>Situatie</span>
+            <span style={{ fontSize: 10, textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.1em", color: "#6B6156" }}>Situatie</span>
             <button
               onClick={() => setShowEnglish((v) => !v)}
-              style={{ fontSize: 11, fontWeight: 700, color: c.primary, background: "transparent", border: "none", cursor: "pointer", padding: 0 }}
+              style={{ fontSize: 11, fontWeight: 700, color: "#3E5BA6", background: "transparent", border: "none", cursor: "pointer", padding: 0 }}
             >
               {showEnglish ? "NL" : "EN"}
             </button>
           </div>
-          <p style={{ fontFamily: font.body, fontSize: 15, lineHeight: 1.7, color: c.onSurface, margin: 0 }}>
+          <p style={{ fontFamily: font.body, fontSize: 15, lineHeight: 1.7, color: "#1C1B1A", margin: 0 }}>
             {showEnglish && task.scenario_en ? task.scenario_en : task.scenario_nl}
           </p>
         </div>

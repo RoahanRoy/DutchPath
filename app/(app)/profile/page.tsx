@@ -41,8 +41,14 @@ export default async function ProfilePage() {
     .select("status, best_score")
     .eq("user_id", user.id);
 
+  const { data: listeningProgressRaw } = await supabase
+    .from("user_listening_progress")
+    .select("status, best_score")
+    .eq("user_id", user.id);
+
   const progressStats = progressRaw as unknown as { status: string; score: number | null }[] ?? [];
   const writingProgressStats = writingProgressRaw as unknown as { status: string; best_score: number | null }[] ?? [];
+  const listeningProgressStats = listeningProgressRaw as unknown as { status: string; best_score: number | null }[] ?? [];
 
   const unlockedIds = new Set(userAchievements.map((ua) => ua.achievement_id));
   const completed = progressStats.filter((p) => p.status === "completed");
@@ -55,6 +61,11 @@ export default async function ProfilePage() {
     ? Math.round(writingCompleted.reduce((s, p) => s + (p.best_score ?? 0), 0) / writingCompleted.length)
     : 0;
 
+  const listeningCompleted = listeningProgressStats.filter((p) => p.status === "completed");
+  const listeningAvgScore = listeningCompleted.length > 0
+    ? Math.round(listeningCompleted.reduce((s, p) => s + (p.best_score ?? 0), 0) / listeningCompleted.length)
+    : 0;
+
   return (
     <ProfileClient
       profile={profile}
@@ -65,6 +76,8 @@ export default async function ProfilePage() {
       completedCount={completed.length}
       writingAvgScore={writingAvgScore}
       writingCompletedCount={writingCompleted.length}
+      listeningAvgScore={listeningAvgScore}
+      listeningCompletedCount={listeningCompleted.length}
     />
   );
 }

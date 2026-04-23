@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { DashboardClient } from "./dashboard-client";
 import { getAmsterdamDate } from "@/lib/utils";
-import type { DailyActivity, Lesson, WritingTask } from "@/lib/supabase/types";
+import type { DailyActivity, Lesson, WritingTask, ListeningTask } from "@/lib/supabase/types";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -86,6 +86,41 @@ export default async function DashboardPage() {
     .eq("user_id", user.id)
     .eq("status", "completed");
 
+  const { data: nextListeningRow } = await supabase
+    .from("user_listening_progress")
+    .select("task_id, listening_tasks(id, title, task_type, week, day, xp_reward, estimated_minutes)")
+    .eq("user_id", user.id)
+    .eq("status", "available")
+    .order("task_id", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  let nextListeningTask: ListeningTask | null =
+    (nextListeningRow as unknown as { listening_tasks: ListeningTask | null } | null)?.listening_tasks ?? null;
+  if (!nextListeningTask) {
+    const { data: firstListening } = await supabase
+      .from("listening_tasks")
+      .select("*")
+      .eq("level", "A2")
+      .order("week", { ascending: true })
+      .order("day", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    const { count: listeningProgressCount } = await supabase
+      .from("user_listening_progress")
+      .select("task_id", { count: "exact", head: true })
+      .eq("user_id", user.id);
+    if (firstListening && (listeningProgressCount ?? 0) === 0) {
+      nextListeningTask = firstListening as unknown as ListeningTask;
+    }
+  }
+
+  const { count: completedListeningCount } = await supabase
+    .from("user_listening_progress")
+    .select("task_id", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .eq("status", "completed");
+
   const todayActivity = activity.find((a) => a.date === today);
 
   return (
@@ -94,10 +129,12 @@ export default async function DashboardPage() {
       activity={activity}
       nextLesson={(nextLessonRow as unknown as { lessons: Lesson | null } | null)?.lessons ?? null}
       nextWritingTask={nextWritingTask}
+      nextListeningTask={nextListeningTask}
       vocabDueCount={vocabDueCount ?? 0}
       completedLessonsCount={completedLessonsCount ?? 0}
       masteredVocabCount={masteredVocabCount ?? 0}
       completedWritingCount={completedWritingCount ?? 0}
+      completedListeningCount={completedListeningCount ?? 0}
       todayXP={todayActivity?.xp_earned ?? 0}
     />
   );

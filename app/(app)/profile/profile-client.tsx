@@ -33,6 +33,8 @@ interface Props {
   completedCount: number;
   writingAvgScore: number;
   writingCompletedCount: number;
+  listeningAvgScore: number;
+  listeningCompletedCount: number;
 }
 
 const ACHIEVEMENT_TITLES: Record<string, string> = {
@@ -56,6 +58,9 @@ const ACHIEVEMENT_TITLES: Record<string, string> = {
   schrijver: "Writer",
   formele_meester: "Formal Master",
   schrijf_streak_7: "Writing Streak 7",
+  eerste_luister: "First Listen",
+  luisteraar: "Listener",
+  perfect_gehoor: "Perfect Ear",
 };
 
 const font = {
@@ -75,23 +80,29 @@ const LEVEL_CARDS = [
   { code: "B2", name: "Upper Intermediate", available: false },
 ];
 
-export function ProfileClient({ profile, activity, achievements, userId, avgScore, completedCount, writingAvgScore, writingCompletedCount }: Props) {
+export function ProfileClient({ profile, activity, achievements, userId, avgScore, completedCount, writingAvgScore, writingCompletedCount, listeningAvgScore, listeningCompletedCount }: Props) {
   const router = useRouter();
   const { isDark, toggle: toggleTheme } = useTheme();
   const c = getColors(isDark);
   const setProfile = useAppStore((s) => s.setProfile);
   const [examDate, setExamDate] = useState(profile?.exam_target_date ?? "");
   const [writingExamDate, setWritingExamDate] = useState(profile?.writing_exam_target_date ?? "");
+  const [knmExamDate, setKnmExamDate] = useState(profile?.knm_exam_target_date ?? "");
+  const [listeningExamDate, setListeningExamDate] = useState(profile?.listening_exam_target_date ?? "");
   const [goalMinutes, setGoalMinutes] = useState(profile?.daily_goal_minutes ?? 20);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [editingExam, setEditingExam] = useState(false);
   const [editingWritingExam, setEditingWritingExam] = useState(false);
+  const [editingKnmExam, setEditingKnmExam] = useState(false);
+  const [editingListeningExam, setEditingListeningExam] = useState(false);
 
   if (!profile) return null;
 
   const daysUntilExam = getDaysUntilExam(examDate);
   const daysUntilWritingExam = getDaysUntilExam(writingExamDate);
+  const daysUntilKnmExam = getDaysUntilExam(knmExamDate);
+  const daysUntilListeningExam = getDaysUntilExam(listeningExamDate);
   const unlockedCount = achievements.filter((a) => a.unlocked).length;
 
   const xpBars = activity.length > 0
@@ -107,6 +118,8 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
       .update({
         exam_target_date: examDate || null,
         writing_exam_target_date: writingExamDate || null,
+        knm_exam_target_date: knmExamDate || null,
+        listening_exam_target_date: listeningExamDate || null,
         daily_goal_minutes: goalMinutes,
       })
       .eq("id", userId)
@@ -117,6 +130,8 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
     setSaved(true);
     setEditingExam(false);
     setEditingWritingExam(false);
+    setEditingKnmExam(false);
+    setEditingListeningExam(false);
     setTimeout(() => setSaved(false), 2000);
   };
 
@@ -229,7 +244,7 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
 
         {/* ── Accuracy Rings + XP History ── */}
         <section style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
             {/* Reading ring */}
             <div style={{
               background: c.surfaceLowest, padding: 20, borderRadius: 24,
@@ -270,6 +285,27 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
               <span style={{ fontSize: 22, fontWeight: 900, color: c.secondary }}>{writingAvgScore}%</span>
               <p style={{ fontSize: 10, fontWeight: 700, color: c.onSurfaceVariant, margin: 0, textTransform: "uppercase", letterSpacing: "0.05em", textAlign: "center" }}>
                 Schrijven gem.<br />{writingCompletedCount} opdrachten
+              </p>
+            </div>
+            {/* Listening ring */}
+            <div style={{
+              background: c.surfaceLowest, padding: 20, borderRadius: 24,
+              display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
+              boxShadow: "0px 12px 32px rgba(26,28,27,0.06)",
+            }}>
+              <div style={{ position: "relative", width: 72, height: 72 }}>
+                <svg width={72} height={72} style={{ transform: "rotate(-90deg)" }}>
+                  <circle cx={36} cy={36} r={28} fill="transparent" stroke={c.surfaceHighest} strokeWidth={6} />
+                  <circle cx={36} cy={36} r={28} fill="transparent" stroke={c.tertiary} strokeWidth={6}
+                    strokeDasharray={176} strokeDashoffset={176 - (listeningAvgScore / 100) * 176} />
+                </svg>
+                <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <span className="mso" style={{ fontSize: 16, color: c.tertiary }}>headphones</span>
+                </div>
+              </div>
+              <span style={{ fontSize: 22, fontWeight: 900, color: c.tertiary }}>{listeningAvgScore}%</span>
+              <p style={{ fontSize: 10, fontWeight: 700, color: c.onSurfaceVariant, margin: 0, textTransform: "uppercase", letterSpacing: "0.05em", textAlign: "center" }}>
+                Luisteren gem.<br />{listeningCompletedCount} taken
               </p>
             </div>
           </div>
@@ -382,6 +418,90 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
                 {editingWritingExam && (
                   <button onClick={() => setEditingWritingExam(false)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 0 }}>
                     <span className="mso" style={{ fontSize: 18, color: c.secondary }}>check</span>
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* KNM Exam Date */}
+          <div style={{
+            display: "flex", justifyContent: "space-between", alignItems: "center",
+            padding: 16, background: c.surfaceLowest, borderRadius: 16,
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <span className="mso" style={{ color: c.tertiary, fontSize: 20 }}>public</span>
+              <span style={{ fontSize: 14, fontWeight: 700 }}>KNM-examendatum</span>
+            </div>
+            {daysUntilKnmExam !== null && daysUntilKnmExam > 0 && !editingKnmExam ? (
+              <button
+                onClick={() => setEditingKnmExam(true)}
+                style={{
+                  background: "transparent", border: "none", cursor: "pointer",
+                  display: "flex", alignItems: "center", gap: 6, padding: 0,
+                  fontFamily: font.headline,
+                }}
+              >
+                <span style={{ fontSize: 14, fontWeight: 900, color: c.tertiary }}>{daysUntilKnmExam} Dagen!</span>
+                <span className="mso" style={{ fontSize: 16, color: c.outline }}>edit</span>
+              </button>
+            ) : (
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <input
+                  type="date"
+                  value={knmExamDate}
+                  onChange={(e) => setKnmExamDate(e.target.value)}
+                  min={new Date().toISOString().split("T")[0]}
+                  style={{
+                    border: "none", background: "transparent", fontSize: 14, fontWeight: 700,
+                    color: c.onSurface, fontFamily: font.headline, outline: "none",
+                  }}
+                />
+                {editingKnmExam && (
+                  <button onClick={() => setEditingKnmExam(false)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 0 }}>
+                    <span className="mso" style={{ fontSize: 18, color: c.tertiary }}>check</span>
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Listening Exam Date */}
+          <div style={{
+            display: "flex", justifyContent: "space-between", alignItems: "center",
+            padding: 16, background: c.surfaceLowest, borderRadius: 16,
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <span className="mso" style={{ color: c.primary, fontSize: 20 }}>headphones</span>
+              <span style={{ fontSize: 14, fontWeight: 700 }}>Luisterexamendatum</span>
+            </div>
+            {daysUntilListeningExam !== null && daysUntilListeningExam > 0 && !editingListeningExam ? (
+              <button
+                onClick={() => setEditingListeningExam(true)}
+                style={{
+                  background: "transparent", border: "none", cursor: "pointer",
+                  display: "flex", alignItems: "center", gap: 6, padding: 0,
+                  fontFamily: font.headline,
+                }}
+              >
+                <span style={{ fontSize: 14, fontWeight: 900, color: c.primary }}>{daysUntilListeningExam} Dagen!</span>
+                <span className="mso" style={{ fontSize: 16, color: c.outline }}>edit</span>
+              </button>
+            ) : (
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <input
+                  type="date"
+                  value={listeningExamDate}
+                  onChange={(e) => setListeningExamDate(e.target.value)}
+                  min={new Date().toISOString().split("T")[0]}
+                  style={{
+                    border: "none", background: "transparent", fontSize: 14, fontWeight: 700,
+                    color: c.onSurface, fontFamily: font.headline, outline: "none",
+                  }}
+                />
+                {editingListeningExam && (
+                  <button onClick={() => setEditingListeningExam(false)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 0 }}>
+                    <span className="mso" style={{ fontSize: 18, color: c.primary }}>check</span>
                   </button>
                 )}
               </div>
