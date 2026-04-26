@@ -189,6 +189,54 @@ async function main() {
     }
   }
 
+  // ── Mock exam sections ──────────────────────────────────────────────
+  let examQuery = supabase
+    .from("listening_exam_sections")
+    .select("id, exam_id, voice_config, transcript_nl, audio_url");
+  if (!FORCE) examQuery = examQuery.is("audio_url", null);
+  const { data: examData, error: examErr } = await examQuery;
+  if (examErr) throw examErr;
+
+  const examRows = (examData ?? []) as {
+    id: number; exam_id: number; voice_config: VoiceConfig; transcript_nl: string; audio_url: string | null;
+  }[];
+  console.log(`\nFound ${examRows.length} exam section(s) to process${FORCE ? " (force)" : ""}.`);
+
+  for (const row of examRows) {
+    const cfg = row.voice_config;
+    try {
+      let audio: { buffer: Buffer; chars: number };
+      if (cfg.mode === "single") {
+        const buf = await synthesize(row.transcript_nl, cfg.voice, cfg.speakingRate ?? 0.9, cfg.pitch ?? 0);
+        audio = { buffer: buf, chars: row.transcript_nl.length };
+      } else {
+        audio = await buildDialogue(cfg.turns);
+      }
+      totalChars += audio.chars;
+
+      const duration = await probeDuration(audio.buffer);
+      const storagePath = `A2/exams/exam-${row.exam_id}/section-${row.id}.mp3`;
+
+      const { error: upErr } = await supabase.storage
+        .from(BUCKET)
+        .upload(storagePath, audio.buffer, { contentType: "audio/mpeg", upsert: true });
+      if (upErr) throw upErr;
+
+      const { data: pub } = supabase.storage.from(BUCKET).getPublicUrl(storagePath);
+      const publicUrl = pub.publicUrl;
+
+      const { error: updErr } = await supabase
+        .from("listening_exam_sections")
+        .update({ audio_url: publicUrl, audio_duration_seconds: duration })
+        .eq("id", row.id);
+      if (updErr) throw updErr;
+
+      console.log(`✓ exam ${row.exam_id} section ${row.id}  ${duration}s`);
+    } catch (e) {
+      console.error(`✗ exam section ${row.id} failed:`, e);
+    }
+  }
+
   console.log(`\nDone. Synthesized ~${totalChars} chars (free tier: 1M WaveNet/month).`);
 }
 
