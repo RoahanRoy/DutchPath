@@ -283,6 +283,51 @@ export type UserListeningProgress = {
   completed_at: string | null;
 };
 
+export type ListeningExam = {
+  id: number;
+  level: string;
+  slug: string;
+  title: string;
+  description: string | null;
+  total_questions: number;
+  passing_score: number;
+  estimated_minutes: number;
+  position: number;
+  created_at: string;
+};
+
+export type ListeningExamSection = {
+  id: number;
+  exam_id: number;
+  position: number;
+  task_type: ListeningTaskType;
+  title: string;
+  scenario_nl: string | null;
+  scenario_en: string | null;
+  transcript_nl: string;
+  transcript_en: string | null;
+  voice_config: ListeningVoiceConfig;
+  audio_url: string | null;
+  audio_duration_seconds: number | null;
+  questions: ListeningQuestion[];
+};
+
+export type UserListeningExamSubmission = {
+  id: string;
+  user_id: string;
+  exam_id: number;
+  answers: Record<string, string>; // keyed by `${section_id}:${question_id}`
+  score: number | null;
+  correct_count: number | null;
+  total_questions: number | null;
+  status: "draft" | "completed";
+  passed: boolean | null;
+  time_spent_seconds: number | null;
+  started_at: string;
+  submitted_at: string | null;
+  updated_at: string;
+};
+
 export interface Database {
   public: {
     Tables: {
