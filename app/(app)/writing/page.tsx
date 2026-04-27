@@ -9,7 +9,7 @@ export default async function WritingPage() {
   if (!user) redirect("/login");
 
   const [{ data: tasksRaw }, { data: progressRaw }, { data: profile }] = await Promise.all([
-    supabase.from("writing_tasks").select("*").eq("level", "A2").order("day"),
+    supabase.from("writing_tasks").select("*").eq("level", "A2").order("week").order("day"),
     supabase.from("user_writing_progress").select("*").eq("user_id", user.id),
     supabase.from("profiles").select("*").eq("id", user.id).single(),
   ]);

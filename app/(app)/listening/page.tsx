@@ -9,7 +9,7 @@ export default async function ListeningPage() {
   if (!user) redirect("/login");
 
   const [{ data: tasksRaw }, { data: progressRaw }, { data: profile }] = await Promise.all([
-    supabase.from("listening_tasks").select("*").eq("level", "A2").order("day"),
+    supabase.from("listening_tasks").select("*").eq("level", "A2").order("week").order("day"),
     supabase.from("user_listening_progress").select("*").eq("user_id", user.id),
     supabase.from("profiles").select("*").eq("id", user.id).single(),
   ]);
