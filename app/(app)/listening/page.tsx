@@ -20,13 +20,12 @@ export default async function ListeningPage() {
   const progress = (progressRaw ?? []) as UserListeningProgress[];
   const progressMap = new Map(progress.map((p) => [p.task_id, p]));
 
-  const firstTaskId = tasks[0]?.id;
-  const hasAnyProgress = progress.length > 0;
-
-  const tasksWithStatus = tasks.map((task) => {
+  const tasksWithStatus = tasks.map((task, idx) => {
     const p = progressMap.get(task.id);
+    const prev = idx === 0 ? null : tasks[idx - 1];
+    const prevCompleted = prev ? progressMap.get(prev.id)?.status === "completed" : true;
     let status: UserListeningProgress["status"] = p?.status ?? "locked";
-    if (!p && task.id === firstTaskId && !hasAnyProgress) status = "available";
+    if (status !== "completed" && status !== "in_progress" && prevCompleted) status = "available";
     return {
       ...task,
       progress: p ?? null,
