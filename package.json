@@ -9,7 +9,8 @@
     "lint": "eslint",
     "generate:listening-audio": "tsx scripts/generate-listening-audio.ts",
     "seed:listening": "tsx scripts/seed-listening-tasks.ts",
-    "seed:listening-exams": "tsx scripts/seed-listening-exams.ts"
+    "seed:listening-exams": "tsx scripts/seed-listening-exams.ts",
+    "seed:writing-exams": "tsx scripts/seed-writing-exams.ts"
   },
   "dependencies": {
     "@fontsource/noto-serif": "^5.2.9",
