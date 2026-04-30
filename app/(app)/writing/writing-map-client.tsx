@@ -122,6 +122,28 @@ export function WritingMapClient({ tasks, writingExamDate }: Props) {
           </div>
         )}
 
+        {/* ── Mock exams shortcut ── */}
+        <Link href="/writing/exams" style={{ textDecoration: "none" }}>
+          <div style={{
+            background: `linear-gradient(135deg, ${c.secondary}, ${c.secondaryContainer})`,
+            color: "#fff", padding: 18, borderRadius: 20,
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            marginBottom: 16, cursor: "pointer",
+            boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+              <div style={{ width: 44, height: 44, borderRadius: 9999, background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <span className="mso mso-fill" style={{ fontSize: 22, color: "#fff" }}>quiz</span>
+              </div>
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", opacity: 0.85 }}>Oefenexamens</div>
+                <div style={{ fontSize: 16, fontWeight: 800 }}>3 mock examens · A2</div>
+              </div>
+            </div>
+            <span className="mso" style={{ fontSize: 22, color: "rgba(255,255,255,0.7)" }}>chevron_right</span>
+          </div>
+        </Link>
+
         {/* ── Phrase library shortcut ── */}
         <Link href="/writing/phrases" style={{ textDecoration: "none" }}>
           <div style={{

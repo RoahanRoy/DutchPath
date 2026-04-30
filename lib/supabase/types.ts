@@ -184,6 +184,59 @@ export type UserWritingProgress = {
   completed_at: string | null;
 };
 
+export type WritingExam = {
+  id: number;
+  level: string;
+  slug: string;
+  title: string;
+  description: string | null;
+  total_sections: number;
+  passing_score: number;
+  estimated_minutes: number;
+  position: number;
+  created_at: string;
+};
+
+export type WritingExamSection = {
+  id: number;
+  exam_id: number;
+  position: number;
+  task_type: WritingTaskType;
+  title: string;
+  scenario_nl: string;
+  scenario_en: string | null;
+  instructions_nl: string;
+  required_elements: RequiredElement[];
+  word_count_min: number | null;
+  word_count_max: number | null;
+  model_answer_nl: string;
+  model_answer_notes: string | null;
+  useful_phrases: UsefulPhrase[] | null;
+};
+
+export type WritingExamAnswer = {
+  text: string;
+  form_fields?: Record<string, string> | null;
+  word_count: number;
+  self_score: SelfScore;
+};
+
+export type UserWritingExamSubmission = {
+  id: string;
+  user_id: string;
+  exam_id: number;
+  answers: Record<string, WritingExamAnswer>; // keyed by section id (string)
+  score: number | null;
+  total_points: number | null;
+  max_points: number | null;
+  status: "draft" | "completed";
+  passed: boolean | null;
+  time_spent_seconds: number | null;
+  started_at: string;
+  submitted_at: string | null;
+  updated_at: string;
+};
+
 export type WritingPhraseCategory =
   | "greeting_formal"
   | "greeting_informal"
