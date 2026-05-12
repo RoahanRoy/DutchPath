@@ -63,19 +63,44 @@ const tts = new textToSpeech.TextToSpeechClient();
 type AudioEncoding = protos.google.cloud.texttospeech.v1.AudioEncoding;
 const MP3: AudioEncoding = protos.google.cloud.texttospeech.v1.AudioEncoding.MP3;
 
+function isChirp3(voice: string): boolean {
+  return /Chirp3/i.test(voice);
+}
+
 async function synthesize(text: string, voice: string, rate = 0.9, pitch = 0): Promise<Buffer> {
+  const chirp = isChirp3(voice);
+  // Chirp3-HD voices reject SSML and `pitch`, and prefer no explicit sampleRateHertz.
+  const plainText = chirp ? text.replace(/<speak>|<\/speak>|<break[^/]*\/>/g, "") : text;
+  const useSsml = !chirp && text.startsWith("<speak>");
   const [response] = await tts.synthesizeSpeech({
-    input: text.startsWith("<speak>") ? { ssml: text } : { text },
+    input: useSsml ? { ssml: text } : { text: plainText },
     voice: { languageCode: "nl-NL", name: voice },
-    audioConfig: {
-      audioEncoding: MP3,
-      speakingRate: rate,
-      pitch,
-      sampleRateHertz: 24000,
-    },
+    audioConfig: chirp
+      ? { audioEncoding: MP3, speakingRate: rate }
+      : { audioEncoding: MP3, speakingRate: rate, pitch, sampleRateHertz: 24000 },
   });
   if (!response.audioContent) throw new Error("No audio returned");
   return Buffer.from(response.audioContent as Uint8Array);
+}
+
+async function silenceMp3(ms: number): Promise<Buffer> {
+  const dir = await mkdtemp(path.join(tmpdir(), "dp-sil-"));
+  try {
+    const out = path.join(dir, "sil.mp3");
+    await new Promise<void>((resolve, reject) => {
+      ffmpeg()
+        .input("/dev/zero")
+        .inputOptions(["-f", "s16le", "-ar", "24000", "-ac", "1", "-t", (ms / 1000).toString()])
+        .outputOptions(["-c:a", "libmp3lame", "-b:a", "64k"])
+        .output(out)
+        .on("end", () => resolve())
+        .on("error", reject)
+        .run();
+    });
+    return await readFile(out);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
 }
 
 async function concatMp3s(buffers: Buffer[]): Promise<Buffer> {
@@ -121,19 +146,16 @@ async function probeDuration(buf: Buffer): Promise<number> {
   }
 }
 
-function wrapWithPause(text: string, pauseMs: number): string {
-  if (!pauseMs) return text;
-  return `<speak>${text}<break time="${pauseMs}ms"/></speak>`;
-}
-
 async function buildDialogue(turns: VoiceTurn[]): Promise<{ buffer: Buffer; chars: number }> {
   const parts: Buffer[] = [];
   let chars = 0;
   for (const turn of turns) {
-    const text = turn.pauseAfterMs ? wrapWithPause(turn.text, turn.pauseAfterMs) : turn.text;
     chars += turn.text.length;
-    const buf = await synthesize(text, turn.voice, turn.speakingRate ?? 0.9, turn.pitch ?? 0);
+    const buf = await synthesize(turn.text, turn.voice, turn.speakingRate ?? 0.9, turn.pitch ?? 0);
     parts.push(buf);
+    if (turn.pauseAfterMs && turn.pauseAfterMs > 0) {
+      parts.push(await silenceMp3(turn.pauseAfterMs));
+    }
   }
   return { buffer: await concatMp3s(parts), chars };
 }
