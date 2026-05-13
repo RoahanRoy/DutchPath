@@ -181,13 +181,8 @@ export function ListeningMapClient({ tasks, listeningExamDate, level }: Props) {
                     {allDone ? (
                       <div style={{ height: "100%", width: "100%", background: c.primary }} />
                     ) : hasAnyProgress ? (
-                      <>
-                        <div style={{ height: `${(weekCompleted / weekTotal) * 100}%`, width: "100%", background: c.primary }} />
-                        <div style={{ height: `${100 - (weekCompleted / weekTotal) * 100}%`, width: "100%", borderLeft: `2px dashed ${c.outlineVariant}`, marginLeft: 1 }} />
-                      </>
-                    ) : (
-                      <div style={{ height: "100%", width: "100%", borderLeft: `2px dashed ${c.outlineVariant}`, marginLeft: 1 }} />
-                    )}
+                      <div style={{ height: `${(weekCompleted / weekTotal) * 100}%`, width: "100%", background: c.primary }} />
+                    ) : null}
                   </div>
 
                   {weekTasks.map((task) => {
