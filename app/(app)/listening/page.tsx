@@ -41,6 +41,7 @@ export default async function ListeningPage() {
   return (
     <ListeningMapClient
       tasks={tasksWithStatus}
+      level={level}
       listeningExamDate={
         level === "B1"
           ? (profile as Profile | null)?.b1_listening_exam_target_date ?? null

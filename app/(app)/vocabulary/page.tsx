@@ -8,7 +8,10 @@ export default async function VocabularyPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: cardsRaw } = await supabase.from("vocabulary_cards").select("*").order("id");
+  const { data: profile } = await supabase.from("profiles").select("current_level").eq("id", user.id).single();
+  const level = (profile as { current_level: string } | null)?.current_level ?? "A2";
+
+  const { data: cardsRaw } = await supabase.from("vocabulary_cards").select("*").eq("level", level).order("id");
   const { data: userVocabRaw } = await supabase.from("user_vocabulary").select("*").eq("user_id", user.id);
 
   const cards: VocabCard[] = (cardsRaw as unknown as VocabCard[]) ?? [];
