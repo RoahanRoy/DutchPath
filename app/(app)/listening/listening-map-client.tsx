@@ -181,8 +181,13 @@ export function ListeningMapClient({ tasks, listeningExamDate, level }: Props) {
                     {allDone ? (
                       <div style={{ height: "100%", width: "100%", background: c.primary }} />
                     ) : hasAnyProgress ? (
-                      <div style={{ height: `${(weekCompleted / weekTotal) * 100}%`, width: "100%", background: c.primary }} />
-                    ) : null}
+                      <>
+                        <div style={{ height: `${(weekCompleted / weekTotal) * 100}%`, width: "100%", background: c.primary }} />
+                        <div style={{ height: `${100 - (weekCompleted / weekTotal) * 100}%`, width: "100%", borderLeft: `2px dashed ${c.outlineVariant}`, marginLeft: 1 }} />
+                      </>
+                    ) : (
+                      <div style={{ height: "100%", width: "100%", borderLeft: `2px dashed ${c.outlineVariant}`, marginLeft: 1 }} />
+                    )}
                   </div>
 
                   {weekTasks.map((task) => {
@@ -202,9 +207,8 @@ export function ListeningMapClient({ tasks, listeningExamDate, level }: Props) {
                         <div style={{
                           position: "relative", width: "100%", minHeight: 56,
                           display: "flex", alignItems: "center",
-                          opacity: isLockedTask ? 0.4 : 1,
                         }}>
-                          <div style={{ width: "calc(50% - 40px)", textAlign: "right", paddingRight: 12 }}>
+                          <div style={{ width: "calc(50% - 40px)", textAlign: "right", paddingRight: 12, opacity: isLockedTask ? 0.4 : 1 }}>
                             <span style={{ fontWeight: 700, color: isCompleted ? c.primary : c.onSurface, fontSize: 14 }}>
                               {task.title}
                             </span>
@@ -242,11 +246,11 @@ export function ListeningMapClient({ tasks, listeningExamDate, level }: Props) {
                               </span>
                             )}
                             {isLockedTask && (
-                              <span className="mso" style={{ fontSize: 24, display: "block", lineHeight: 1 }}>lock</span>
+                              <span className="mso" style={{ fontSize: 24, display: "block", lineHeight: 1, opacity: 0.5 }}>lock</span>
                             )}
                           </div>
 
-                          <div style={{ width: "calc(50% - 40px)", marginLeft: "auto", paddingLeft: 12 }}>
+                          <div style={{ width: "calc(50% - 40px)", marginLeft: "auto", paddingLeft: 12, opacity: isLockedTask ? 0.4 : 1 }}>
                             <span style={{
                               padding: "2px 8px", borderRadius: 9999, fontSize: 10, fontWeight: 700,
                               background: `${tColor}1a`, color: tColor,

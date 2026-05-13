@@ -129,8 +129,13 @@ export function LessonMapClient({ lessons }: Props) {
                     {allDone ? (
                       <div style={{ height: "100%", width: "100%", background: c.primary }} />
                     ) : hasAnyProgress ? (
-                      <div style={{ height: `${(weekCompleted / weekTotal) * 100}%`, width: "100%", background: c.primary }} />
-                    ) : null}
+                      <>
+                        <div style={{ height: `${(weekCompleted / weekTotal) * 100}%`, width: "100%", background: c.primary }} />
+                        <div style={{ height: `${100 - (weekCompleted / weekTotal) * 100}%`, width: "100%", borderLeft: `2px dashed ${c.outlineVariant}`, marginLeft: 1 }} />
+                      </>
+                    ) : (
+                      <div style={{ height: "100%", width: "100%", borderLeft: `2px dashed ${c.outlineVariant}`, marginLeft: 1 }} />
+                    )}
                   </div>
 
                   {weekLessons.map((lesson) => {
@@ -151,10 +156,9 @@ export function LessonMapClient({ lessons }: Props) {
                         <div style={{
                           position: "relative", width: "100%", minHeight: 56,
                           display: "flex", alignItems: "center",
-                          opacity: isLockedLesson ? 0.4 : 1,
                         }}>
                           {/* Left label — right-aligned, stops before circle */}
-                          <div style={{ width: "calc(50% - 40px)", textAlign: "right", paddingRight: 12 }}>
+                          <div style={{ width: "calc(50% - 40px)", textAlign: "right", paddingRight: 12, opacity: isLockedLesson ? 0.4 : 1 }}>
                             <span style={{ fontWeight: 700, color: isCompleted ? c.primary : c.onSurface, fontSize: 14 }}>
                               {lesson.title}
                             </span>
@@ -208,12 +212,13 @@ export function LessonMapClient({ lessons }: Props) {
                               <span className="mso" style={{
                                 fontSize: 24,
                                 display: "block", lineHeight: 1, verticalAlign: "baseline",
+                                opacity: 0.5,
                               }}>lock</span>
                             )}
                           </div>
 
                           {/* Right label — left-aligned, starts after circle */}
-                          <div style={{ width: "calc(50% - 40px)", marginLeft: "auto", paddingLeft: 12 }}>
+                          <div style={{ width: "calc(50% - 40px)", marginLeft: "auto", paddingLeft: 12, opacity: isLockedLesson ? 0.4 : 1 }}>
                             <span style={{
                               padding: "2px 8px", borderRadius: 9999, fontSize: 10, fontWeight: 700,
                               background: `${typeColor}1a`, color: typeColor,
