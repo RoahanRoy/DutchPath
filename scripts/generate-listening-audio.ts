@@ -224,6 +224,16 @@ async function main() {
   }[];
   console.log(`\nFound ${examRows.length} exam section(s) to process${FORCE ? " (force)" : ""}.`);
 
+  // Fetch the parent exam's level so we can store sections under the right prefix.
+  const examIds = Array.from(new Set(examRows.map((r) => r.exam_id)));
+  const { data: examLevelData } = await supabase
+    .from("listening_exams")
+    .select("id, level")
+    .in("id", examIds);
+  const examLevelById = new Map<number, string>(
+    (examLevelData ?? []).map((e: { id: number; level: string }) => [e.id, e.level]),
+  );
+
   for (const row of examRows) {
     const cfg = row.voice_config;
     try {
@@ -237,7 +247,8 @@ async function main() {
       totalChars += audio.chars;
 
       const duration = await probeDuration(audio.buffer);
-      const storagePath = `A2/exams/exam-${row.exam_id}/section-${row.id}.mp3`;
+      const examLevel = examLevelById.get(row.exam_id) ?? "A2";
+      const storagePath = `${examLevel}/exams/exam-${row.exam_id}/section-${row.id}.mp3`;
 
       const { error: upErr } = await supabase.storage
         .from(BUCKET)
