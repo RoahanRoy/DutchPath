@@ -8,13 +8,17 @@ export default async function ListeningPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [{ data: tasksRaw }, { data: progressRaw }, { data: profile }] = await Promise.all([
-    supabase.from("listening_tasks").select("*").eq("level", "A2").order("week").order("day"),
-    supabase.from("user_listening_progress").select("*").eq("user_id", user.id),
-    supabase.from("profiles").select("*").eq("id", user.id).single(),
-  ]);
+  const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
+  const level = (profile as Profile | null)?.current_level ?? "A2";
+  const listeningExamDone = level === "B1"
+    ? (profile as Profile | null)?.b1_listening_exam_completed
+    : (profile as Profile | null)?.listening_exam_completed;
+  if (listeningExamDone) redirect("/dashboard");
 
-  if ((profile as Profile | null)?.listening_exam_completed) redirect("/dashboard");
+  const [{ data: tasksRaw }, { data: progressRaw }] = await Promise.all([
+    supabase.from("listening_tasks").select("*").eq("level", level).order("week").order("day"),
+    supabase.from("user_listening_progress").select("*").eq("user_id", user.id),
+  ]);
 
   const tasks = (tasksRaw ?? []) as unknown as ListeningTask[];
   const progress = (progressRaw ?? []) as UserListeningProgress[];
@@ -37,7 +41,11 @@ export default async function ListeningPage() {
   return (
     <ListeningMapClient
       tasks={tasksWithStatus}
-      listeningExamDate={(profile as Profile | null)?.listening_exam_target_date ?? null}
+      listeningExamDate={
+        level === "B1"
+          ? (profile as Profile | null)?.b1_listening_exam_target_date ?? null
+          : (profile as Profile | null)?.listening_exam_target_date ?? null
+      }
     />
   );
 }

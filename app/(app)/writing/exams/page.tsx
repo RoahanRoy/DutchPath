@@ -8,6 +8,13 @@ export default async function WritingExamsPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("current_level")
+    .eq("id", user.id)
+    .single();
+  const level = (profile as { current_level: string } | null)?.current_level ?? "A2";
+
   const { data: examsRaw } = await (supabase as unknown as {
     from: (t: string) => {
       select: (cols: string) => {
@@ -16,7 +23,7 @@ export default async function WritingExamsPage() {
         };
       };
     };
-  }).from("writing_exams").select("*").eq("level", "A2").order("position");
+  }).from("writing_exams").select("*").eq("level", level).order("position");
 
   const exams = examsRaw ?? [];
 

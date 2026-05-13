@@ -74,10 +74,10 @@ const GOAL_OPTIONS = [
   { value: 30, emoji: "🔥", label: "30min" },
 ];
 
-const LEVEL_CARDS = [
+const LEVEL_CARDS: { code: "A2" | "B1" | "B2"; name: string; available: boolean }[] = [
   { code: "A2", name: "Basic Dutch", available: true },
-  { code: "B1", name: "Intermediate", available: false },
-  { code: "B2", name: "Upper Intermediate", available: false },
+  { code: "B1", name: "Staatsexamen NT2 I", available: true },
+  { code: "B2", name: "Staatsexamen NT2 II", available: false },
 ];
 
 export function ProfileClient({ profile, activity, achievements, userId, avgScore, completedCount, writingAvgScore, writingCompletedCount, listeningAvgScore, listeningCompletedCount }: Props) {
@@ -85,14 +85,34 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
   const { isDark, toggle: toggleTheme } = useTheme();
   const c = getColors(isDark);
   const setProfile = useAppStore((s) => s.setProfile);
-  const [examDate, setExamDate] = useState(profile?.exam_target_date ?? "");
-  const [writingExamDate, setWritingExamDate] = useState(profile?.writing_exam_target_date ?? "");
+  const [currentLevel, setCurrentLevel] = useState<"A2" | "B1" | "B2">(
+    (profile?.current_level as "A2" | "B1" | "B2") ?? "A2",
+  );
+  const isB1 = currentLevel === "B1";
+  // Keep separate state per level so toggling doesn't clobber the other level's edits.
+  const [examDateA2, setExamDateA2] = useState(profile?.exam_target_date ?? "");
+  const [writingExamDateA2, setWritingExamDateA2] = useState(profile?.writing_exam_target_date ?? "");
   const [knmExamDate, setKnmExamDate] = useState(profile?.knm_exam_target_date ?? "");
-  const [listeningExamDate, setListeningExamDate] = useState(profile?.listening_exam_target_date ?? "");
-  const [examCompleted, setExamCompleted] = useState(profile?.exam_completed ?? false);
-  const [writingExamCompleted, setWritingExamCompleted] = useState(profile?.writing_exam_completed ?? false);
+  const [listeningExamDateA2, setListeningExamDateA2] = useState(profile?.listening_exam_target_date ?? "");
+  const [examDateB1, setExamDateB1] = useState(profile?.b1_exam_target_date ?? "");
+  const [writingExamDateB1, setWritingExamDateB1] = useState(profile?.b1_writing_exam_target_date ?? "");
+  const [listeningExamDateB1, setListeningExamDateB1] = useState(profile?.b1_listening_exam_target_date ?? "");
+  const examDate = isB1 ? examDateB1 : examDateA2;
+  const setExamDate = isB1 ? setExamDateB1 : setExamDateA2;
+  const writingExamDate = isB1 ? writingExamDateB1 : writingExamDateA2;
+  const setWritingExamDate = isB1 ? setWritingExamDateB1 : setWritingExamDateA2;
+  const listeningExamDate = isB1 ? listeningExamDateB1 : listeningExamDateA2;
+  const setListeningExamDate = isB1 ? setListeningExamDateB1 : setListeningExamDateA2;
+  const [examCompletedA2, setExamCompletedA2] = useState(profile?.exam_completed ?? false);
+  const [writingExamCompletedA2, setWritingExamCompletedA2] = useState(profile?.writing_exam_completed ?? false);
   const [knmExamCompleted, setKnmExamCompleted] = useState(profile?.knm_exam_completed ?? false);
-  const [listeningExamCompleted, setListeningExamCompleted] = useState(profile?.listening_exam_completed ?? false);
+  const [listeningExamCompletedA2, setListeningExamCompletedA2] = useState(profile?.listening_exam_completed ?? false);
+  const [examCompletedB1, setExamCompletedB1] = useState(profile?.b1_exam_completed ?? false);
+  const [writingExamCompletedB1, setWritingExamCompletedB1] = useState(profile?.b1_writing_exam_completed ?? false);
+  const [listeningExamCompletedB1, setListeningExamCompletedB1] = useState(profile?.b1_listening_exam_completed ?? false);
+  const examCompleted = isB1 ? examCompletedB1 : examCompletedA2;
+  const writingExamCompleted = isB1 ? writingExamCompletedB1 : writingExamCompletedA2;
+  const listeningExamCompleted = isB1 ? listeningExamCompletedB1 : listeningExamCompletedA2;
   const [goalMinutes, setGoalMinutes] = useState(profile?.daily_goal_minutes ?? 20);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -117,15 +137,23 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
   const handleSave = async () => {
     setSaving(true);
     const supabase = createClient();
+    const payload: Record<string, unknown> = isB1
+      ? {
+          b1_exam_target_date: examDate || null,
+          b1_writing_exam_target_date: writingExamDate || null,
+          b1_listening_exam_target_date: listeningExamDate || null,
+          daily_goal_minutes: goalMinutes,
+        }
+      : {
+          exam_target_date: examDate || null,
+          writing_exam_target_date: writingExamDate || null,
+          knm_exam_target_date: knmExamDate || null,
+          listening_exam_target_date: listeningExamDate || null,
+          daily_goal_minutes: goalMinutes,
+        };
     const { data } = await (supabase as any)
       .from("profiles")
-      .update({
-        exam_target_date: examDate || null,
-        writing_exam_target_date: writingExamDate || null,
-        knm_exam_target_date: knmExamDate || null,
-        listening_exam_target_date: listeningExamDate || null,
-        daily_goal_minutes: goalMinutes,
-      })
+      .update(payload)
       .eq("id", userId)
       .select()
       .single();
@@ -139,25 +167,55 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
     setTimeout(() => setSaved(false), 2000);
   };
 
+  type A2CompletionCol = "exam_completed" | "writing_exam_completed" | "knm_exam_completed" | "listening_exam_completed";
   const toggleExamCompleted = async (
-    column: "exam_completed" | "writing_exam_completed" | "knm_exam_completed" | "listening_exam_completed",
+    column: A2CompletionCol,
     next: boolean,
   ) => {
-    const setters: Record<typeof column, (v: boolean) => void> = {
-      exam_completed: setExamCompleted,
-      writing_exam_completed: setWritingExamCompleted,
+    // Map A2 column → B1 column when on B1 (KNM has no B1 equivalent).
+    const dbColumn = isB1 && column !== "knm_exam_completed"
+      ? ({
+          exam_completed: "b1_exam_completed",
+          writing_exam_completed: "b1_writing_exam_completed",
+          listening_exam_completed: "b1_listening_exam_completed",
+        } as Record<A2CompletionCol, string>)[column]
+      : column;
+    const settersA2: Record<A2CompletionCol, (v: boolean) => void> = {
+      exam_completed: setExamCompletedA2,
+      writing_exam_completed: setWritingExamCompletedA2,
       knm_exam_completed: setKnmExamCompleted,
-      listening_exam_completed: setListeningExamCompleted,
+      listening_exam_completed: setListeningExamCompletedA2,
     };
-    setters[column](next);
+    const settersB1: Partial<Record<A2CompletionCol, (v: boolean) => void>> = {
+      exam_completed: setExamCompletedB1,
+      writing_exam_completed: setWritingExamCompletedB1,
+      listening_exam_completed: setListeningExamCompletedB1,
+    };
+    const setter = (isB1 ? settersB1[column] : settersA2[column]) ?? settersA2[column];
+    setter(next);
     const supabase = createClient();
     const { data } = await (supabase as any)
       .from("profiles")
-      .update({ [column]: next })
+      .update({ [dbColumn]: next })
       .eq("id", userId)
       .select()
       .single();
     if (data) setProfile(data);
+  };
+
+  const switchLevel = async (next: "A2" | "B1" | "B2") => {
+    if (next === currentLevel) return;
+    setCurrentLevel(next);
+    const supabase = createClient();
+    const { data } = await (supabase as any)
+      .from("profiles")
+      .update({ current_level: next })
+      .eq("id", userId)
+      .select()
+      .single();
+    if (data) setProfile(data);
+    // Force a router refresh so server pages pick up the new level filter.
+    router.refresh();
   };
 
   const handleSignOut = async () => {
@@ -206,7 +264,7 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
               borderRadius: 9999, background: c.primaryContainer, color: "#fff",
               fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em",
             }}>
-              Level {profile.current_level}
+              Level {currentLevel}
             </span>
           </div>
 
@@ -235,20 +293,37 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
             Current learning path
           </h3>
           <div style={{ display: "flex", gap: 16, overflowX: "auto", paddingBottom: 16 }} className="no-scrollbar">
-            {LEVEL_CARDS.map((lvl, i) => {
+            {LEVEL_CARDS.map((lvl) => {
+              const isActive = lvl.code === currentLevel;
               const pct = lvl.available ? Math.min(100, Math.round((completedCount / 30) * 100)) : 0;
+              const dim = !lvl.available;
               return (
-                <div key={lvl.code} style={{
-                  minWidth: 200, padding: 20, borderRadius: 24,
-                  display: "flex", flexDirection: "column", gap: 12,
-                  background: lvl.available ? c.surfaceLowest : c.surfaceLow,
-                  border: lvl.available ? `2px solid ${c.primary}` : "none",
-                  opacity: i === 2 ? 0.4 : i === 1 ? 0.6 : 1,
-                }}>
+                <button
+                  type="button"
+                  key={lvl.code}
+                  onClick={() => lvl.available && switchLevel(lvl.code)}
+                  disabled={!lvl.available}
+                  aria-pressed={isActive}
+                  style={{
+                    minWidth: 200, padding: 20, borderRadius: 24,
+                    display: "flex", flexDirection: "column", gap: 12,
+                    background: isActive ? c.surfaceLowest : c.surfaceLow,
+                    border: isActive ? `2px solid ${c.primary}` : "2px solid transparent",
+                    opacity: dim ? 0.4 : 1,
+                    cursor: lvl.available ? "pointer" : "default",
+                    textAlign: "left",
+                    fontFamily: font.headline,
+                    transition: "border-color 0.2s, background 0.2s",
+                  }}
+                >
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                     <span style={{ fontSize: 24, fontWeight: 900, color: lvl.available ? c.primary : c.outline }}>{lvl.code}</span>
                     {lvl.available ? (
-                      <span style={{ fontSize: 12, fontWeight: 700, color: c.primary }}>{pct}%</span>
+                      isActive ? (
+                        <span style={{ fontSize: 10, fontWeight: 800, color: c.primary, textTransform: "uppercase", letterSpacing: "0.1em" }}>Active</span>
+                      ) : (
+                        <span style={{ fontSize: 12, fontWeight: 700, color: c.primary }}>{pct}%</span>
+                      )
                     ) : (
                       <span className="mso" style={{ color: c.outline, fontSize: 20 }}>lock</span>
                     )}
@@ -261,7 +336,7 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
                   ) : (
                     <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", color: c.outline }}>Coming soon</span>
                   )}
-                </div>
+                </button>
               );
             })}
           </div>
@@ -483,7 +558,8 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
             </button>
           </div>
 
-          {/* KNM Exam Date */}
+          {/* KNM Exam Date — A2 inburgering only; not part of Programma I (B1). */}
+          {!isB1 && (
           <div style={{
             display: "flex", flexDirection: "column", gap: 8,
             padding: 16, background: c.surfaceLowest, borderRadius: 16,
@@ -541,6 +617,7 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
               {knmExamCompleted ? "Undo completion" : "Mark as completed"}
             </button>
           </div>
+          )}
 
           {/* Listening Exam Date */}
           <div style={{
