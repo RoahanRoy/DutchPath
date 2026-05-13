@@ -15,6 +15,7 @@ interface TaskWithStatus extends WritingTask {
 interface Props {
   tasks: TaskWithStatus[];
   writingExamDate: string | null;
+  level: string;
 }
 
 const font = {
@@ -55,7 +56,7 @@ function typeColor(type: WritingTaskType, c: ReturnType<typeof getColors>) {
   }
 }
 
-export function WritingMapClient({ tasks, writingExamDate }: Props) {
+export function WritingMapClient({ tasks, writingExamDate, level }: Props) {
   const { isDark } = useTheme();
   const c = getColors(isDark);
   const [selectedTask, setSelectedTask] = useState<TaskWithStatus | null>(null);
@@ -137,7 +138,7 @@ export function WritingMapClient({ tasks, writingExamDate }: Props) {
               </div>
               <div>
                 <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", opacity: 0.85 }}>Oefenexamens</div>
-                <div style={{ fontSize: 16, fontWeight: 800 }}>3 mock examens · A2</div>
+                <div style={{ fontSize: 16, fontWeight: 800 }}>3 mock examens · {level}</div>
               </div>
             </div>
             <span className="mso" style={{ fontSize: 22, color: "rgba(255,255,255,0.7)" }}>chevron_right</span>

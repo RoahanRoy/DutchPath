@@ -43,6 +43,7 @@ export default async function WritingPage() {
   return (
     <WritingMapClient
       tasks={tasksWithStatus}
+      level={level}
       writingExamDate={
         level === "B1"
           ? (profile as Profile | null)?.b1_writing_exam_target_date ?? null

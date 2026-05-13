@@ -53,5 +53,5 @@ export default async function WritingExamsPage() {
     attempts: subs.filter((s) => s.exam_id === e.id && s.status === "completed").length,
   }));
 
-  return <ExamsListClient exams={examsWithStats} />;
+  return <ExamsListClient exams={examsWithStats} level={level} />;
 }

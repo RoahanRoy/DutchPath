@@ -10,7 +10,7 @@ type ExamWithStats = ListeningExam & {
   attempts: number;
 };
 
-export function ExamsListClient({ exams }: { exams: ExamWithStats[] }) {
+export function ExamsListClient({ exams, level }: { exams: ExamWithStats[]; level: string }) {
   const { isDark } = useTheme();
   const c = getColors(isDark);
 
@@ -26,7 +26,7 @@ export function ExamsListClient({ exams }: { exams: ExamWithStats[] }) {
           Oefenexamens
         </h1>
         <p style={{ fontSize: 14, color: c.onSurfaceVariant, marginTop: 4, marginBottom: 24 }}>
-          Drie volledige A2 luisterexamens. Elk examen bestaat uit vijf fragmenten met in totaal twintig vragen. Tijdens het examen kun je elk fragment maar één keer beluisteren.
+          Drie volledige {level} luisterexamens. Elk examen bestaat uit vijf fragmenten met in totaal twintig vragen. Tijdens het examen kun je elk fragment maar één keer beluisteren.
         </p>
 
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>

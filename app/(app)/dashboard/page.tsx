@@ -25,14 +25,17 @@ export default async function DashboardPage() {
 
   const activity: DailyActivity[] = activityRaw ?? [];
 
+  const level = (profile as { current_level: string } | null)?.current_level ?? "A2";
+
   const { data: nextLessonRow } = await supabase
     .from("user_lesson_progress")
-    .select("lesson_id, lessons(id, title, type, week, day, xp_reward, estimated_minutes)")
+    .select("lesson_id, lessons!inner(id, title, type, week, day, xp_reward, estimated_minutes, level)")
     .eq("user_id", user.id)
     .eq("status", "available")
+    .eq("lessons.level", level)
     .order("lesson_id", { ascending: true })
     .limit(1)
-    .single();
+    .maybeSingle();
 
   const { count: vocabDueCount } = await supabase
     .from("user_vocabulary")
@@ -54,28 +57,26 @@ export default async function DashboardPage() {
 
   const { data: nextWritingRow } = await supabase
     .from("user_writing_progress")
-    .select("task_id, writing_tasks(id, title, task_type, week, day, xp_reward, estimated_minutes)")
+    .select("task_id, writing_tasks!inner(id, title, task_type, week, day, xp_reward, estimated_minutes, level)")
     .eq("user_id", user.id)
     .eq("status", "available")
+    .eq("writing_tasks.level", level)
     .order("task_id", { ascending: true })
     .limit(1)
     .maybeSingle();
 
-  // If no progress at all, first task is implicitly available
+  // If no progress at this level yet, first task is implicitly available
   let nextWritingTask: WritingTask | null = (nextWritingRow as unknown as { writing_tasks: WritingTask | null } | null)?.writing_tasks ?? null;
   if (!nextWritingTask) {
     const { data: firstTask } = await supabase
       .from("writing_tasks")
       .select("*")
-      .eq("level", (profile as { current_level: string } | null)?.current_level ?? "A2")
+      .eq("level", level)
+      .order("week", { ascending: true })
       .order("day", { ascending: true })
       .limit(1)
       .maybeSingle();
-    const { count: writingProgressCount } = await supabase
-      .from("user_writing_progress")
-      .select("task_id", { count: "exact", head: true })
-      .eq("user_id", user.id);
-    if (firstTask && (writingProgressCount ?? 0) === 0) {
+    if (firstTask) {
       nextWritingTask = firstTask as unknown as WritingTask;
     }
   }
@@ -88,9 +89,10 @@ export default async function DashboardPage() {
 
   const { data: nextListeningRow } = await supabase
     .from("user_listening_progress")
-    .select("task_id, listening_tasks(id, title, task_type, week, day, xp_reward, estimated_minutes)")
+    .select("task_id, listening_tasks!inner(id, title, task_type, week, day, xp_reward, estimated_minutes, level)")
     .eq("user_id", user.id)
     .eq("status", "available")
+    .eq("listening_tasks.level", level)
     .order("task_id", { ascending: true })
     .limit(1)
     .maybeSingle();
@@ -101,16 +103,12 @@ export default async function DashboardPage() {
     const { data: firstListening } = await supabase
       .from("listening_tasks")
       .select("*")
-      .eq("level", (profile as { current_level: string } | null)?.current_level ?? "A2")
+      .eq("level", level)
       .order("week", { ascending: true })
       .order("day", { ascending: true })
       .limit(1)
       .maybeSingle();
-    const { count: listeningProgressCount } = await supabase
-      .from("user_listening_progress")
-      .select("task_id", { count: "exact", head: true })
-      .eq("user_id", user.id);
-    if (firstListening && (listeningProgressCount ?? 0) === 0) {
+    if (firstListening) {
       nextListeningTask = firstListening as unknown as ListeningTask;
     }
   }

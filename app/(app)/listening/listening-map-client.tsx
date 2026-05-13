@@ -15,6 +15,7 @@ interface TaskWithStatus extends ListeningTask {
 interface Props {
   tasks: TaskWithStatus[];
   listeningExamDate: string | null;
+  level: string;
 }
 
 const font = {
@@ -55,7 +56,7 @@ function typeColor(type: ListeningTaskType, c: ReturnType<typeof getColors>) {
   }
 }
 
-export function ListeningMapClient({ tasks, listeningExamDate }: Props) {
+export function ListeningMapClient({ tasks, listeningExamDate, level }: Props) {
   const { isDark } = useTheme();
   const c = getColors(isDark);
   const [selectedTask, setSelectedTask] = useState<TaskWithStatus | null>(null);
@@ -109,7 +110,7 @@ export function ListeningMapClient({ tasks, listeningExamDate }: Props) {
               </div>
               <div>
                 <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", opacity: 0.85 }}>Oefenexamens</div>
-                <div style={{ fontSize: 16, fontWeight: 800 }}>3 mock examens · A2</div>
+                <div style={{ fontSize: 16, fontWeight: 800 }}>3 mock examens · {level}</div>
               </div>
             </div>
             <span className="mso" style={{ fontSize: 22, color: "rgba(255,255,255,0.7)" }}>chevron_right</span>

@@ -146,7 +146,7 @@ export function DashboardClient({
     { icon: "check_circle", color: "#16a34a", value: completedLessonsCount, label: "Lessons" },
     { icon: "edit_note", color: c.secondaryContainer, value: completedWritingCount, label: "Writing" },
     { icon: "headphones", color: c.tertiary, value: completedListeningCount, label: "Listening" },
-    { icon: "trending_up", color: c.primary, value: `A2`, label: "Level" },
+    { icon: "trending_up", color: c.primary, value: profile.current_level, label: "Level" },
   ];
 
   return (
