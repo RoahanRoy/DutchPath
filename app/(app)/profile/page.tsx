@@ -31,40 +31,62 @@ export default async function ProfilePage() {
     .eq("user_id", user.id);
   const userAchievements: UserAchievement[] = (userAchievementsRaw as unknown as UserAchievement[]) ?? [];
 
-  const { data: progressRaw } = await supabase
-    .from("user_lesson_progress")
-    .select("status, score")
-    .eq("user_id", user.id);
+  const currentLevel = (profile as { current_level: string } | null)?.current_level ?? "A2";
 
-  const { data: writingProgressRaw } = await supabase
-    .from("user_writing_progress")
-    .select("status, best_score")
-    .eq("user_id", user.id);
+  // Per-level progress: inner-join the parent table so we can group by level.
+  const [{ data: lessonProgRaw }, { data: writingProgRaw }, { data: listeningProgRaw }] = await Promise.all([
+    supabase
+      .from("user_lesson_progress")
+      .select("status, score, lessons!inner(level)")
+      .eq("user_id", user.id)
+      .eq("status", "completed"),
+    supabase
+      .from("user_writing_progress")
+      .select("status, best_score, writing_tasks!inner(level)")
+      .eq("user_id", user.id)
+      .eq("status", "completed"),
+    supabase
+      .from("user_listening_progress")
+      .select("status, best_score, listening_tasks!inner(level)")
+      .eq("user_id", user.id)
+      .eq("status", "completed"),
+  ]);
 
-  const { data: listeningProgressRaw } = await supabase
-    .from("user_listening_progress")
-    .select("status, best_score")
-    .eq("user_id", user.id);
+  type LessonRow = { score: number | null; lessons: { level: string } };
+  type WritingRow = { best_score: number | null; writing_tasks: { level: string } };
+  type ListeningRow = { best_score: number | null; listening_tasks: { level: string } };
+  const lessonRows = (lessonProgRaw as unknown as LessonRow[] | null) ?? [];
+  const writingRows = (writingProgRaw as unknown as WritingRow[] | null) ?? [];
+  const listeningRows = (listeningProgRaw as unknown as ListeningRow[] | null) ?? [];
 
-  const progressStats = progressRaw as unknown as { status: string; score: number | null }[] ?? [];
-  const writingProgressStats = writingProgressRaw as unknown as { status: string; best_score: number | null }[] ?? [];
-  const listeningProgressStats = listeningProgressRaw as unknown as { status: string; best_score: number | null }[] ?? [];
+  const filteredLessons = lessonRows.filter((r) => r.lessons?.level === currentLevel);
+  const filteredWriting = writingRows.filter((r) => r.writing_tasks?.level === currentLevel);
+  const filteredListening = listeningRows.filter((r) => r.listening_tasks?.level === currentLevel);
+
+  const avgScore = filteredLessons.length > 0
+    ? Math.round(filteredLessons.reduce((s, p) => s + (p.score ?? 0), 0) / filteredLessons.length)
+    : 0;
+  const writingAvgScore = filteredWriting.length > 0
+    ? Math.round(filteredWriting.reduce((s, p) => s + (p.best_score ?? 0), 0) / filteredWriting.length)
+    : 0;
+  const listeningAvgScore = filteredListening.length > 0
+    ? Math.round(filteredListening.reduce((s, p) => s + (p.best_score ?? 0), 0) / filteredListening.length)
+    : 0;
+
+  // Per-level completed counts for the level-path progress bars.
+  const lessonsCompletedByLevel: Record<string, number> = {};
+  for (const r of lessonRows) {
+    const k = r.lessons?.level;
+    if (k) lessonsCompletedByLevel[k] = (lessonsCompletedByLevel[k] ?? 0) + 1;
+  }
+
+  // Lesson totals per level (active levels only).
+  const [{ count: a2LessonTotal }, { count: b1LessonTotal }] = await Promise.all([
+    supabase.from("lessons").select("id", { count: "exact", head: true }).eq("level", "A2"),
+    supabase.from("lessons").select("id", { count: "exact", head: true }).eq("level", "B1"),
+  ]);
 
   const unlockedIds = new Set(userAchievements.map((ua) => ua.achievement_id));
-  const completed = progressStats.filter((p) => p.status === "completed");
-  const avgScore = completed.length > 0
-    ? Math.round(completed.reduce((s, p) => s + (p.score ?? 0), 0) / completed.length)
-    : 0;
-
-  const writingCompleted = writingProgressStats.filter((p) => p.status === "completed");
-  const writingAvgScore = writingCompleted.length > 0
-    ? Math.round(writingCompleted.reduce((s, p) => s + (p.best_score ?? 0), 0) / writingCompleted.length)
-    : 0;
-
-  const listeningCompleted = listeningProgressStats.filter((p) => p.status === "completed");
-  const listeningAvgScore = listeningCompleted.length > 0
-    ? Math.round(listeningCompleted.reduce((s, p) => s + (p.best_score ?? 0), 0) / listeningCompleted.length)
-    : 0;
 
   return (
     <ProfileClient
@@ -73,11 +95,13 @@ export default async function ProfilePage() {
       achievements={achievements.map((a) => ({ ...a, unlocked: unlockedIds.has(a.id) }))}
       userId={user.id}
       avgScore={avgScore}
-      completedCount={completed.length}
+      completedCount={filteredLessons.length}
       writingAvgScore={writingAvgScore}
-      writingCompletedCount={writingCompleted.length}
+      writingCompletedCount={filteredWriting.length}
       listeningAvgScore={listeningAvgScore}
-      listeningCompletedCount={listeningCompleted.length}
+      listeningCompletedCount={filteredListening.length}
+      lessonsCompletedByLevel={lessonsCompletedByLevel}
+      lessonTotalsByLevel={{ A2: a2LessonTotal ?? 0, B1: b1LessonTotal ?? 0 }}
     />
   );
 }

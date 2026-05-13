@@ -35,6 +35,8 @@ interface Props {
   writingCompletedCount: number;
   listeningAvgScore: number;
   listeningCompletedCount: number;
+  lessonsCompletedByLevel: Record<string, number>;
+  lessonTotalsByLevel: Record<string, number>;
 }
 
 const ACHIEVEMENT_TITLES: Record<string, string> = {
@@ -80,7 +82,7 @@ const LEVEL_CARDS: { code: "A2" | "B1" | "B2"; name: string; available: boolean 
   { code: "B2", name: "Staatsexamen NT2 II", available: false },
 ];
 
-export function ProfileClient({ profile, activity, achievements, userId, avgScore, completedCount, writingAvgScore, writingCompletedCount, listeningAvgScore, listeningCompletedCount }: Props) {
+export function ProfileClient({ profile, activity, achievements, userId, avgScore, completedCount, writingAvgScore, writingCompletedCount, listeningAvgScore, listeningCompletedCount, lessonsCompletedByLevel, lessonTotalsByLevel }: Props) {
   const router = useRouter();
   const { isDark, toggle: toggleTheme } = useTheme();
   const c = getColors(isDark);
@@ -295,7 +297,11 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
           <div style={{ display: "flex", gap: 16, overflowX: "auto", paddingBottom: 16 }} className="no-scrollbar">
             {LEVEL_CARDS.map((lvl) => {
               const isActive = lvl.code === currentLevel;
-              const pct = lvl.available ? Math.min(100, Math.round((completedCount / 30) * 100)) : 0;
+              const cardTotal = lessonTotalsByLevel[lvl.code] ?? 0;
+              const cardDone = lessonsCompletedByLevel[lvl.code] ?? 0;
+              const pct = lvl.available && cardTotal > 0
+                ? Math.min(100, Math.round((cardDone / cardTotal) * 100))
+                : 0;
               const dim = !lvl.available;
               return (
                 <button
