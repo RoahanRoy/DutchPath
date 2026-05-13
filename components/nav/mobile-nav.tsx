@@ -5,12 +5,18 @@ import { usePathname } from "next/navigation";
 import { useAppStore } from "@/lib/store";
 import { useTheme, getColors } from "@/lib/use-theme";
 
-const NAV_ITEMS: { href: string; icon: string; label: string; hideWhen?: "writing_exam_completed" | "listening_exam_completed" | "knm_exam_completed" | "exam_completed" }[] = [
+const NAV_ITEMS: {
+  href: string;
+  icon: string;
+  label: string;
+  hideWhen?: "writing_exam_completed" | "listening_exam_completed" | "knm_exam_completed" | "exam_completed";
+  hideAtB1?: boolean;
+}[] = [
   { href: "/dashboard", icon: "home", label: "Home" },
   { href: "/lessons", icon: "menu_book", label: "Lessons", hideWhen: "exam_completed" },
   { href: "/writing", icon: "edit_note", label: "Writing", hideWhen: "writing_exam_completed" },
   { href: "/listening", icon: "headphones", label: "Listening", hideWhen: "listening_exam_completed" },
-  { href: "/knm", icon: "public", label: "KNM", hideWhen: "knm_exam_completed" },
+  { href: "/knm", icon: "public", label: "KNM", hideWhen: "knm_exam_completed", hideAtB1: true },
   { href: "/vocabulary", icon: "format_list_bulleted", label: "Vocab" },
   { href: "/profile", icon: "person", label: "Profile" },
 ];
@@ -41,7 +47,16 @@ export function MobileNav() {
         border: c.glassBorder !== "transparent" ? `1px solid ${c.glassBorder}` : "none",
         transition: "background 0.3s",
       }}>
-        {NAV_ITEMS.filter(({ hideWhen }) => !(hideWhen && profile && (profile as any)[hideWhen])).map(({ href, icon, label }) => {
+        {NAV_ITEMS.filter(({ hideWhen, hideAtB1 }) => {
+          if (!profile) return true;
+          const p = profile as unknown as Record<string, unknown>;
+          if (hideAtB1 && p.current_level === "B1") return false;
+          if (!hideWhen) return true;
+          const flag = p.current_level === "B1"
+            ? ({ exam_completed: "b1_exam_completed", writing_exam_completed: "b1_writing_exam_completed", listening_exam_completed: "b1_listening_exam_completed" } as Record<string, string>)[hideWhen] ?? hideWhen
+            : hideWhen;
+          return !p[flag];
+        }).map(({ href, icon, label }) => {
           const active = pathname.startsWith(href);
           return (
             <Link

@@ -8,13 +8,17 @@ export default async function WritingPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [{ data: tasksRaw }, { data: progressRaw }, { data: profile }] = await Promise.all([
-    supabase.from("writing_tasks").select("*").eq("level", "A2").order("week").order("day"),
-    supabase.from("user_writing_progress").select("*").eq("user_id", user.id),
-    supabase.from("profiles").select("*").eq("id", user.id).single(),
-  ]);
+  const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
+  const level = (profile as Profile | null)?.current_level ?? "A2";
+  const writingExamDone = level === "B1"
+    ? (profile as Profile | null)?.b1_writing_exam_completed
+    : (profile as Profile | null)?.writing_exam_completed;
+  if (writingExamDone) redirect("/dashboard");
 
-  if ((profile as Profile | null)?.writing_exam_completed) redirect("/dashboard");
+  const [{ data: tasksRaw }, { data: progressRaw }] = await Promise.all([
+    supabase.from("writing_tasks").select("*").eq("level", level).order("week").order("day"),
+    supabase.from("user_writing_progress").select("*").eq("user_id", user.id),
+  ]);
 
   const tasks = (tasksRaw ?? []) as unknown as WritingTask[];
   const progress = (progressRaw ?? []) as UserWritingProgress[];
@@ -39,7 +43,11 @@ export default async function WritingPage() {
   return (
     <WritingMapClient
       tasks={tasksWithStatus}
-      writingExamDate={(profile as Profile | null)?.writing_exam_target_date ?? null}
+      writingExamDate={
+        level === "B1"
+          ? (profile as Profile | null)?.b1_writing_exam_target_date ?? null
+          : (profile as Profile | null)?.writing_exam_target_date ?? null
+      }
     />
   );
 }

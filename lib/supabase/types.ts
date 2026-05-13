@@ -26,6 +26,12 @@ export type Profile = {
   writing_exam_completed: boolean;
   knm_exam_completed: boolean;
   listening_exam_completed: boolean;
+  b1_exam_target_date: string | null;
+  b1_exam_completed: boolean;
+  b1_writing_exam_target_date: string | null;
+  b1_writing_exam_completed: boolean;
+  b1_listening_exam_target_date: string | null;
+  b1_listening_exam_completed: boolean;
 };
 
 export type Lesson = {
@@ -386,8 +392,8 @@ export interface Database {
     Tables: {
       profiles: {
         Row: Profile;
-        Insert: { id: string; username?: string | null; avatar_url?: string | null; current_level?: string; xp_total?: number; streak_days?: number; streak_last_date?: string | null; daily_goal_minutes?: number; exam_target_date?: string | null; streak_freeze_available?: boolean; leaderboard_opt_in?: boolean; role?: string; created_at?: string; writing_exam_target_date?: string | null; writing_xp_total?: number; writing_completed_count?: number; knm_exam_target_date?: string | null; listening_exam_target_date?: string | null; listening_xp_total?: number; listening_completed_count?: number; exam_completed?: boolean; writing_exam_completed?: boolean; knm_exam_completed?: boolean; listening_exam_completed?: boolean };
-        Update: { id?: string; username?: string | null; avatar_url?: string | null; current_level?: string; xp_total?: number; streak_days?: number; streak_last_date?: string | null; daily_goal_minutes?: number; exam_target_date?: string | null; streak_freeze_available?: boolean; leaderboard_opt_in?: boolean; role?: string; created_at?: string; writing_exam_target_date?: string | null; writing_xp_total?: number; writing_completed_count?: number; knm_exam_target_date?: string | null; listening_exam_target_date?: string | null; listening_xp_total?: number; listening_completed_count?: number; exam_completed?: boolean; writing_exam_completed?: boolean; knm_exam_completed?: boolean; listening_exam_completed?: boolean };
+        Insert: { id: string; username?: string | null; avatar_url?: string | null; current_level?: string; xp_total?: number; streak_days?: number; streak_last_date?: string | null; daily_goal_minutes?: number; exam_target_date?: string | null; streak_freeze_available?: boolean; leaderboard_opt_in?: boolean; role?: string; created_at?: string; writing_exam_target_date?: string | null; writing_xp_total?: number; writing_completed_count?: number; knm_exam_target_date?: string | null; listening_exam_target_date?: string | null; listening_xp_total?: number; listening_completed_count?: number; exam_completed?: boolean; writing_exam_completed?: boolean; knm_exam_completed?: boolean; listening_exam_completed?: boolean; b1_exam_target_date?: string | null; b1_exam_completed?: boolean; b1_writing_exam_target_date?: string | null; b1_writing_exam_completed?: boolean; b1_listening_exam_target_date?: string | null; b1_listening_exam_completed?: boolean };
+        Update: { id?: string; username?: string | null; avatar_url?: string | null; current_level?: string; xp_total?: number; streak_days?: number; streak_last_date?: string | null; daily_goal_minutes?: number; exam_target_date?: string | null; streak_freeze_available?: boolean; leaderboard_opt_in?: boolean; role?: string; created_at?: string; writing_exam_target_date?: string | null; writing_xp_total?: number; writing_completed_count?: number; knm_exam_target_date?: string | null; listening_exam_target_date?: string | null; listening_xp_total?: number; listening_completed_count?: number; exam_completed?: boolean; writing_exam_completed?: boolean; knm_exam_completed?: boolean; listening_exam_completed?: boolean; b1_exam_target_date?: string | null; b1_exam_completed?: boolean; b1_writing_exam_target_date?: string | null; b1_writing_exam_completed?: boolean; b1_listening_exam_target_date?: string | null; b1_listening_exam_completed?: boolean };
       };
       lessons: {
         Row: Lesson;

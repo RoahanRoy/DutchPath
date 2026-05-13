@@ -67,7 +67,7 @@ export default async function DashboardPage() {
     const { data: firstTask } = await supabase
       .from("writing_tasks")
       .select("*")
-      .eq("level", "A2")
+      .eq("level", (profile as { current_level: string } | null)?.current_level ?? "A2")
       .order("day", { ascending: true })
       .limit(1)
       .maybeSingle();
@@ -101,7 +101,7 @@ export default async function DashboardPage() {
     const { data: firstListening } = await supabase
       .from("listening_tasks")
       .select("*")
-      .eq("level", "A2")
+      .eq("level", (profile as { current_level: string } | null)?.current_level ?? "A2")
       .order("week", { ascending: true })
       .order("day", { ascending: true })
       .limit(1)

@@ -7,7 +7,13 @@ export default async function KnmPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: profile } = await supabase.from("profiles").select("knm_exam_completed").eq("id", user.id).single();
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("knm_exam_completed, current_level")
+    .eq("id", user.id)
+    .single();
+  // KNM is an A2 inburgering module; not part of Programma I (B1).
+  if ((profile as { current_level: string } | null)?.current_level === "B1") redirect("/dashboard");
   if ((profile as { knm_exam_completed: boolean } | null)?.knm_exam_completed) redirect("/dashboard");
 
   return <KnmClient />;

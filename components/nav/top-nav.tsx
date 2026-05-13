@@ -6,14 +6,28 @@ import { useAppStore } from "@/lib/store";
 import { createClient } from "@/lib/supabase/client";
 import { useTheme, getColors } from "@/lib/use-theme";
 
-const NAV_LINKS: { href: string; label: string; hideWhen?: "writing_exam_completed" | "listening_exam_completed" | "exam_completed" | "knm_exam_completed" }[] = [
+type CompletionFlag =
+  | "writing_exam_completed"
+  | "listening_exam_completed"
+  | "exam_completed"
+  | "knm_exam_completed"
+  | "b1_writing_exam_completed"
+  | "b1_listening_exam_completed"
+  | "b1_exam_completed";
+
+const NAV_LINKS: {
+  href: string;
+  label: string;
+  hideWhen?: CompletionFlag;
+  hideAtB1?: boolean;
+}[] = [
   { href: "/dashboard", label: "Overzicht" },
   { href: "/lessons", label: "Lessen", hideWhen: "exam_completed" },
   { href: "/writing", label: "Schrijven", hideWhen: "writing_exam_completed" },
   { href: "/listening", label: "Luisteren", hideWhen: "listening_exam_completed" },
   { href: "/vocabulary", label: "Woordenschat" },
   { href: "/reading", label: "Lezen", hideWhen: "exam_completed" },
-  { href: "/knm", label: "KNM", hideWhen: "knm_exam_completed" },
+  { href: "/knm", label: "KNM", hideWhen: "knm_exam_completed", hideAtB1: true },
   { href: "/profile", label: "Profiel" },
 ];
 
@@ -93,7 +107,16 @@ export function TopNav() {
           overflowX: "auto", whiteSpace: "nowrap",
         }}
       >
-        {NAV_LINKS.filter(({ hideWhen }) => !(hideWhen && profile && (profile as any)[hideWhen])).map(({ href, label }) => {
+        {NAV_LINKS.filter(({ hideWhen, hideAtB1 }) => {
+          if (!profile) return true;
+          const p = profile as unknown as Record<string, unknown>;
+          if (hideAtB1 && p.current_level === "B1") return false;
+          if (!hideWhen) return true;
+          const flag = p.current_level === "B1"
+            ? ({ exam_completed: "b1_exam_completed", writing_exam_completed: "b1_writing_exam_completed", listening_exam_completed: "b1_listening_exam_completed" } as Record<string, string>)[hideWhen] ?? hideWhen
+            : hideWhen;
+          return !p[flag];
+        }).map(({ href, label }) => {
           const active = pathname.startsWith(href);
           return (
             <Link
