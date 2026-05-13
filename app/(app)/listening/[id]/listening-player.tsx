@@ -461,7 +461,7 @@ export function ListeningPlayer({ task, progress, draft, userId }: Props) {
           background: c.surfaceLowest, borderRadius: 20, padding: 24, marginBottom: 20,
           boxShadow: "0px 4px 24px rgba(0,0,0,0.06)",
         }}>
-          <audio ref={audioRef} src={task.audio_url ?? undefined} preload="auto" />
+          <audio ref={audioRef} src={task.audio_url ?? undefined} preload="metadata" />
 
           <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
             <button

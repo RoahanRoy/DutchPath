@@ -193,6 +193,9 @@ async function main() {
         .upload(storagePath, audio.buffer, {
           contentType: "audio/mpeg",
           upsert: true,
+          // Audio content is immutable per (level, week, task_id) — long cache
+          // keeps repeat plays on the CDN and off our egress allowance.
+          cacheControl: "31536000",
         });
       if (upErr) throw upErr;
 
@@ -252,7 +255,7 @@ async function main() {
 
       const { error: upErr } = await supabase.storage
         .from(BUCKET)
-        .upload(storagePath, audio.buffer, { contentType: "audio/mpeg", upsert: true });
+        .upload(storagePath, audio.buffer, { contentType: "audio/mpeg", upsert: true, cacheControl: "31536000" });
       if (upErr) throw upErr;
 
       const { data: pub } = supabase.storage.from(BUCKET).getPublicUrl(storagePath);
