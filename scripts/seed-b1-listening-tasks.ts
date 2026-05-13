@@ -18,9 +18,9 @@ if (!SUPABASE_URL || !SERVICE_ROLE) {
 const supabase = createClient(SUPABASE_URL, SERVICE_ROLE, { auth: { persistSession: false } });
 
 const V = {
-  MALE: "nl-NL-Wavenet-B",
-  FEMALE_A: "nl-NL-Wavenet-D",
-  FEMALE_B: "nl-NL-Wavenet-E",
+  MALE: "nl-NL-Chirp3-HD-Charon",
+  FEMALE_A: "nl-NL-Chirp3-HD-Kore",
+  FEMALE_B: "nl-NL-Chirp3-HD-Leda",
 };
 
 type SeedTask = {
