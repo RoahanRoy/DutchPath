@@ -14,12 +14,15 @@ export default async function LessonPage({ params }: { params: Promise<{ id: str
   const lessonId = parseInt(id);
   if (isNaN(lessonId)) notFound();
 
-  const [{ data: lesson }, { data: progress }] = await Promise.all([
+  const [{ data: lesson }, { data: progress }, { data: nextLesson }] = await Promise.all([
     supabase.from("lessons").select("*").eq("id", lessonId).single(),
     supabase.from("user_lesson_progress").select("*").eq("user_id", user.id).eq("lesson_id", lessonId).single(),
+    supabase.from("lessons").select("id").eq("unlock_after_lesson_id", lessonId).maybeSingle(),
   ]);
 
   if (!lesson) notFound();
 
-  return <LessonPlayer lesson={lesson} progress={progress} userId={user.id} />;
+  const nextLessonId = (nextLesson as { id: number } | null)?.id ?? null;
+
+  return <LessonPlayer lesson={lesson} progress={progress} userId={user.id} nextLessonId={nextLessonId} />;
 }

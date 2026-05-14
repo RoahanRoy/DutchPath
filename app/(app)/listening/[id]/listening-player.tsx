@@ -20,6 +20,7 @@ interface Props {
   progress: UserListeningProgress | null;
   draft: UserListeningSubmission | null;
   userId: string;
+  nextTaskId: number | null;
 }
 
 type Phase = "listen" | "answer" | "review";
@@ -29,7 +30,7 @@ const font = {
   body: "'Noto Serif', serif",
 };
 
-export function ListeningPlayer({ task, progress, draft, userId }: Props) {
+export function ListeningPlayer({ task, progress, draft, userId, nextTaskId }: Props) {
   const router = useRouter();
   const { isDark } = useTheme();
   const c = getColors(isDark);
@@ -394,25 +395,25 @@ export function ListeningPlayer({ task, progress, draft, userId }: Props) {
           </div>
 
           <div style={{ display: "flex", gap: 12 }}>
-            <Link
-              href="/listening"
-              style={{
-                flex: 1, padding: 16, textAlign: "center", background: c.surfaceHigh,
-                color: c.onSurface, borderRadius: 9999, fontWeight: 800, fontSize: 15, textDecoration: "none",
-              }}
-            >
-              Terug naar overzicht
-            </Link>
             <button
               onClick={() => router.refresh()}
               style={{
-                flex: 1, padding: 16, textAlign: "center",
-                background: `linear-gradient(to bottom, ${c.primary}, ${c.primaryContainer})`,
-                color: "#fff", borderRadius: 9999, fontWeight: 800, fontSize: 15, border: "none", cursor: "pointer",
+                flex: 1, padding: 16, textAlign: "center", background: c.surfaceHigh,
+                color: c.onSurface, borderRadius: 9999, fontWeight: 800, fontSize: 15, border: "none", cursor: "pointer",
               }}
             >
               Opnieuw proberen
             </button>
+            <Link
+              href={nextTaskId ? `/listening/${nextTaskId}` : "/listening"}
+              style={{
+                flex: 1, padding: 16, textAlign: "center",
+                background: `linear-gradient(to bottom, ${c.primary}, ${c.primaryContainer})`,
+                color: "#fff", borderRadius: 9999, fontWeight: 800, fontSize: 15, textDecoration: "none",
+              }}
+            >
+              {nextTaskId ? "Volgende les" : "Terug naar overzicht"}
+            </Link>
           </div>
         </div>
       </div>

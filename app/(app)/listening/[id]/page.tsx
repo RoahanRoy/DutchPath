@@ -20,7 +20,7 @@ export default async function ListeningTaskPage({
   const taskId = parseInt(id);
   if (isNaN(taskId)) notFound();
 
-  const [{ data: taskRaw }, { data: progressRaw }, { data: draftRaw }] = await Promise.all([
+  const [{ data: taskRaw }, { data: progressRaw }, { data: draftRaw }, { data: nextRaw }] = await Promise.all([
     supabase.from("listening_tasks").select("*").eq("id", taskId).single(),
     supabase.from("user_listening_progress").select("*").eq("user_id", user.id).eq("task_id", taskId).maybeSingle(),
     supabase
@@ -32,6 +32,7 @@ export default async function ListeningTaskPage({
       .order("updated_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
+    supabase.from("listening_tasks").select("id").eq("unlock_after_task_id", taskId).maybeSingle(),
   ]);
 
   if (!taskRaw) notFound();
@@ -39,6 +40,7 @@ export default async function ListeningTaskPage({
   const task = taskRaw as unknown as ListeningTask;
   const progress = (progressRaw as unknown as UserListeningProgress | null) ?? null;
   const draft = (draftRaw as unknown as UserListeningSubmission | null) ?? null;
+  const nextTaskId = (nextRaw as { id: number } | null)?.id ?? null;
 
   return (
     <ListeningPlayer
@@ -46,6 +48,7 @@ export default async function ListeningTaskPage({
       progress={progress}
       draft={draft}
       userId={user.id}
+      nextTaskId={nextTaskId}
     />
   );
 }
