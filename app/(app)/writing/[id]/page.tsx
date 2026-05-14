@@ -21,7 +21,7 @@ export default async function WritingTaskPage({
   const taskId = parseInt(id);
   if (isNaN(taskId)) notFound();
 
-  const [{ data: taskRaw }, { data: progressRaw }, { data: draftRaw }, { data: phrasesRaw }, { data: nextRaw }] = await Promise.all([
+  const [{ data: taskRaw }, { data: progressRaw }, { data: draftRaw }, { data: phrasesRaw }] = await Promise.all([
     supabase.from("writing_tasks").select("*").eq("id", taskId).single(),
     supabase.from("user_writing_progress").select("*").eq("user_id", user.id).eq("task_id", taskId).maybeSingle(),
     supabase
@@ -34,7 +34,6 @@ export default async function WritingTaskPage({
       .limit(1)
       .maybeSingle(),
     supabase.from("writing_phrases").select("*"),
-    supabase.from("writing_tasks").select("id").eq("unlock_after_task_id", taskId).maybeSingle(),
   ]);
 
   if (!taskRaw) notFound();
@@ -43,6 +42,16 @@ export default async function WritingTaskPage({
   const progress = (progressRaw as unknown as UserWritingProgress | null) ?? null;
   const draft = (draftRaw as unknown as UserWritingSubmission | null) ?? null;
   const phrases = ((phrasesRaw ?? []) as unknown as WritingPhrase[]);
+
+  const { data: nextRaw } = await supabase
+    .from("writing_tasks")
+    .select("id")
+    .eq("level", task.level)
+    .or(`week.gt.${task.week},and(week.eq.${task.week},day.gt.${task.day})`)
+    .order("week", { ascending: true })
+    .order("day", { ascending: true })
+    .limit(1)
+    .maybeSingle();
   const nextTaskId = (nextRaw as { id: number } | null)?.id ?? null;
 
   return (
