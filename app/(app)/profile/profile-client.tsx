@@ -116,8 +116,6 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
   const writingExamCompleted = isB1 ? writingExamCompletedB1 : writingExamCompletedA2;
   const listeningExamCompleted = isB1 ? listeningExamCompletedB1 : listeningExamCompletedA2;
   const [goalMinutes, setGoalMinutes] = useState(profile?.daily_goal_minutes ?? 20);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
   const [editingExam, setEditingExam] = useState(false);
   const [editingWritingExam, setEditingWritingExam] = useState(false);
   const [editingKnmExam, setEditingKnmExam] = useState(false);
@@ -136,37 +134,15 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
     : [0];
   const maxXP = Math.max(...xpBars, 1);
 
-  const handleSave = async () => {
-    setSaving(true);
+  const saveFields = async (fields: Record<string, unknown>) => {
     const supabase = createClient();
-    const payload: Record<string, unknown> = isB1
-      ? {
-          b1_exam_target_date: examDate || null,
-          b1_writing_exam_target_date: writingExamDate || null,
-          b1_listening_exam_target_date: listeningExamDate || null,
-          daily_goal_minutes: goalMinutes,
-        }
-      : {
-          exam_target_date: examDate || null,
-          writing_exam_target_date: writingExamDate || null,
-          knm_exam_target_date: knmExamDate || null,
-          listening_exam_target_date: listeningExamDate || null,
-          daily_goal_minutes: goalMinutes,
-        };
     const { data } = await (supabase as any)
       .from("profiles")
-      .update(payload)
+      .update(fields)
       .eq("id", userId)
       .select()
       .single();
     if (data) setProfile(data);
-    setSaving(false);
-    setSaved(true);
-    setEditingExam(false);
-    setEditingWritingExam(false);
-    setEditingKnmExam(false);
-    setEditingListeningExam(false);
-    setTimeout(() => setSaved(false), 2000);
   };
 
   type A2CompletionCol = "exam_completed" | "writing_exam_completed" | "knm_exam_completed" | "listening_exam_completed";
@@ -486,7 +462,7 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
                     }}
                   />
                   {editingExam && (
-                    <button onClick={() => setEditingExam(false)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 0 }}>
+                    <button onClick={() => { setEditingExam(false); saveFields(isB1 ? { b1_exam_target_date: examDate || null } : { exam_target_date: examDate || null }); }} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 0 }}>
                       <span className="mso" style={{ fontSize: 18, color: c.primary }}>check</span>
                     </button>
                   )}
@@ -545,7 +521,7 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
                     }}
                   />
                   {editingWritingExam && (
-                    <button onClick={() => setEditingWritingExam(false)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 0 }}>
+                    <button onClick={() => { setEditingWritingExam(false); saveFields(isB1 ? { b1_writing_exam_target_date: writingExamDate || null } : { writing_exam_target_date: writingExamDate || null }); }} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 0 }}>
                       <span className="mso" style={{ fontSize: 18, color: c.secondary }}>check</span>
                     </button>
                   )}
@@ -605,7 +581,7 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
                     }}
                   />
                   {editingKnmExam && (
-                    <button onClick={() => setEditingKnmExam(false)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 0 }}>
+                    <button onClick={() => { setEditingKnmExam(false); saveFields({ knm_exam_target_date: knmExamDate || null }); }} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 0 }}>
                       <span className="mso" style={{ fontSize: 18, color: c.tertiary }}>check</span>
                     </button>
                   )}
@@ -665,7 +641,7 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
                     }}
                   />
                   {editingListeningExam && (
-                    <button onClick={() => setEditingListeningExam(false)} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 0 }}>
+                    <button onClick={() => { setEditingListeningExam(false); saveFields(isB1 ? { b1_listening_exam_target_date: listeningExamDate || null } : { listening_exam_target_date: listeningExamDate || null }); }} style={{ background: "transparent", border: "none", cursor: "pointer", padding: 0 }}>
                       <span className="mso" style={{ fontSize: 18, color: c.primary }}>check</span>
                     </button>
                   )}
@@ -693,7 +669,7 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
               {GOAL_OPTIONS.map((goal) => (
                 <button
                   key={goal.value}
-                  onClick={() => setGoalMinutes(goal.value)}
+                  onClick={() => { setGoalMinutes(goal.value); saveFields({ daily_goal_minutes: goal.value }); }}
                   style={{
                     flex: 1, padding: "12px 4px", borderRadius: 12, border: "none", cursor: "pointer",
                     display: "flex", flexDirection: "column", alignItems: "center",
@@ -747,21 +723,6 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
               </div>
             </button>
           </div>
-
-          {/* Save Button */}
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            style={{
-              width: "100%", padding: 16, borderRadius: 9999, border: "none", cursor: "pointer",
-              background: `linear-gradient(to bottom, ${c.primary}, ${c.primaryContainer})`,
-              color: "#fff", fontWeight: 700, fontSize: 14,
-              fontFamily: font.headline, opacity: saving ? 0.6 : 1,
-              boxShadow: "0 10px 20px -5px rgba(0,0,0,0.15)",
-            }}
-          >
-            {saving ? "Saving..." : saved ? "Saved! ✓" : "Save changes"}
-          </button>
 
           {/* Sign Out */}
           <button
