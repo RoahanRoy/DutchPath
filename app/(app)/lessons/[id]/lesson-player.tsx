@@ -19,6 +19,7 @@ interface Props {
   lesson: Lesson;
   progress: UserLessonProgress | null;
   userId: string;
+  nextLessonId: number | null;
 }
 
 type Phase = "intro" | "question" | "result" | "complete";
@@ -28,7 +29,7 @@ const font = {
   body: "'Noto Serif', serif",
 };
 
-export function LessonPlayer({ lesson, progress, userId }: Props) {
+export function LessonPlayer({ lesson, progress, userId, nextLessonId }: Props) {
   const { isDark } = useTheme();
   const c = getColors(isDark);
   const router = useRouter();
@@ -211,16 +212,16 @@ export function LessonPlayer({ lesson, progress, userId }: Props) {
 
           <div style={{ display: "flex", gap: 12 }}>
             <button
-              onClick={() => router.push("/lessons")}
+              onClick={() => { setPhase("intro"); setCurrentQ(0); setCorrectCount(0); setSelectedAnswer(null); setIsCorrect(null); setHeartsLeft(unlockedHearts ? 999 : 5); }}
               style={{ flex: 1, padding: 14, borderRadius: 9999, border: `1.5px solid ${c.outlineVariant}`, background: "transparent", fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: font.headline, color: c.onSurface }}
             >
-              Terug naar kaart
+              Probeer opnieuw
             </button>
             <button
-              onClick={() => { setPhase("intro"); setCurrentQ(0); setCorrectCount(0); setSelectedAnswer(null); setIsCorrect(null); setHeartsLeft(unlockedHearts ? 999 : 5); }}
+              onClick={() => router.push(nextLessonId ? `/lessons/${nextLessonId}` : "/lessons")}
               style={{ flex: 1, padding: 14, borderRadius: 9999, border: "none", background: c.primary, color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: font.headline }}
             >
-              Probeer opnieuw
+              {nextLessonId ? "Volgende les" : "Terug naar kaart"}
             </button>
           </div>
         </motion.div>

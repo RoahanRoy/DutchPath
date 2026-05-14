@@ -23,6 +23,7 @@ interface Props {
   draft: UserWritingSubmission | null;
   phrases: WritingPhrase[];
   userId: string;
+  nextTaskId: number | null;
 }
 
 const font = {
@@ -116,7 +117,7 @@ function ScoreSlider({
   );
 }
 
-export function WritingEditor({ task, progress, draft, phrases, userId }: Props) {
+export function WritingEditor({ task, progress, draft, phrases, userId, nextTaskId }: Props) {
   const { isDark } = useTheme();
   const c = getColors(isDark);
   const router = useRouter();
@@ -386,16 +387,16 @@ export function WritingEditor({ task, progress, draft, phrases, userId }: Props)
 
           <div style={{ display: "flex", gap: 12 }}>
             <button
-              onClick={() => router.push("/writing")}
+              onClick={() => { setPhase("write"); setSelfScore({ task_completion: 0, structure: 0, vocabulary: 0, grammar: 0 }); }}
               style={{ flex: 1, padding: 14, borderRadius: 9999, border: `1.5px solid ${c.outlineVariant}`, background: "transparent", fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: font.headline, color: c.onSurface }}
             >
-              Terug naar kaart
+              Opnieuw proberen
             </button>
             <button
-              onClick={() => { setPhase("write"); setSelfScore({ task_completion: 0, structure: 0, vocabulary: 0, grammar: 0 }); }}
+              onClick={() => router.push(nextTaskId ? `/writing/${nextTaskId}` : "/writing")}
               style={{ flex: 1, padding: 14, borderRadius: 9999, border: "none", background: c.secondary, color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: font.headline }}
             >
-              Opnieuw proberen
+              {nextTaskId ? "Volgende les" : "Terug naar kaart"}
             </button>
           </div>
         </motion.div>
