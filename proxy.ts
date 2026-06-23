@@ -7,7 +7,7 @@ import { createServerClient } from "@supabase/ssr";
 // protection is enforced separately at the page/layout level via getUser().
 const AUTH_REFRESH_TIMEOUT_MS = 2000;
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(

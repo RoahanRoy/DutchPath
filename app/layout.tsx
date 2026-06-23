@@ -17,6 +17,13 @@ export default function RootLayout({
   return (
     <html lang="nl" className="h-full antialiased" suppressHydrationWarning>
       <head>
+        <link
+          rel="preload"
+          href="/fonts/material-symbols-outlined.woff2"
+          as="font"
+          type="font/woff2"
+          crossOrigin="anonymous"
+        />
         <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem("theme");if(t==="dark"||(t==null&&matchMedia("(prefers-color-scheme:dark)").matches))document.documentElement.classList.add("dark")}catch(e){}})()` }} />
       </head>
       <body className="min-h-full flex flex-col bg-[var(--background)] text-[var(--foreground)]" style={{ transition: "background-color 0.3s, color 0.3s" }}>
