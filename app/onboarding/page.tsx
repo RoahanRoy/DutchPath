@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
 import { useAppStore } from "@/lib/store";
 import { useTheme, getColors } from "@/lib/use-theme";
@@ -90,11 +89,6 @@ export default function OnboardingPage() {
     }
   };
 
-  const stepVariants = {
-    enter: { opacity: 0, x: 40 },
-    center: { opacity: 1, x: 0 },
-    exit: { opacity: 0, x: -40 },
-  };
 
   return (
     <div style={{
@@ -112,11 +106,8 @@ export default function OnboardingPage() {
           <span style={{ fontSize: 12, fontWeight: 700, color: c.primary }}>{Math.round(progress)}%</span>
         </div>
         <div style={{ height: 6, background: c.surfaceHighest, borderRadius: 9999, overflow: "hidden" }}>
-          <motion.div
-            initial={{ width: 0 }}
-            animate={{ width: `${progress}%` }}
-            transition={{ duration: 0.4, ease: "easeOut" }}
-            style={{ height: "100%", background: c.primary, borderRadius: 9999 }}
+          <div
+            style={{ width: `${progress}%`, height: "100%", background: c.primary, borderRadius: 9999, transition: "width 0.4s ease" }}
           />
         </div>
         {/* Step dots */}
@@ -137,15 +128,7 @@ export default function OnboardingPage() {
         borderRadius: 28, padding: 32, overflow: "hidden",
         boxShadow: "0px 12px 48px rgba(26,28,27,0.08)",
       }}>
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={step}
-            variants={stepVariants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{ duration: 0.25 }}
-          >
+        <div key={step} className="fm-slide-in-right">
             {/* Step header */}
             <div style={{ marginBottom: 28 }}>
               <div style={{
@@ -264,9 +247,8 @@ export default function OnboardingPage() {
             )}
 
             {error && (
-              <motion.div
-                initial={{ opacity: 0, y: -4 }}
-                animate={{ opacity: 1, y: 0 }}
+              <div
+                className="fm-fade-down"
                 role="alert"
                 style={{
                   display: "flex", alignItems: "center", gap: 8,
@@ -277,10 +259,9 @@ export default function OnboardingPage() {
               >
                 <span className="mso" style={{ fontSize: 18 }}>error</span>
                 {error}
-              </motion.div>
+              </div>
             )}
-          </motion.div>
-        </AnimatePresence>
+        </div>
 
         {/* Action buttons */}
         <div style={{ display: "flex", gap: 12, marginTop: 28 }}>

@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
 import type { Lesson } from "@/lib/supabase/types";
 import { getStarRating } from "@/lib/utils";
 import { useTheme, getColors } from "@/lib/use-theme";
@@ -78,11 +77,9 @@ export function LessonMapClient({ lessons }: Props) {
             <p style={{ fontSize: 12, fontWeight: 700, color: c.primary, margin: 0 }}>{pct}%</p>
           </div>
           <div style={{ width: "100%", height: 12, background: c.surfaceHighest, borderRadius: 9999, overflow: "hidden" }}>
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${pct}%` }}
-              transition={{ duration: 0.8, ease: "easeOut" }}
-              style={{ height: "100%", background: c.primary, borderRadius: 9999 }}
+            <div
+              className="fm-grow-x"
+              style={{ width: `${pct}%`, height: "100%", background: c.primary, borderRadius: 9999 }}
             />
           </div>
         </section>
@@ -146,10 +143,9 @@ export function LessonMapClient({ lessons }: Props) {
                     const typeColor = TYPE_COLORS[lesson.type] ?? c.onSurfaceVariant;
 
                     return (
-                      <motion.div
+                      <div
                         key={lesson.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
+                        className="fm-fade-up-lg"
                         style={{ cursor: isLockedLesson ? "default" : "pointer" }}
                         onClick={() => !isLockedLesson && setSelectedLesson(lesson)}
                       >
@@ -227,7 +223,7 @@ export function LessonMapClient({ lessons }: Props) {
                             </span>
                           </div>
                         </div>
-                      </motion.div>
+                      </div>
                     );
                   })}
                 </div>
@@ -238,21 +234,15 @@ export function LessonMapClient({ lessons }: Props) {
       </main>
 
       {/* ── Bottom Sheet ── */}
-      <AnimatePresence>
-        {selectedLesson && (
+      {selectedLesson && (
           <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+            <div
+              className="fm-fade-in"
               style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.3)", zIndex: 55 }}
               onClick={() => setSelectedLesson(null)}
             />
-            <motion.div
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
-              transition={{ type: "spring", stiffness: 400, damping: 40 }}
+            <div
+              className="fm-sheet-up"
               style={{
                 position: "fixed", bottom: 0, left: 0, width: "100%", zIndex: 60,
                 padding: "0 16px 16px",
@@ -361,10 +351,9 @@ export function LessonMapClient({ lessons }: Props) {
                   {selectedLesson.status === "completed" ? "Opnieuw oefenen" : "Start les"}
                 </Link>
               </div>
-            </motion.div>
+            </div>
           </>
         )}
-      </AnimatePresence>
 
       {/* Pulse ring animation */}
       <style>{`

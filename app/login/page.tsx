@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
 import { useTheme, getColors } from "@/lib/use-theme";
 
@@ -55,9 +54,8 @@ export default function LoginPage() {
       fontFamily: font.headline, transition: "background 0.3s",
     }}>
       {/* Logo */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
+      <div
+        className="fm-fade-down"
         style={{ marginBottom: 40, textAlign: "center" }}
       >
         <div style={{ fontSize: 56, marginBottom: 8 }} aria-hidden="true">🇳🇱</div>
@@ -70,14 +68,13 @@ export default function LoginPage() {
         <p style={{ color: c.onSurfaceVariant, marginTop: 6, fontSize: 14, fontWeight: 500 }}>
           Learn Dutch for your Inburgering exam
         </p>
-      </motion.div>
+      </div>
 
       {/* Card */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
+      <div
+        className="fm-fade-up-lg"
         style={{
+          animationDelay: "0.1s",
           width: "100%", maxWidth: 400, background: c.surfaceLowest,
           borderRadius: 28, padding: 32,
           boxShadow: "0px 12px 48px rgba(26,28,27,0.08)",
@@ -179,9 +176,8 @@ export default function LoginPage() {
           </div>
 
           {error && (
-            <motion.div
-              initial={{ opacity: 0, y: -4 }}
-              animate={{ opacity: 1, y: 0 }}
+            <div
+              className="fm-fade-down"
               role="alert"
               style={{
                 display: "flex", alignItems: "center", gap: 8,
@@ -192,7 +188,7 @@ export default function LoginPage() {
             >
               <span className="mso" style={{ fontSize: 18 }}>error</span>
               {error}
-            </motion.div>
+            </div>
           )}
 
           <button
@@ -218,7 +214,7 @@ export default function LoginPage() {
             Sign up free
           </Link>
         </p>
-      </motion.div>
+      </div>
 
       {/* Spinner keyframe */}
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>

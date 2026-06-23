@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
 import { useAppStore } from "@/lib/store";
 import { useTheme, getColors } from "@/lib/use-theme";
@@ -283,9 +282,8 @@ export function ListeningPlayer({ task, progress, draft, userId, nextTaskId }: P
     return (
       <div style={{ minHeight: "100vh", background: c.background, fontFamily: font.headline, padding: "24px 24px 128px" }}>
         <div style={{ maxWidth: 560, margin: "0 auto" }}>
-          <motion.div
-            initial={{ y: 40, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
+          <div
+            className="fm-rise"
             style={{
               background: c.surfaceLowest, borderRadius: 24, padding: 32, textAlign: "center",
               boxShadow: "0px 4px 24px rgba(0,0,0,0.06)", marginBottom: 24,
@@ -316,7 +314,7 @@ export function ListeningPlayer({ task, progress, draft, userId, nextTaskId }: P
               <span className="mso" style={{ fontSize: 16 }}>emoji_events</span>
               +{reviewResult.xpAwarded} XP
             </div>
-          </motion.div>
+          </div>
 
           {/* Per-question breakdown */}
           <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 24 }}>
@@ -528,11 +526,9 @@ export function ListeningPlayer({ task, progress, draft, userId, nextTaskId }: P
         )}
 
         {/* Questions */}
-        <AnimatePresence>
-          {phase === "answer" && (
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
+        {phase === "answer" && (
+            <div
+              className="fm-fade-up"
               style={{ display: "flex", flexDirection: "column", gap: 16, marginTop: 8 }}
             >
               {questions.map((q, idx) => (
@@ -586,9 +582,8 @@ export function ListeningPlayer({ task, progress, draft, userId, nextTaskId }: P
               >
                 {allAnswered ? "Inleveren" : `Beantwoord alle vragen (${Object.keys(answers).length}/${questions.length})`}
               </button>
-            </motion.div>
+            </div>
           )}
-        </AnimatePresence>
       </div>
     </div>
   );

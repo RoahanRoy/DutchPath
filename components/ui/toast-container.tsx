@@ -1,6 +1,5 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import { useAppStore } from "@/lib/store";
 
@@ -14,17 +13,12 @@ export function ToastContainer() {
       aria-live="polite"
       aria-atomic="false"
     >
-      <AnimatePresence>
-        {toasts.map((toast) => (
-          <motion.div
+      {toasts.map((toast) => (
+          <div
             key={toast.id}
-            initial={{ opacity: 0, y: -40, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -20, scale: 0.95 }}
-            transition={{ type: "spring", stiffness: 400, damping: 30 }}
             role="alert"
             className={`
-              flex items-center gap-3 rounded-2xl px-4 py-3 shadow-xl
+              fm-fade-down flex items-center gap-3 rounded-2xl px-4 py-3 shadow-xl
               ${toast.type === "achievement"
                 ? "bg-gradient-to-r from-yellow-400 to-amber-500 text-white"
                 : toast.type === "xp"
@@ -36,15 +30,12 @@ export function ToastContainer() {
             `}
           >
             {toast.icon && (
-              <motion.span
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 0.1, type: "spring", stiffness: 500 }}
-                className="text-2xl"
+              <span
+                className="text-2xl fm-scale-in"
                 aria-hidden="true"
               >
                 {toast.icon}
-              </motion.span>
+              </span>
             )}
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-sm leading-tight">{toast.title}</p>
@@ -64,9 +55,8 @@ export function ToastContainer() {
             >
               <X size={16} />
             </button>
-          </motion.div>
+          </div>
         ))}
-      </AnimatePresence>
     </div>
   );
 }
