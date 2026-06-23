@@ -1,12 +1,13 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getUser } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { ExamsListClient } from "./exams-list-client";
 import type { ListeningExam, UserListeningExamSubmission } from "@/lib/supabase/types";
 
 export default async function ListeningExamsPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getUser();
   if (!user) redirect("/login");
+
+  const supabase = await createClient();
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -15,26 +16,26 @@ export default async function ListeningExamsPage() {
     .single();
   const level = (profile as { current_level: string } | null)?.current_level ?? "A2";
 
-  const { data: examsRaw } = await (supabase as unknown as {
-    from: (t: string) => {
-      select: (cols: string) => {
-        eq: (k: string, v: unknown) => {
-          order: (col: string) => Promise<{ data: ListeningExam[] | null }>;
+  const [{ data: examsRaw }, { data: subsRaw }] = await Promise.all([
+    (supabase as unknown as {
+      from: (t: string) => {
+        select: (cols: string) => {
+          eq: (k: string, v: unknown) => {
+            order: (col: string) => Promise<{ data: ListeningExam[] | null }>;
+          };
         };
       };
-    };
-  }).from("listening_exams").select("*").eq("level", level).order("position");
+    }).from("listening_exams").select("*").eq("level", level).order("position"),
+    (supabase as unknown as {
+      from: (t: string) => {
+        select: (cols: string) => {
+          eq: (k: string, v: unknown) => Promise<{ data: UserListeningExamSubmission[] | null }>;
+        };
+      };
+    }).from("user_listening_exam_submissions").select("*").eq("user_id", user.id),
+  ]);
 
   const exams = examsRaw ?? [];
-
-  const { data: subsRaw } = await (supabase as unknown as {
-    from: (t: string) => {
-      select: (cols: string) => {
-        eq: (k: string, v: unknown) => Promise<{ data: UserListeningExamSubmission[] | null }>;
-      };
-    };
-  }).from("user_listening_exam_submissions").select("*").eq("user_id", user.id);
-
   const subs = subsRaw ?? [];
 
   const bestByExam = new Map<number, { score: number; passed: boolean }>();

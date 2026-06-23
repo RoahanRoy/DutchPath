@@ -1,12 +1,13 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getUser } from "@/lib/supabase/server";
 import { redirect, notFound } from "next/navigation";
 import { LessonPlayer } from "./lesson-player";
 
 export default async function LessonPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getUser();
   if (!user) redirect("/login");
+
+  const supabase = await createClient();
 
   const { data: profile } = await supabase.from("profiles").select("exam_completed").eq("id", user.id).single();
   if ((profile as { exam_completed: boolean } | null)?.exam_completed) redirect("/dashboard");

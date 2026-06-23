@@ -1,12 +1,13 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getUser } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { LessonMapClient } from "./lesson-map-client";
 import type { Lesson, UserLessonProgress } from "@/lib/supabase/types";
 
 export default async function LessonsPage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getUser();
   if (!user) redirect("/login");
+
+  const supabase = await createClient();
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -19,19 +20,12 @@ export default async function LessonsPage() {
     : (profile as { exam_completed: boolean } | null)?.exam_completed;
   if (examDone) redirect("/dashboard");
 
-  const { data: lessonsRaw } = await supabase
-    .from("lessons")
-    .select("*")
-    .eq("level", level)
-    .order("day");
+  const [{ data: lessonsRaw }, { data: progressRaw }] = await Promise.all([
+    supabase.from("lessons").select("*").eq("level", level).order("day"),
+    supabase.from("user_lesson_progress").select("*").eq("user_id", user.id),
+  ]);
 
   const lessons = (lessonsRaw ?? []) as unknown as Lesson[];
-
-  const { data: progressRaw } = await supabase
-    .from("user_lesson_progress")
-    .select("*")
-    .eq("user_id", user.id);
-
   const progress: UserLessonProgress[] = progressRaw ?? [];
 
   // Merge progress into lessons

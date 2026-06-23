@@ -1,40 +1,40 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getUser } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { ProfileClient } from "./profile-client";
 import type { DailyActivity, Achievement, UserAchievement } from "@/lib/supabase/types";
 
 export default async function ProfilePage() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getUser();
   if (!user) redirect("/login");
+
+  const supabase = await createClient();
 
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split("T")[0];
 
-  const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
-
-  const { data: activityRaw } = await supabase
-    .from("daily_activity")
-    .select("*")
-    .eq("user_id", user.id)
-    .gte("date", thirtyDaysAgo.toISOString().split("T")[0])
-    .order("date");
-
-  const activity: DailyActivity[] = activityRaw ?? [];
-
-  const { data: achievementsRaw } = await supabase.from("achievements").select("*");
-  const achievements: Achievement[] = (achievementsRaw as unknown as Achievement[]) ?? [];
-
-  const { data: userAchievementsRaw } = await supabase
-    .from("user_achievements")
-    .select("*")
-    .eq("user_id", user.id);
-  const userAchievements: UserAchievement[] = (userAchievementsRaw as unknown as UserAchievement[]) ?? [];
-
-  const currentLevel = (profile as { current_level: string } | null)?.current_level ?? "A2";
-
-  // Per-level progress: inner-join the parent table so we can group by level.
-  const [{ data: lessonProgRaw }, { data: writingProgRaw }, { data: listeningProgRaw }] = await Promise.all([
+  // None of these depend on each other — fetch in a single parallel wave.
+  // Per-level progress inner-joins the parent table so we can group by level.
+  const [
+    { data: profile },
+    { data: activityRaw },
+    { data: achievementsRaw },
+    { data: userAchievementsRaw },
+    { data: lessonProgRaw },
+    { data: writingProgRaw },
+    { data: listeningProgRaw },
+    { count: a2LessonTotal },
+    { count: b1LessonTotal },
+  ] = await Promise.all([
+    supabase.from("profiles").select("*").eq("id", user.id).single(),
+    supabase
+      .from("daily_activity")
+      .select("*")
+      .eq("user_id", user.id)
+      .gte("date", thirtyDaysAgoStr)
+      .order("date"),
+    supabase.from("achievements").select("*"),
+    supabase.from("user_achievements").select("*").eq("user_id", user.id),
     supabase
       .from("user_lesson_progress")
       .select("status, score, lessons!inner(level)")
@@ -50,7 +50,14 @@ export default async function ProfilePage() {
       .select("status, best_score, listening_tasks!inner(level)")
       .eq("user_id", user.id)
       .eq("status", "completed"),
+    supabase.from("lessons").select("id", { count: "exact", head: true }).eq("level", "A2"),
+    supabase.from("lessons").select("id", { count: "exact", head: true }).eq("level", "B1"),
   ]);
+
+  const activity: DailyActivity[] = activityRaw ?? [];
+  const achievements: Achievement[] = (achievementsRaw as unknown as Achievement[]) ?? [];
+  const userAchievements: UserAchievement[] = (userAchievementsRaw as unknown as UserAchievement[]) ?? [];
+  const currentLevel = (profile as { current_level: string } | null)?.current_level ?? "A2";
 
   type LessonRow = { score: number | null; lessons: { level: string } };
   type WritingRow = { best_score: number | null; writing_tasks: { level: string } };
@@ -79,12 +86,6 @@ export default async function ProfilePage() {
     const k = r.lessons?.level;
     if (k) lessonsCompletedByLevel[k] = (lessonsCompletedByLevel[k] ?? 0) + 1;
   }
-
-  // Lesson totals per level (active levels only).
-  const [{ count: a2LessonTotal }, { count: b1LessonTotal }] = await Promise.all([
-    supabase.from("lessons").select("id", { count: "exact", head: true }).eq("level", "A2"),
-    supabase.from("lessons").select("id", { count: "exact", head: true }).eq("level", "B1"),
-  ]);
 
   const unlockedIds = new Set(userAchievements.map((ua) => ua.achievement_id));
 

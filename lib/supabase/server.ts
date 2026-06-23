@@ -1,6 +1,21 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { cache } from "react";
 import type { Database } from "./types";
+
+/**
+ * Returns the authenticated user, deduplicated across the layout and page of a
+ * single request. `auth.getUser()` makes a network round-trip to the Supabase
+ * Auth server, so without this both the (app) layout and each page would each
+ * pay that cost. React `cache()` collapses them into one call per request.
+ */
+export const getUser = cache(async () => {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  return user;
+});
 
 export async function createClient() {
   const cookieStore = await cookies();
