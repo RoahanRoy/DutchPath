@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
 import { useTheme, getColors } from "@/lib/use-theme";
 
@@ -62,9 +61,8 @@ export default function SignupPage() {
         background: c.background, padding: "16px 24px",
         fontFamily: font.headline, transition: "background 0.3s",
       }}>
-        <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
+        <div
+          className="fm-scale-in"
           style={{
             textAlign: "center", maxWidth: 400, padding: 40,
             background: c.surfaceLowest, borderRadius: 28,
@@ -89,7 +87,7 @@ export default function SignupPage() {
             <span className="mso" style={{ fontSize: 18 }}>arrow_back</span>
             Back to login
           </Link>
-        </motion.div>
+        </div>
       </div>
     );
   }
@@ -102,9 +100,8 @@ export default function SignupPage() {
       fontFamily: font.headline, transition: "background 0.3s",
     }}>
       {/* Logo */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
+      <div
+        className="fm-fade-down"
         style={{ marginBottom: 40, textAlign: "center" }}
       >
         <div style={{ fontSize: 56, marginBottom: 8 }} aria-hidden="true">🇳🇱</div>
@@ -114,14 +111,13 @@ export default function SignupPage() {
         <p style={{ color: c.onSurfaceVariant, marginTop: 6, fontSize: 14, fontWeight: 500 }}>
           Start your Inburgering journey today
         </p>
-      </motion.div>
+      </div>
 
       {/* Card */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
+      <div
+        className="fm-fade-up-lg"
         style={{
+          animationDelay: "0.1s",
           width: "100%", maxWidth: 400, background: c.surfaceLowest,
           borderRadius: 28, padding: 32,
           boxShadow: "0px 12px 48px rgba(26,28,27,0.08)",
@@ -241,9 +237,8 @@ export default function SignupPage() {
           </div>
 
           {error && (
-            <motion.div
-              initial={{ opacity: 0, y: -4 }}
-              animate={{ opacity: 1, y: 0 }}
+            <div
+              className="fm-fade-down"
               role="alert"
               style={{
                 display: "flex", alignItems: "center", gap: 8,
@@ -254,7 +249,7 @@ export default function SignupPage() {
             >
               <span className="mso" style={{ fontSize: 18 }}>error</span>
               {error}
-            </motion.div>
+            </div>
           )}
 
           <button
@@ -280,7 +275,7 @@ export default function SignupPage() {
             Sign in
           </Link>
         </p>
-      </motion.div>
+      </div>
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>

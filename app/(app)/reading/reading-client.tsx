@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import type { Lesson, LessonContent } from "@/lib/supabase/types";
 import { useTheme, getColors } from "@/lib/use-theme";
 
@@ -326,9 +325,8 @@ export function ReadingClient({ lessons }: Props) {
 
           {/* Results banner */}
           {showResults && questions.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
+            <div
+              className="fm-fade-up"
               style={{
                 background: totalCorrect === questions.length ? "rgba(187,247,208,0.6)" : c.primaryFixed,
                 borderRadius: 20, padding: 24, textAlign: "center", marginBottom: 24,
@@ -347,7 +345,7 @@ export function ReadingClient({ lessons }: Props) {
                 <span className="mso mso-fill" style={{ fontSize: 16, color: c.onTertiaryContainer }}>emoji_events</span>
                 <span style={{ fontWeight: 800, fontSize: 14, color: c.tertiary }}>+{selectedLesson.xp_reward ?? 0} XP</span>
               </div>
-            </motion.div>
+            </div>
           )}
         </main>
 
@@ -392,12 +390,9 @@ export function ReadingClient({ lessons }: Props) {
         )}
 
         {/* Word tooltip */}
-        <AnimatePresence>
-          {tooltip && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0 }}
+        {tooltip && (
+            <div
+              className="fm-scale-in"
               role="tooltip"
               style={{
                 position: "fixed", zIndex: 100, left: tooltip.x - 60, top: tooltip.y - 64,
@@ -407,9 +402,8 @@ export function ReadingClient({ lessons }: Props) {
             >
               <p style={{ fontWeight: 700, fontSize: 14 }}>{tooltip.word}</p>
               <p style={{ opacity: 0.7, fontSize: 10, fontFamily: font.headline }}>Tik voor vertaling</p>
-            </motion.div>
+            </div>
           )}
-        </AnimatePresence>
 
         {/* Background decorations */}
         <div style={{ position: "fixed", top: -96, right: -96, width: 256, height: 256, background: `${c.primary}0d`, borderRadius: 9999, filter: "blur(96px)", zIndex: -1 }} />
@@ -479,14 +473,13 @@ export function ReadingClient({ lessons }: Props) {
           {filtered.map((lesson, i) => {
             const lType = lesson.type ?? "reading";
             return (
-              <motion.button
+              <button
                 key={lesson.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.04 }}
+                className="fm-fade-up"
                 onClick={() => setSelectedLesson(lesson)}
                 aria-label={`Open: ${lesson.title}`}
                 style={{
+                  animationDelay: `${i * 0.04}s`,
                   width: "100%", textAlign: "left", background: c.surfaceLowest,
                   borderRadius: 20, padding: 20, border: "none", cursor: "pointer",
                   boxShadow: "0px 4px 16px rgba(26,28,27,0.04)",
@@ -539,7 +532,7 @@ export function ReadingClient({ lessons }: Props) {
 
                 {/* Chevron */}
                 <span className="mso" style={{ fontSize: 20, color: c.outlineVariant, marginTop: 14, flexShrink: 0 }}>chevron_right</span>
-              </motion.button>
+              </button>
             );
           })}
         </div>

@@ -142,6 +142,41 @@ body {
 .card-hover { transition: transform 0.15s ease, box-shadow 0.15s ease; }
 .card-hover:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.12); }
 
+/* ---- Mount/enter animations (replacing framer-motion) ---- */
+@keyframes fmFadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fmFadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fmFadeUpLg { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fmRise { from { opacity: 0; transform: translateY(48px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fmFadeDown { from { opacity: 0; transform: translateY(-16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fmScaleIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+@keyframes fmScaleIn95 { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+@keyframes fmSlideInRight { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes fmSheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+@keyframes fmGrowX { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+.fm-fade-in { animation: fmFadeIn 0.3s ease-out both; }
+.fm-fade-up { animation: fmFadeUp 0.4s ease-out both; }
+.fm-fade-up-lg { animation: fmFadeUpLg 0.45s ease-out both; }
+.fm-rise { animation: fmRise 0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.fm-fade-down { animation: fmFadeDown 0.3s ease-out both; }
+.fm-scale-in { animation: fmScaleIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.fm-scale-in-95 { animation: fmScaleIn95 0.35s ease-out both; }
+.fm-slide-in-right { animation: fmSlideInRight 0.2s ease-out both; }
+.fm-sheet-up { animation: fmSheetUp 0.3s cubic-bezier(0.22, 1, 0.36, 1) both; }
+/* Progress fill: set width inline to target %, this animates the fill left-to-right */
+.fm-grow-x { transform-origin: left center; animation: fmGrowX 0.8s ease-out both; }
+/* Press feedback (replaces framer whileTap) */
+.tap-shrink { transition: transform 0.1s ease; }
+.tap-shrink:active { transform: scale(0.97); }
+
+@media (prefers-reduced-motion: reduce) {
+  .fm-fade-in, .fm-fade-up, .fm-fade-up-lg, .fm-rise, .fm-fade-down,
+  .fm-scale-in, .fm-scale-in-95, .fm-slide-in-right, .fm-sheet-up, .fm-grow-x {
+    animation-duration: 0.01ms;
+    animation-iteration-count: 1;
+  }
+}
+
 .pb-safe { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
 .tap-target { min-width: 44px; min-height: 44px; }
 

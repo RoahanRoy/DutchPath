@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
 import type {
   WritingTask,
   UserWritingProgress,
@@ -361,10 +360,8 @@ export function WritingEditor({ task, progress, draft, phrases, userId, nextTask
     const pct = Math.round((total / 12) * 100);
     return (
       <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: c.background, fontFamily: font.headline, padding: 24 }}>
-        <motion.div
-          initial={{ y: 60, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        <div
+          className="fm-rise"
           style={{ width: "100%", maxWidth: 380, background: c.surfaceLowest, borderRadius: 24, padding: 24, textAlign: "center", boxShadow: "0px 12px 32px rgba(26,28,27,0.06)" }}
         >
           <div style={{ fontSize: 48, marginBottom: 12 }}>{pct >= 80 ? "🎉" : pct >= 50 ? "👍" : "💪"}</div>
@@ -399,7 +396,7 @@ export function WritingEditor({ task, progress, draft, phrases, userId, nextTask
               {nextTaskId ? "Volgende les" : "Terug naar kaart"}
             </button>
           </div>
-        </motion.div>
+        </div>
       </div>
     );
   }
@@ -744,21 +741,15 @@ export function WritingEditor({ task, progress, draft, phrases, userId, nextTask
       </div>
 
       {/* Phrase drawer */}
-      <AnimatePresence>
-        {showPhrases && (
+      {showPhrases && (
           <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+            <div
+              className="fm-fade-in"
               style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.3)", zIndex: 65 }}
               onClick={() => setShowPhrases(false)}
             />
-            <motion.div
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
-              transition={{ type: "spring", stiffness: 400, damping: 40 }}
+            <div
+              className="fm-sheet-up"
               style={{
                 position: "fixed", bottom: 0, left: 0, width: "100%", zIndex: 70,
                 background: c.surfaceLowest, borderRadius: "24px 24px 0 0",
@@ -806,10 +797,9 @@ export function WritingEditor({ task, progress, draft, phrases, userId, nextTask
                   </button>
                 ))}
               </div>
-            </motion.div>
+            </div>
           </>
         )}
-      </AnimatePresence>
 
       {/* Background decorations */}
       <div style={{ position: "fixed", top: -96, right: -96, width: 256, height: 256, background: `${c.secondary}0d`, borderRadius: 9999, filter: "blur(96px)", zIndex: -1 }} />

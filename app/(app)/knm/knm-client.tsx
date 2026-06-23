@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { useTheme, getColors } from "@/lib/use-theme";
 import {
   KNM_TOPICS,
@@ -149,7 +148,7 @@ export function KnmClient() {
             <button onClick={goHome} style={backBtn(c)}>
               <span className="mso" style={{ fontSize: 18 }}>arrow_back</span> Alle thema&apos;s
             </button>
-            <motion.section initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+            <section className="fm-fade-up"
               style={{
                 background: c.surfaceLowest, borderRadius: 24, padding: 32, marginTop: 16, textAlign: "center",
                 boxShadow: "0px 8px 24px rgba(26,28,27,0.05)",
@@ -170,7 +169,7 @@ export function KnmClient() {
                 {correctCount}/{questions.length}
               </p>
               <p style={{ fontSize: 14, color: c.onSurfaceVariant }}>{pct}% juist</p>
-            </motion.section>
+            </section>
 
             {/* Review each */}
             <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 20 }}>
@@ -415,9 +414,8 @@ export function KnmClient() {
     return (
       <div style={{ color: c.onSurface, fontFamily: font.headline, minHeight: "100vh" }}>
         <div style={{ maxWidth: 672, margin: "0 auto", padding: "24px 24px 140px" }}>
-          <motion.section
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
+          <section
+            className="fm-scale-in-95"
             style={{
               background: passed
                 ? "linear-gradient(to bottom, rgba(22,163,74,0.12), rgba(22,163,74,0.04))"
@@ -440,7 +438,7 @@ export function KnmClient() {
               <Stat label="Percentage" value={`${pct}%`} />
               <Stat label="Tijd gebruikt" value={`${minutesUsed} min`} />
             </div>
-          </motion.section>
+          </section>
 
           <h2 style={{ fontSize: 18, fontWeight: 800, marginTop: 28, marginBottom: 10 }}>Per thema</h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -526,8 +524,8 @@ export function KnmClient() {
         </div>
 
         {/* Mock exam CTA */}
-        <motion.button
-          whileTap={{ scale: 0.98 }}
+        <button
+          className="tap-shrink"
           onClick={startMockExam}
           style={{
             width: "100%", textAlign: "left", border: "none", cursor: "pointer",
@@ -555,7 +553,7 @@ export function KnmClient() {
             </div>
           </div>
           <span className="mso" style={{ color: "rgba(255,255,255,0.7)", fontSize: 24 }}>chevron_right</span>
-        </motion.button>
+        </button>
 
         {/* Info strip */}
         <div style={{
@@ -575,9 +573,9 @@ export function KnmClient() {
             const color = TOPIC_COLORS[t.color];
             const total = topicStats[t.key]?.total ?? 0;
             return (
-              <motion.button
+              <button
                 key={t.key}
-                whileTap={{ scale: 0.97 }}
+                className="tap-shrink"
                 onClick={() => startTopic(t)}
                 style={{
                   textAlign: "left", border: "none", cursor: "pointer",
@@ -604,7 +602,7 @@ export function KnmClient() {
                   {total} vragen
                   <span className="mso" style={{ fontSize: 14 }}>arrow_forward</span>
                 </div>
-              </motion.button>
+              </button>
             );
           })}
         </div>
@@ -641,12 +639,9 @@ function QuestionCard({
   showAnswer: boolean;
 }) {
   return (
-    <AnimatePresence mode="wait">
-      <motion.div
+    <div
         key={q.id}
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -8 }}
+        className="fm-fade-up"
         style={{
           background: c.surfaceLowest, borderRadius: 22, padding: 22,
           boxShadow: "0px 6px 18px rgba(26,28,27,0.05)",
@@ -699,8 +694,7 @@ function QuestionCard({
             );
           })}
         </div>
-      </motion.div>
-    </AnimatePresence>
+      </div>
   );
 }
 

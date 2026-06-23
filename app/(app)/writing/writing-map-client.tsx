@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
 import type { WritingTask, WritingTaskType } from "@/lib/supabase/types";
 import { getDaysUntilExam } from "@/lib/utils";
 import { useTheme, getColors } from "@/lib/use-theme";
@@ -88,11 +87,9 @@ export function WritingMapClient({ tasks, writingExamDate, level }: Props) {
             <p style={{ fontSize: 12, fontWeight: 700, color: c.secondary, margin: 0 }}>{pct}%</p>
           </div>
           <div style={{ width: "100%", height: 12, background: c.surfaceHighest, borderRadius: 9999, overflow: "hidden" }}>
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${pct}%` }}
-              transition={{ duration: 0.8, ease: "easeOut" }}
-              style={{ height: "100%", background: c.secondary, borderRadius: 9999 }}
+            <div
+              className="fm-grow-x"
+              style={{ width: `${pct}%`, height: "100%", background: c.secondary, borderRadius: 9999 }}
             />
           </div>
         </section>
@@ -222,10 +219,9 @@ export function WritingMapClient({ tasks, writingExamDate, level }: Props) {
                     const tColor = typeColor(task.task_type, c);
 
                     return (
-                      <motion.div
+                      <div
                         key={task.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
+                        className="fm-fade-up-lg"
                         style={{ cursor: isLockedTask ? "default" : "pointer" }}
                         onClick={() => !isLockedTask && setSelectedTask(task)}
                       >
@@ -287,7 +283,7 @@ export function WritingMapClient({ tasks, writingExamDate, level }: Props) {
                             </span>
                           </div>
                         </div>
-                      </motion.div>
+                      </div>
                     );
                   })}
                 </div>
@@ -298,21 +294,15 @@ export function WritingMapClient({ tasks, writingExamDate, level }: Props) {
       </main>
 
       {/* ── Bottom Sheet ── */}
-      <AnimatePresence>
-        {selectedTask && (
+      {selectedTask && (
           <>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+            <div
+              className="fm-fade-in"
               style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.3)", zIndex: 55 }}
               onClick={() => setSelectedTask(null)}
             />
-            <motion.div
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
-              transition={{ type: "spring", stiffness: 400, damping: 40 }}
+            <div
+              className="fm-sheet-up"
               style={{
                 position: "fixed", bottom: 0, left: 0, width: "100%", zIndex: 60,
                 padding: "0 16px 16px",
@@ -424,10 +414,9 @@ export function WritingMapClient({ tasks, writingExamDate, level }: Props) {
                   {selectedTask.status === "completed" ? "Opnieuw schrijven" : "Start opdracht"}
                 </Link>
               </div>
-            </motion.div>
+            </div>
           </>
         )}
-      </AnimatePresence>
     </div>
   );
 }

@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
 import type { Lesson, UserLessonProgress, LessonContent, Question } from "@/lib/supabase/types";
 import { createClient } from "@/lib/supabase/client";
 import { useAppStore } from "@/lib/store";
@@ -178,10 +177,8 @@ export function LessonPlayer({ lesson, progress, userId, nextLessonId }: Props) 
 
     return (
       <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: c.background, fontFamily: font.headline, padding: 24 }}>
-        <motion.div
-          initial={{ y: 60, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        <div
+          className="fm-rise"
           style={{ width: "100%", maxWidth: 380, background: c.surfaceLowest, borderRadius: 24, padding: 24, textAlign: "center", boxShadow: "0px 12px 32px rgba(26,28,27,0.06)" }}
         >
           <div style={{ fontSize: 48, marginBottom: 12 }}>{score >= 80 ? "🎉" : score >= 50 ? "👍" : "💪"}</div>
@@ -224,7 +221,7 @@ export function LessonPlayer({ lesson, progress, userId, nextLessonId }: Props) 
               {nextLessonId ? "Volgende les" : "Terug naar kaart"}
             </button>
           </div>
-        </motion.div>
+        </div>
       </div>
     );
   }
@@ -339,19 +336,14 @@ export function LessonPlayer({ lesson, progress, userId, nextLessonId }: Props) 
       </nav>
 
       {/* XP float */}
-      <AnimatePresence>
-        {showXP && (
-          <motion.div
-            initial={{ opacity: 1, y: 0 }}
-            animate={{ opacity: 0, y: -60 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 1.2 }}
+      {showXP && (
+          <div
+            className="xp-float"
             style={{ position: "fixed", top: 80, right: 24, zIndex: 50, color: c.tertiary, fontWeight: 800, fontSize: 18, pointerEvents: "none" }}
           >
             +{xpAmount} XP
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
 
       {/* Sticky passage */}
       <div style={{ position: "sticky", top: 64, zIndex: 10, background: c.background, padding: "12px 24px 8px", borderBottom: `1px solid ${c.surfaceHighest}` }}>
@@ -379,15 +371,8 @@ export function LessonPlayer({ lesson, progress, userId, nextLessonId }: Props) 
           Vraag {currentQ + 1} van {questions.length}
         </p>
 
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentQ}
-            initial={{ opacity: 0, x: 30 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -30 }}
-            transition={{ duration: 0.2 }}
-            className={isShaking ? "wrong-shake" : ""}
-          >
+        <div key={currentQ} className="fm-slide-in-right">
+          <div className={isShaking ? "wrong-shake" : undefined}>
             <QuestionRenderer
               question={question}
               selectedAnswer={selectedAnswer}
@@ -396,8 +381,8 @@ export function LessonPlayer({ lesson, progress, userId, nextLessonId }: Props) 
               setFillWords={setFillWords}
               onAnswer={submitAnswer}
             />
-          </motion.div>
-        </AnimatePresence>
+          </div>
+        </div>
       </div>
 
       {/* Bottom Action Bar */}
@@ -408,9 +393,8 @@ export function LessonPlayer({ lesson, progress, userId, nextLessonId }: Props) 
       }}>
         {/* Feedback */}
         {isCorrect !== null && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+          <div
+            className="fm-fade-up-lg"
             style={{
               borderRadius: 16, padding: 16,
               display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -440,7 +424,7 @@ export function LessonPlayer({ lesson, progress, userId, nextLessonId }: Props) 
             {isCorrect && (
               <span style={{ color: c.tertiary, fontWeight: 800, fontSize: 18 }}>+{xpAmount} XP</span>
             )}
-          </motion.div>
+          </div>
         )}
 
         {/* Action button */}

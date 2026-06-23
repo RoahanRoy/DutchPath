@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
 import type { Profile, DailyActivity } from "@/lib/supabase/types";
 import { createClient } from "@/lib/supabase/client";
 import { useAppStore } from "@/lib/store";
@@ -749,11 +748,9 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
           </div>
 
           <div style={{ height: 8, background: c.surfaceHighest, borderRadius: 9999, overflow: "hidden" }}>
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${achievements.length > 0 ? (unlockedCount / achievements.length) * 100 : 0}%` }}
-              transition={{ duration: 0.8 }}
-              style={{ height: "100%", borderRadius: 9999, background: "linear-gradient(to right, #fbbf24, #f59e0b)" }}
+            <div
+              className="fm-grow-x"
+              style={{ width: `${achievements.length > 0 ? (unlockedCount / achievements.length) * 100 : 0}%`, height: "100%", borderRadius: 9999, background: "linear-gradient(to right, #fbbf24, #f59e0b)" }}
             />
           </div>
 

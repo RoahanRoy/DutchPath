@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import type { VocabCard, UserVocab } from "@/lib/supabase/types";
 import { createClient } from "@/lib/supabase/client";
 import { useAppStore } from "@/lib/store";
@@ -154,7 +153,7 @@ export function VocabularyClient({ cards, userId }: Props) {
   if (reviewQueue !== null && reviewDone) {
     return (
       <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: c.background, fontFamily: font.headline, padding: 24 }}>
-        <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} style={{ fontSize: 48, marginBottom: 16 }}>🎉</motion.div>
+        <div className="fm-scale-in" style={{ fontSize: 48, marginBottom: 16 }}>🎉</div>
         <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 8, color: c.onSurface }}>Herhaling voltooid!</h2>
         <p style={{ fontSize: 14, color: c.onSurfaceVariant, marginBottom: 24 }}>{reviewQueue.length} kaarten herhaald</p>
         <button
@@ -196,9 +195,8 @@ export function VocabularyClient({ cards, userId }: Props) {
           </div>
           <div style={{ flex: 1, maxWidth: 140, margin: "0 16px" }}>
             <div style={{ height: 6, width: "100%", background: c.surfaceHighest, borderRadius: 9999, overflow: "hidden" }}>
-              <motion.div
-                animate={{ width: `${((reviewIndex + 1) / reviewQueue.length) * 100}%` }}
-                style={{ height: "100%", background: c.secondary, borderRadius: 9999 }}
+              <div
+                style={{ width: `${((reviewIndex + 1) / reviewQueue.length) * 100}%`, height: "100%", background: c.secondary, borderRadius: 9999, transition: "width 0.4s ease" }}
               />
             </div>
           </div>
@@ -214,10 +212,12 @@ export function VocabularyClient({ cards, userId }: Props) {
             style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 420, cursor: "pointer" }}
           >
             <div style={{ perspective: 1000, width: "100%", height: 420 }}>
-              <motion.div
-                animate={{ rotateY: isFlipped ? 180 : 0 }}
-                transition={{ duration: 0.5 }}
-                style={{ transformStyle: "preserve-3d", width: "100%", height: "100%", position: "relative" }}
+              <div
+                style={{
+                  transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
+                  transition: "transform 0.5s",
+                  transformStyle: "preserve-3d", width: "100%", height: "100%", position: "relative",
+                }}
               >
                 {/* Front */}
                 <div style={{
@@ -272,16 +272,14 @@ export function VocabularyClient({ cards, userId }: Props) {
                     </div>
                   )}
                 </div>
-              </motion.div>
+              </div>
             </div>
           </section>
 
           {/* Rating Buttons */}
-          <AnimatePresence>
-            {isFlipped && (
-              <motion.section
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
+          {isFlipped && (
+              <section
+                className="fm-fade-up-lg"
                 style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}
               >
                 {RATING_BUTTONS.map((btn) => (
@@ -300,9 +298,8 @@ export function VocabularyClient({ cards, userId }: Props) {
                     <span style={{ fontSize: 10, fontWeight: 700, color: btn.color }}>{btn.interval}</span>
                   </button>
                 ))}
-              </motion.section>
+              </section>
             )}
-          </AnimatePresence>
         </main>
 
         {/* Background decorations */}
