@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, getUser } from "@/lib/supabase/server";
 import { redirect, notFound } from "next/navigation";
 import { WritingEditor } from "./writing-editor";
 import type {
@@ -14,9 +14,10 @@ export default async function WritingTaskPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getUser();
   if (!user) redirect("/login");
+
+  const supabase = await createClient();
 
   const taskId = parseInt(id);
   if (isNaN(taskId)) notFound();
