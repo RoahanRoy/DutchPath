@@ -1,4 +1,4 @@
-import { createClient, getUser } from "@/lib/supabase/server";
+import { createClient, getClaims } from "@/lib/supabase/server";
 import { redirect, notFound } from "next/navigation";
 import { ListeningPlayer } from "./listening-player";
 import type {
@@ -13,8 +13,9 @@ export default async function ListeningTaskPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const user = await getUser();
-  if (!user) redirect("/login");
+  const claims = await getClaims();
+  if (!claims?.sub) redirect("/login");
+  const userId = claims.sub as string;
 
   const supabase = await createClient();
 
@@ -23,11 +24,11 @@ export default async function ListeningTaskPage({
 
   const [{ data: taskRaw }, { data: progressRaw }, { data: draftRaw }] = await Promise.all([
     supabase.from("listening_tasks").select("*").eq("id", taskId).single(),
-    supabase.from("user_listening_progress").select("*").eq("user_id", user.id).eq("task_id", taskId).maybeSingle(),
+    supabase.from("user_listening_progress").select("*").eq("user_id", userId).eq("task_id", taskId).maybeSingle(),
     supabase
       .from("user_listening_submissions")
       .select("*")
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .eq("task_id", taskId)
       .eq("status", "draft")
       .order("updated_at", { ascending: false })
@@ -57,7 +58,7 @@ export default async function ListeningTaskPage({
       task={task}
       progress={progress}
       draft={draft}
-      userId={user.id}
+      userId={userId}
       nextTaskId={nextTaskId}
     />
   );

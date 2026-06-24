@@ -2,9 +2,10 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
 // Cap how long the proxy will wait on Supabase Auth before giving up.
-// Session refresh is best-effort: if Auth is slow, we must NOT block the
-// whole request (that causes MIDDLEWARE_INVOCATION_TIMEOUT / 504). Route
-// protection is enforced separately at the page/layout level via getUser().
+// This is the one place that refreshes the session cookie (best-effort): if
+// Auth is slow, we must NOT block the whole request (that causes
+// MIDDLEWARE_INVOCATION_TIMEOUT / 504). Pages then verify the refreshed token
+// LOCALLY via getClaims()/getProfile() — no per-page getUser round-trip.
 const AUTH_REFRESH_TIMEOUT_MS = 2000;
 
 export async function proxy(request: NextRequest) {
@@ -37,7 +38,7 @@ export async function proxy(request: NextRequest) {
       new Promise((resolve) => setTimeout(resolve, AUTH_REFRESH_TIMEOUT_MS)),
     ]);
   } catch {
-    // Swallow auth errors here; the page/layout getUser() handles real auth.
+    // Swallow auth errors here; pages enforce real auth via getClaims().
   }
 
   return supabaseResponse;

@@ -1,20 +1,15 @@
-import { createClient, getUser } from "@/lib/supabase/server";
+import { createClient, getProfile } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { ExamsListClient } from "./exams-list-client";
 import type { WritingExam, UserWritingExamSubmission } from "@/lib/supabase/types";
 
 export default async function WritingExamsPage() {
-  const user = await getUser();
-  if (!user) redirect("/login");
+  const profile = await getProfile();
+  if (!profile) redirect("/login");
 
   const supabase = await createClient();
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("current_level")
-    .eq("id", user.id)
-    .single();
-  const level = (profile as { current_level: string } | null)?.current_level ?? "A2";
+  const level = profile.current_level ?? "A2";
 
   const [{ data: examsRaw }, { data: subsRaw }] = await Promise.all([
     (supabase as unknown as {
@@ -32,7 +27,7 @@ export default async function WritingExamsPage() {
           eq: (k: string, v: unknown) => Promise<{ data: UserWritingExamSubmission[] | null }>;
         };
       };
-    }).from("user_writing_exam_submissions").select("*").eq("user_id", user.id),
+    }).from("user_writing_exam_submissions").select("*").eq("user_id", profile.id),
   ]);
 
   const exams = examsRaw ?? [];

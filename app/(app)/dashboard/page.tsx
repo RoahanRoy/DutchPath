@@ -1,14 +1,17 @@
-import { createClient, getUser } from "@/lib/supabase/server";
+import { createClient, getProfile } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { DashboardClient } from "./dashboard-client";
 import { getAmsterdamDate } from "@/lib/utils";
 import type { DailyActivity, Lesson, WritingTask, ListeningTask } from "@/lib/supabase/types";
 
 export default async function DashboardPage() {
-  const user = await getUser();
-  if (!user) redirect("/login");
+  // Profile first — its level scopes the "next task" queries below. getProfile()
+  // verifies the JWT locally (no getUser round-trip) and is shared with the layout.
+  const profile = await getProfile();
+  if (!profile) redirect("/login");
 
   const supabase = await createClient();
+  const user = { id: profile.id };
 
   const today = getAmsterdamDate();
   const twelveWeeksAgo = new Date();
@@ -16,9 +19,7 @@ export default async function DashboardPage() {
   const twelveWeeksAgoStr = twelveWeeksAgo.toISOString().split("T")[0];
   const nowIso = new Date().toISOString();
 
-  // Profile first — its level scopes the "next task" queries below.
-  const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
-  const level = (profile as { current_level: string } | null)?.current_level ?? "A2";
+  const level = profile.current_level ?? "A2";
 
   // Everything else only depends on user.id / level — fan out in one parallel wave
   // instead of awaiting each query serially.
