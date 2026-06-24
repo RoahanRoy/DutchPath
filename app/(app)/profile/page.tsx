@@ -1,11 +1,14 @@
-import { createClient, getUser } from "@/lib/supabase/server";
+import { createClient, getClaims } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { ProfileClient } from "./profile-client";
 import type { DailyActivity, Achievement, UserAchievement } from "@/lib/supabase/types";
 
 export default async function ProfilePage() {
-  const user = await getUser();
-  if (!user) redirect("/login");
+  // Local JWT verify (no getUser round-trip). The profile row is fetched below
+  // inside the parallel fan-out, so we only need the user id here.
+  const claims = await getClaims();
+  if (!claims?.sub) redirect("/login");
+  const userId = claims.sub as string;
 
   const supabase = await createClient();
 
@@ -26,29 +29,29 @@ export default async function ProfilePage() {
     { count: a2LessonTotal },
     { count: b1LessonTotal },
   ] = await Promise.all([
-    supabase.from("profiles").select("*").eq("id", user.id).single(),
+    supabase.from("profiles").select("*").eq("id", userId).single(),
     supabase
       .from("daily_activity")
       .select("*")
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .gte("date", thirtyDaysAgoStr)
       .order("date"),
     supabase.from("achievements").select("*"),
-    supabase.from("user_achievements").select("*").eq("user_id", user.id),
+    supabase.from("user_achievements").select("*").eq("user_id", userId),
     supabase
       .from("user_lesson_progress")
       .select("status, score, lessons!inner(level)")
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .eq("status", "completed"),
     supabase
       .from("user_writing_progress")
       .select("status, best_score, writing_tasks!inner(level)")
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .eq("status", "completed"),
     supabase
       .from("user_listening_progress")
       .select("status, best_score, listening_tasks!inner(level)")
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .eq("status", "completed"),
     supabase.from("lessons").select("id", { count: "exact", head: true }).eq("level", "A2"),
     supabase.from("lessons").select("id", { count: "exact", head: true }).eq("level", "B1"),
@@ -94,7 +97,7 @@ export default async function ProfilePage() {
       profile={profile}
       activity={activity}
       achievements={achievements.map((a) => ({ ...a, unlocked: unlockedIds.has(a.id) }))}
-      userId={user.id}
+      userId={userId}
       avgScore={avgScore}
       completedCount={filteredLessons.length}
       writingAvgScore={writingAvgScore}

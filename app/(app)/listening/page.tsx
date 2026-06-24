@@ -1,24 +1,23 @@
-import { createClient, getUser } from "@/lib/supabase/server";
+import { createClient, getProfile } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { ListeningMapClient } from "./listening-map-client";
-import type { ListeningTask, UserListeningProgress, Profile } from "@/lib/supabase/types";
+import type { ListeningTask, UserListeningProgress } from "@/lib/supabase/types";
 
 export default async function ListeningPage() {
-  const user = await getUser();
-  if (!user) redirect("/login");
+  const profile = await getProfile();
+  if (!profile) redirect("/login");
 
   const supabase = await createClient();
 
-  const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
-  const level = (profile as Profile | null)?.current_level ?? "A2";
+  const level = profile.current_level ?? "A2";
   const listeningExamDone = level === "B1"
-    ? (profile as Profile | null)?.b1_listening_exam_completed
-    : (profile as Profile | null)?.listening_exam_completed;
+    ? profile.b1_listening_exam_completed
+    : profile.listening_exam_completed;
   if (listeningExamDone) redirect("/dashboard");
 
   const [{ data: tasksRaw }, { data: progressRaw }] = await Promise.all([
     supabase.from("listening_tasks").select("*").eq("level", level).order("week").order("day"),
-    supabase.from("user_listening_progress").select("*").eq("user_id", user.id),
+    supabase.from("user_listening_progress").select("*").eq("user_id", profile.id),
   ]);
 
   const tasks = (tasksRaw ?? []) as unknown as ListeningTask[];
@@ -45,8 +44,8 @@ export default async function ListeningPage() {
       level={level}
       listeningExamDate={
         level === "B1"
-          ? (profile as Profile | null)?.b1_listening_exam_target_date ?? null
-          : (profile as Profile | null)?.listening_exam_target_date ?? null
+          ? profile.b1_listening_exam_target_date ?? null
+          : profile.listening_exam_target_date ?? null
       }
     />
   );

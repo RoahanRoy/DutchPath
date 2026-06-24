@@ -1,11 +1,11 @@
-import { createClient, getUser } from "@/lib/supabase/server";
+import { createClient, getClaims } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { PhrasesClient } from "./phrases-client";
 import type { WritingPhrase } from "@/lib/supabase/types";
 
 export default async function PhrasesPage() {
-  const user = await getUser();
-  if (!user) redirect("/login");
+  const claims = await getClaims();
+  if (!claims?.sub) redirect("/login");
 
   const supabase = await createClient();
 

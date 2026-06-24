@@ -1,4 +1,4 @@
-import { createClient, getUser } from "@/lib/supabase/server";
+import { createClient, getClaims } from "@/lib/supabase/server";
 import { redirect, notFound } from "next/navigation";
 import { ExamRunner } from "./exam-runner";
 import type { ListeningExam, ListeningExamSection } from "@/lib/supabase/types";
@@ -8,8 +8,9 @@ export default async function ListeningExamPage({ params }: { params: Promise<{ 
   const examId = Number(id);
   if (!Number.isFinite(examId)) notFound();
 
-  const user = await getUser();
-  if (!user) redirect("/login");
+  const claims = await getClaims();
+  if (!claims?.sub) redirect("/login");
+  const userId = claims.sub as string;
 
   const supabase = await createClient();
 
@@ -38,5 +39,5 @@ export default async function ListeningExamPage({ params }: { params: Promise<{ 
 
   const sections = sectionsRaw ?? [];
 
-  return <ExamRunner exam={examRaw} sections={sections} userId={user.id} />;
+  return <ExamRunner exam={examRaw} sections={sections} userId={userId} />;
 }
