@@ -1,7 +1,8 @@
 import { createClient, getProfile } from "@/lib/supabase/server";
+import { getWritingTasksByLevel } from "@/lib/supabase/reference";
 import { redirect } from "next/navigation";
 import { WritingMapClient } from "./writing-map-client";
-import type { WritingTask, UserWritingProgress } from "@/lib/supabase/types";
+import type { UserWritingProgress } from "@/lib/supabase/types";
 
 export default async function WritingPage() {
   const profile = await getProfile();
@@ -15,12 +16,13 @@ export default async function WritingPage() {
     : profile.writing_exam_completed;
   if (writingExamDone) redirect("/dashboard");
 
-  const [{ data: tasksRaw }, { data: progressRaw }] = await Promise.all([
-    supabase.from("writing_tasks").select("*").eq("level", level).order("week").order("day"),
+  // Writing tasks are shared reference content (cached); only the user's own
+  // progress must hit the DB live.
+  const [tasks, { data: progressRaw }] = await Promise.all([
+    getWritingTasksByLevel(level),
     supabase.from("user_writing_progress").select("*").eq("user_id", profile.id),
   ]);
 
-  const tasks = (tasksRaw ?? []) as unknown as WritingTask[];
   const progress = (progressRaw ?? []) as UserWritingProgress[];
   const progressMap = new Map(progress.map((p) => [p.task_id, p]));
 

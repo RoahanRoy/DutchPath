@@ -1,7 +1,8 @@
 import { createClient, getProfile } from "@/lib/supabase/server";
+import { getLessonsByLevel } from "@/lib/supabase/reference";
 import { redirect } from "next/navigation";
 import { LessonMapClient } from "./lesson-map-client";
-import type { Lesson, UserLessonProgress } from "@/lib/supabase/types";
+import type { UserLessonProgress } from "@/lib/supabase/types";
 
 export default async function LessonsPage() {
   const profile = await getProfile();
@@ -13,12 +14,13 @@ export default async function LessonsPage() {
   const examDone = level === "B1" ? profile.b1_exam_completed : profile.exam_completed;
   if (examDone) redirect("/dashboard");
 
-  const [{ data: lessonsRaw }, { data: progressRaw }] = await Promise.all([
-    supabase.from("lessons").select("*").eq("level", level).order("day"),
+  // Lessons are shared reference content (cached); only the user's own
+  // progress must hit the DB live.
+  const [lessons, { data: progressRaw }] = await Promise.all([
+    getLessonsByLevel(level),
     supabase.from("user_lesson_progress").select("*").eq("user_id", profile.id),
   ]);
 
-  const lessons = (lessonsRaw ?? []) as unknown as Lesson[];
   const progress: UserLessonProgress[] = progressRaw ?? [];
 
   // Merge progress into lessons

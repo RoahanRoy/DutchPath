@@ -1,7 +1,8 @@
 import { createClient, getProfile } from "@/lib/supabase/server";
+import { getListeningTasksByLevel } from "@/lib/supabase/reference";
 import { redirect } from "next/navigation";
 import { ListeningMapClient } from "./listening-map-client";
-import type { ListeningTask, UserListeningProgress } from "@/lib/supabase/types";
+import type { UserListeningProgress } from "@/lib/supabase/types";
 
 export default async function ListeningPage() {
   const profile = await getProfile();
@@ -15,12 +16,13 @@ export default async function ListeningPage() {
     : profile.listening_exam_completed;
   if (listeningExamDone) redirect("/dashboard");
 
-  const [{ data: tasksRaw }, { data: progressRaw }] = await Promise.all([
-    supabase.from("listening_tasks").select("*").eq("level", level).order("week").order("day"),
+  // Listening tasks are shared reference content (cached); only the user's own
+  // progress must hit the DB live.
+  const [tasks, { data: progressRaw }] = await Promise.all([
+    getListeningTasksByLevel(level),
     supabase.from("user_listening_progress").select("*").eq("user_id", profile.id),
   ]);
 
-  const tasks = (tasksRaw ?? []) as unknown as ListeningTask[];
   const progress = (progressRaw ?? []) as UserListeningProgress[];
   const progressMap = new Map(progress.map((p) => [p.task_id, p]));
 
