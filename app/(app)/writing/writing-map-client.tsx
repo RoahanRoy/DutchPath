@@ -27,6 +27,14 @@ const WEEK_SUBTITLES: Record<number, string> = {
   2: "Berichten & Informele E-mails",
   3: "Informele → Formele Stap",
   4: "Formeel & Proefexamen",
+  5: "Werk & Sollicitatie",
+  6: "Wonen & Buren",
+  7: "Gezondheid & Zorg",
+  8: "Onderwijs & Cursus",
+  9: "Geldzaken & Diensten",
+  10: "Reizen & Vrije tijd",
+  11: "Klachten & Verzoeken",
+  12: "Eindexamen — Volledige Oefentoets",
 };
 
 const TYPE_LABELS: Record<WritingTaskType, string> = {
@@ -60,7 +68,7 @@ export function WritingMapClient({ tasks, writingExamDate, level }: Props) {
   const c = getColors(isDark);
   const [selectedTask, setSelectedTask] = useState<TaskWithStatus | null>(null);
 
-  const weeks = [1, 2, 3, 4];
+  const weeks = Array.from(new Set(tasks.map((t) => t.week))).sort((a, b) => a - b);
   const tasksByWeek = weeks.map((w) => ({
     week: w,
     tasks: tasks.filter((t) => t.week === w),

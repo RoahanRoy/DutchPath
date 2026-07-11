@@ -11,6 +11,7 @@
     "seed:listening": "tsx scripts/seed-listening-tasks.ts",
     "seed:listening-exams": "tsx scripts/seed-listening-exams.ts",
     "seed:writing-exams": "tsx scripts/seed-writing-exams.ts",
+    "seed:a2-writing": "tsx scripts/seed-a2-writing-tasks.ts",
     "seed:b1-listening": "tsx scripts/seed-b1-listening-tasks.ts",
     "seed:b1-listening-exams": "tsx scripts/seed-b1-listening-exams.ts",
     "seed:b1-writing": "tsx scripts/seed-b1-writing-tasks.ts",
