@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type MouseEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ListeningExam, ListeningExamSection, ListeningQuestion } from "@/lib/supabase/types";
@@ -26,6 +26,11 @@ export function ExamRunner({ exam, sections, userId }: Props) {
   const supabase = useMemo(() => createClient(), []);
   const updateXP = useAppStore((s) => s.updateXP);
   const addToast = useAppStore((s) => s.addToast);
+
+  /* B1 mirrors the real exam: each fragment plays exactly once. A2 (and any
+     other level) lets the candidate replay and scrub the audio freely, with
+     the player pinned at the top of the page above its questions. */
+  const replayable = exam.level !== "B1";
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const startedAtRef = useRef<number>(0);
@@ -94,6 +99,23 @@ export function ExamRunner({ exam, sections, userId }: Props) {
     void el.play();
   };
 
+  /* Replayable player controls (A2): toggle play/pause and scrub. */
+  const handlePlayPause = () => {
+    const el = audioRef.current;
+    if (!el) return;
+    if (el.paused) void el.play();
+    else el.pause();
+  };
+
+  const handleSeek = (e: MouseEvent<HTMLDivElement>) => {
+    const el = audioRef.current;
+    if (!el || !duration) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const pct = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+    el.currentTime = pct * duration;
+    setCurrentTime(el.currentTime);
+  };
+
   const handleAnswer = (sectionId: number, qId: string, optId: string) => {
     setAnswers((a) => ({ ...a, [`${sectionId}:${qId}`]: optId }));
   };
@@ -113,17 +135,19 @@ export function ExamRunner({ exam, sections, userId }: Props) {
       .single();
     if (data?.id) submissionIdRef.current = data.id;
     startedAtRef.current = Date.now();
-    setPhase({ kind: "section", idx: 0, step: "listen" });
-  }, [exam.id, supabase, userId]);
+    setPhase({ kind: "section", idx: 0, step: replayable ? "answer" : "listen" });
+  }, [exam.id, supabase, userId, replayable]);
 
   const goNext = () => {
     if (phase.kind !== "section") return;
-    if (phase.step === "listen") {
+    /* B1 gates the questions behind a one-time listen; replayable levels show
+       the audio and questions together, so there is no separate listen step. */
+    if (!replayable && phase.step === "listen") {
       setPhase({ ...phase, step: "answer" });
       return;
     }
     if (phase.idx < sections.length - 1) {
-      setPhase({ kind: "section", idx: phase.idx + 1, step: "listen" });
+      setPhase({ kind: "section", idx: phase.idx + 1, step: replayable ? "answer" : "listen" });
     } else {
       void submit();
     }
@@ -215,7 +239,11 @@ export function ExamRunner({ exam, sections, userId }: Props) {
             </h3>
             <ul style={{ margin: 0, paddingLeft: 20, fontSize: 13, color: c.onSurface, lineHeight: 1.6 }}>
               <li>{sections.length} fragmenten · {exam.total_questions} vragen totaal</li>
-              <li>Elk fragment kun je <strong>maar één keer</strong> beluisteren</li>
+              {replayable ? (
+                <li>Je kunt elk fragment <strong>zo vaak beluisteren als je wilt</strong></li>
+              ) : (
+                <li>Elk fragment kun je <strong>maar één keer</strong> beluisteren</li>
+              )}
               <li>Beantwoord alle vragen voordat je naar het volgende fragment gaat</li>
               <li>Slagen vanaf <strong>{exam.passing_score}%</strong></li>
               <li>Geschatte tijd: {exam.estimated_minutes} minuten</li>
@@ -356,8 +384,17 @@ export function ExamRunner({ exam, sections, userId }: Props) {
     (q) => answers[`${currentSection.id}:${q.id}`] != null
   );
   const isLastSection = phase.idx === sections.length - 1;
-  const progressPct = Math.round(((phase.idx + (phase.step === "answer" ? 0.5 : 0)) / sections.length) * 100);
+  const progressPct = Math.round(
+    ((phase.idx + (!replayable && phase.step === "answer" ? 0.5 : 0)) / sections.length) * 100
+  );
   const fmt = (s: number) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+  /* When can the candidate advance? B1: play the fragment, then answer. A2:
+     just answer, since the player stays available. */
+  const canProceed = replayable
+    ? sectionAnswered
+    : phase.step === "listen"
+    ? played
+    : sectionAnswered;
 
   return (
     <div style={{ background: c.background, color: c.onSurface, minHeight: "100vh" }}>
@@ -392,7 +429,48 @@ export function ExamRunner({ exam, sections, userId }: Props) {
           />
         )}
 
-        {phase.step === "listen" && (
+        {/* A2: replayable player pinned to the top, above all questions */}
+        {replayable && (
+          <div style={{
+            position: "sticky", top: 8, zIndex: 10,
+            background: c.surfaceLowest, padding: 16, borderRadius: 20, marginBottom: 20,
+            boxShadow: "0 6px 20px rgba(26,28,27,0.12)",
+            border: `1px solid ${c.outlineVariant}`,
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+              <button
+                onClick={handlePlayPause}
+                aria-label={isPlaying ? "Pauzeer" : "Speel af"}
+                style={{
+                  width: 52, height: 52, borderRadius: 9999, border: "none", flexShrink: 0,
+                  background: c.primary, color: "#fff", cursor: "pointer",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}
+              >
+                <span className="mso mso-fill" style={{ fontSize: 28 }}>
+                  {isPlaying ? "pause" : "play_arrow"}
+                </span>
+              </button>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, fontWeight: 700, color: c.onSurfaceVariant, marginBottom: 6 }}>
+                  <span>{isPlaying ? "Aan het afspelen" : "Fragment"}</span>
+                  <span>{fmt(currentTime)} / {fmt(duration)}</span>
+                </div>
+                <div
+                  onClick={handleSeek}
+                  style={{ height: 8, background: c.surfaceHigh, borderRadius: 9999, overflow: "hidden", cursor: "pointer" }}
+                >
+                  <div style={{ height: "100%", width: duration > 0 ? `${(currentTime / duration) * 100}%` : "0%", background: c.primary, borderRadius: 9999 }} />
+                </div>
+              </div>
+            </div>
+            <p style={{ fontSize: 11, color: c.onSurfaceVariant, margin: "10px 0 0", textAlign: "center" }}>
+              Je kunt zo vaak luisteren als je wilt — tik op de balk om terug te gaan.
+            </p>
+          </div>
+        )}
+
+        {!replayable && phase.step === "listen" && (
           <div style={{
             background: c.surfaceLowest, padding: 24, borderRadius: 20, marginBottom: 16,
             boxShadow: "0 4px 16px rgba(26,28,27,0.06)",
@@ -480,24 +558,20 @@ export function ExamRunner({ exam, sections, userId }: Props) {
         {/* Footer CTA */}
         <button
           onClick={goNext}
-          disabled={
-            (phase.step === "listen" && !played) ||
-            (phase.step === "answer" && !sectionAnswered) ||
-            submitting
-          }
+          disabled={!canProceed || submitting}
           style={{
             width: "100%", padding: 16, borderRadius: 9999, border: "none",
-            background: ((phase.step === "listen" && played) || (phase.step === "answer" && sectionAnswered))
+            background: canProceed
               ? `linear-gradient(to bottom, ${c.primary}, ${c.primaryContainer})` : c.surfaceHigh,
-            color: ((phase.step === "listen" && played) || (phase.step === "answer" && sectionAnswered)) ? "#fff" : c.onSurfaceVariant,
-            cursor: ((phase.step === "listen" && played) || (phase.step === "answer" && sectionAnswered)) ? "pointer" : "not-allowed",
+            color: canProceed ? "#fff" : c.onSurfaceVariant,
+            cursor: canProceed ? "pointer" : "not-allowed",
             fontWeight: 800, fontSize: 14, letterSpacing: "0.02em",
-            boxShadow: ((phase.step === "listen" && played) || (phase.step === "answer" && sectionAnswered)) ? "0 10px 20px -5px rgba(0,0,0,0.15)" : "none",
+            boxShadow: canProceed ? "0 10px 20px -5px rgba(0,0,0,0.15)" : "none",
           }}
         >
           {submitting
             ? "Bezig met opslaan..."
-            : phase.step === "listen"
+            : !replayable && phase.step === "listen"
             ? "Naar de vragen"
             : isLastSection
             ? "Examen inleveren"
