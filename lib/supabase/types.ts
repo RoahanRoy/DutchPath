@@ -78,6 +78,9 @@ export type UserVocab = {
   correct_count: number;
   incorrect_count: number;
   streak: number;
+  ease_factor: number;
+  interval_days: number;
+  repetitions: number;
 };
 
 export type DailyActivity = {
@@ -412,8 +415,8 @@ export interface Database {
       };
       user_vocabulary: {
         Row: UserVocab;
-        Insert: { user_id: string; card_id: number; status?: string; next_review_at?: string; correct_count?: number; incorrect_count?: number; streak?: number };
-        Update: { user_id?: string; card_id?: number; status?: string; next_review_at?: string; correct_count?: number; incorrect_count?: number; streak?: number };
+        Insert: { user_id: string; card_id: number; status?: string; next_review_at?: string; correct_count?: number; incorrect_count?: number; streak?: number; ease_factor?: number; interval_days?: number; repetitions?: number };
+        Update: { user_id?: string; card_id?: number; status?: string; next_review_at?: string; correct_count?: number; incorrect_count?: number; streak?: number; ease_factor?: number; interval_days?: number; repetitions?: number };
       };
       daily_activity: {
         Row: DailyActivity;
