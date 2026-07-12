@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import type { VocabCard, UserVocab } from "@/lib/supabase/types";
 import { createClient } from "@/lib/supabase/client";
 import { useAppStore } from "@/lib/store";
-import { calculateNextReview } from "@/lib/utils";
+import { calculateNextReview, previewNextInterval } from "@/lib/utils";
 import { useTheme, getColors } from "@/lib/use-theme";
 
 /**
@@ -44,9 +44,9 @@ const CATEGORY_ICONS: Record<string, string> = {
 };
 
 const RATING_BUTTONS = [
-  { rating: "hard" as const, emoji: "😅", label: "Moeilijk", interval: "+1d", color: "#ba1a1a" },
-  { rating: "ok" as const, emoji: "😊", label: "OK", interval: "+3d", color: "#a04100" },
-  { rating: "easy" as const, emoji: "😎", label: "Makkelijk", interval: "+7d", color: "#2e7d32" },
+  { rating: "hard" as const, emoji: "😅", label: "Moeilijk", color: "#ba1a1a" },
+  { rating: "ok" as const, emoji: "😊", label: "OK", color: "#a04100" },
+  { rating: "easy" as const, emoji: "😎", label: "Makkelijk", color: "#2e7d32" },
 ];
 
 export function VocabularyClient({ cards, userId }: Props) {
@@ -104,10 +104,16 @@ export function VocabularyClient({ cards, userId }: Props) {
     const current = cardStates.get(cardId);
     const currentStreak = current?.streak ?? 0;
 
-    const nextReview = calculateNextReview(rating, currentStreak);
-    const newStreak = rating === "easy" ? currentStreak + 1 : 0;
+    const srs = calculateNextReview(rating, {
+      ease_factor: current?.ease_factor,
+      interval_days: current?.interval_days,
+      repetitions: current?.repetitions,
+    });
+    const nextReview = srs.next_review_at;
+    const newStreak = rating === "hard" ? 0 : currentStreak + 1;
+    // A card is "mastered" once it graduates to a mature (3-week+) interval.
     const newStatus: UserVocab["status"] =
-      newStreak >= 3 ? "mastered" : rating === "easy" ? "reviewing" : "learning";
+      srs.interval_days >= 21 ? "mastered" : srs.repetitions >= 1 ? "reviewing" : "learning";
 
     const newCorrect = (current?.correct_count ?? 0) + (rating !== "hard" ? 1 : 0);
     const newIncorrect = (current?.incorrect_count ?? 0) + (rating === "hard" ? 1 : 0);
@@ -117,6 +123,7 @@ export function VocabularyClient({ cards, userId }: Props) {
       user_id: userId, card_id: cardId, status: newStatus,
       next_review_at: nextReview.toISOString(),
       correct_count: newCorrect, incorrect_count: newIncorrect, streak: newStreak,
+      ease_factor: srs.ease_factor, interval_days: srs.interval_days, repetitions: srs.repetitions,
     });
     const today = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Amsterdam" });
     await (supabase as any).rpc("increment_xp", { p_user_id: userId, p_amount: 2 });
@@ -133,6 +140,7 @@ export function VocabularyClient({ cards, userId }: Props) {
         user_id: userId, card_id: cardId, status: newStatus,
         next_review_at: nextReview.toISOString(),
         correct_count: newCorrect, incorrect_count: newIncorrect, streak: newStreak,
+        ease_factor: srs.ease_factor, interval_days: srs.interval_days, repetitions: srs.repetitions,
       });
       return next;
     });
@@ -282,7 +290,13 @@ export function VocabularyClient({ cards, userId }: Props) {
                 className="fm-fade-up-lg"
                 style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}
               >
-                {RATING_BUTTONS.map((btn) => (
+                {RATING_BUTTONS.map((btn) => {
+                  const days = previewNextInterval(btn.rating, {
+                    ease_factor: uv?.ease_factor,
+                    interval_days: uv?.interval_days,
+                    repetitions: uv?.repetitions,
+                  });
+                  return (
                   <button
                     key={btn.rating}
                     onClick={(e) => { e.stopPropagation(); handleRating(btn.rating); }}
@@ -295,9 +309,10 @@ export function VocabularyClient({ cards, userId }: Props) {
                   >
                     <span style={{ fontSize: 24 }}>{btn.emoji}</span>
                     <span style={{ fontSize: 12, fontWeight: 700, color: c.onSurface }}>{btn.label}</span>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: btn.color }}>{btn.interval}</span>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: btn.color }}>+{days}d</span>
                   </button>
-                ))}
+                  );
+                })}
               </section>
             )}
         </main>
