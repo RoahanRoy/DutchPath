@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { getAmsterdamDate, getAmsterdamHour } from "./utils";
 
 export type AchievementContext = {
   track: "reading" | "writing" | "listening";
@@ -25,25 +26,6 @@ type AchievementRow = {
   icon: string;
   xp_reward: number;
 };
-
-const AMSTERDAM_TZ = "Europe/Amsterdam";
-
-function amsterdamHour(d = new Date()): number {
-  const h = new Intl.DateTimeFormat("en-US", {
-    timeZone: AMSTERDAM_TZ, hour: "2-digit", hour12: false,
-  }).format(d);
-  return parseInt(h, 10);
-}
-
-function amsterdamDate(d = new Date()): string {
-  const parts = new Intl.DateTimeFormat("en-CA", {
-    timeZone: AMSTERDAM_TZ, year: "numeric", month: "2-digit", day: "2-digit",
-  }).formatToParts(d);
-  const y = parts.find((p) => p.type === "year")!.value;
-  const m = parts.find((p) => p.type === "month")!.value;
-  const day = parts.find((p) => p.type === "day")!.value;
-  return `${y}-${m}-${day}`;
-}
 
 function daysBetween(a: string, b: string): number {
   const [ay, am, ad] = a.split("-").map(Number);
@@ -151,12 +133,11 @@ export async function checkAndUnlockAchievements(
     // Approximation: 7 distinct consecutive days ending today with any lesson/writing activity.
     // daily_activity doesn't distinguish tracks, so treat it as a learning streak.
     if (activity.length < 7) return false;
-    const today = amsterdamDate();
     const dates = new Set(activity.map((a) => a.date));
     for (let i = 0; i < 7; i += 1) {
       const d = new Date();
       d.setUTCDate(d.getUTCDate() - i);
-      if (!dates.has(amsterdamDate(d))) return false;
+      if (!dates.has(getAmsterdamDate(d))) return false;
     }
     // Plus at least one writing completion must exist
     return writingCompletedCount > 0;
@@ -166,13 +147,13 @@ export async function checkAndUnlockAchievements(
 
   // Doorzetter: most recent prior activity (before today) was 3+ days ago.
   const comebackAfterGap = (() => {
-    const today = amsterdamDate();
+    const today = getAmsterdamDate();
     const prior = activity.filter((a) => a.date < today);
     if (prior.length === 0) return false;
     return daysBetween(today, prior[0].date) >= 3;
   })();
 
-  const hour = amsterdamHour();
+  const hour = getAmsterdamHour();
 
   const newlyUnlocked: UnlockedAchievement[] = [];
 

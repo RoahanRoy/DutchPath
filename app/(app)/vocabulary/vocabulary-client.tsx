@@ -4,7 +4,7 @@ import { useState, useMemo } from "react";
 import type { VocabCard, UserVocab } from "@/lib/supabase/types";
 import { createClient } from "@/lib/supabase/client";
 import { useAppStore } from "@/lib/store";
-import { calculateNextReview, previewNextInterval } from "@/lib/utils";
+import { calculateNextReview, previewNextInterval, getAmsterdamDate } from "@/lib/utils";
 import { useTheme, getColors } from "@/lib/use-theme";
 
 /**
@@ -62,21 +62,20 @@ export function VocabularyClient({ cards, userId }: Props) {
   const [isFlipped, setIsFlipped] = useState(false);
   const [reviewDone, setReviewDone] = useState(false);
 
-  const now = new Date();
-
   const filtered = useMemo(() => {
     return cards.filter((c) => category === "all" || c.category === category);
   }, [cards, category]);
 
   const dueCards = useMemo(() => {
+    const now = Date.now();
     return filtered
       .filter((c) => {
         const uv = cardStates.get(c.id);
         if (!uv) return false;
-        return new Date(uv.next_review_at) <= now;
+        return new Date(uv.next_review_at).getTime() <= now;
       })
       .map((c) => c.id);
-  }, [filtered, cardStates, now]);
+  }, [filtered, cardStates]);
 
   const catStats = useMemo(() => {
     return CATEGORIES.slice(1).map(({ value, label }) => {
@@ -118,20 +117,23 @@ export function VocabularyClient({ cards, userId }: Props) {
     const newCorrect = (current?.correct_count ?? 0) + (rating !== "hard" ? 1 : 0);
     const newIncorrect = (current?.incorrect_count ?? 0) + (rating === "hard" ? 1 : 0);
 
+    // All four writes are independent — one parallel wave instead of four
+    // sequential round-trips keeps the card-to-card transition snappy.
     const supabase = createClient();
-    await (supabase.from("user_vocabulary") as any).upsert({
-      user_id: userId, card_id: cardId, status: newStatus,
-      next_review_at: nextReview.toISOString(),
-      correct_count: newCorrect, incorrect_count: newIncorrect, streak: newStreak,
-      ease_factor: srs.ease_factor, interval_days: srs.interval_days, repetitions: srs.repetitions,
-    });
-    const today = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Amsterdam" });
-    await (supabase as any).rpc("increment_xp", { p_user_id: userId, p_amount: 2 });
-    await (supabase as any).rpc("increment_streak", { p_user_id: userId });
-    await (supabase as any).rpc("upsert_daily_activity", {
-      p_user_id: userId, p_date: today, p_xp: 2,
-      p_minutes: 0, p_lessons: 0, p_words: 1,
-    });
+    await Promise.all([
+      (supabase.from("user_vocabulary") as any).upsert({
+        user_id: userId, card_id: cardId, status: newStatus,
+        next_review_at: nextReview.toISOString(),
+        correct_count: newCorrect, incorrect_count: newIncorrect, streak: newStreak,
+        ease_factor: srs.ease_factor, interval_days: srs.interval_days, repetitions: srs.repetitions,
+      }),
+      (supabase as any).rpc("increment_xp", { p_user_id: userId, p_amount: 2 }),
+      (supabase as any).rpc("increment_streak", { p_user_id: userId }),
+      (supabase as any).rpc("upsert_daily_activity", {
+        p_user_id: userId, p_date: getAmsterdamDate(), p_xp: 2,
+        p_minutes: 0, p_lessons: 0, p_words: 1,
+      }),
+    ]);
     updateXP(2);
 
     setCardStates((prev) => {

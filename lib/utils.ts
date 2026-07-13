@@ -13,13 +13,14 @@ export function getDaysUntilExam(examDate: string | null): number | null {
   return diff;
 }
 
-export function getAmsterdamDate(): string {
-  return new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Amsterdam" });
+/** YYYY-MM-DD in Amsterdam local time (en-CA locale formats ISO-style). */
+export function getAmsterdamDate(d: Date = new Date()): string {
+  return d.toLocaleDateString("en-CA", { timeZone: "Europe/Amsterdam" });
 }
 
-export function getAmsterdamHour(): number {
+export function getAmsterdamHour(d: Date = new Date()): number {
   return parseInt(
-    new Date().toLocaleTimeString("en-US", {
+    d.toLocaleTimeString("en-US", {
       timeZone: "Europe/Amsterdam",
       hour: "numeric",
       hour12: false,

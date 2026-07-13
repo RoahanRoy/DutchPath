@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useAppStore } from "@/lib/store";
 import { useTheme, getColors } from "@/lib/use-theme";
+import { getAmsterdamDate } from "@/lib/utils";
 import { checkAndUnlockAchievements } from "@/lib/achievements";
 import type {
   ListeningTask,
@@ -154,7 +155,9 @@ export function ListeningPlayer({ task, progress, draft, userId, nextTaskId }: P
     const score = total > 0 ? Math.round((correctCount / total) * 100) : 0;
     const xpAwarded = Math.round((task.xp_reward * score) / 100);
     const now = new Date().toISOString();
-    const today = now.slice(0, 10);
+    // Amsterdam-local date, matching what increment_streak uses server-side —
+    // the UTC date drifts a day off around midnight CET.
+    const today = getAmsterdamDate();
     const elapsedSeconds = Math.floor((Date.now() - startedAtRef.current) / 1000);
 
     // Finalize submission
@@ -212,39 +215,23 @@ export function ListeningPlayer({ task, progress, draft, userId, nextTaskId }: P
       });
     }
 
-    // XP + streak + daily activity (shared RPCs)
+    // XP + streak + daily activity + listening counters (shared RPCs) —
+    // independent writes, so run them in one parallel wave.
     const sb = supabase as unknown as {
       rpc: (fn: string, args: Record<string, unknown>) => Promise<unknown>;
     };
-    await sb.rpc("increment_xp", { p_user_id: userId, p_amount: xpAwarded });
-    await sb.rpc("increment_streak", { p_user_id: userId });
-    await sb.rpc("upsert_daily_activity", {
-      p_user_id: userId, p_date: today,
-      p_xp: xpAwarded, p_minutes: Math.ceil(elapsedSeconds / 60),
-      p_lessons: 1, p_words: 0,
-    });
-
-    // Increment listening counters directly
-    const { data: prof } = await (supabase as unknown as {
-      from: (t: string) => {
-        select: (cols: string) => {
-          eq: (k: string, v: unknown) => {
-            single: () => Promise<{ data: { listening_xp_total?: number; listening_completed_count?: number } | null }>;
-          };
-        };
-      };
-    }).from("profiles").select("listening_xp_total,listening_completed_count").eq("id", userId).single();
-    if (prof) {
-      const p = prof as unknown as { listening_xp_total: number; listening_completed_count: number };
-      await (supabase as unknown as {
-        from: (t: string) => {
-          update: (p: unknown) => { eq: (k: string, v: string) => Promise<unknown> };
-        };
-      }).from("profiles").update({
-        listening_xp_total: (p.listening_xp_total ?? 0) + xpAwarded,
-        listening_completed_count: (p.listening_completed_count ?? 0) + 1,
-      }).eq("id", userId);
-    }
+    await Promise.all([
+      sb.rpc("increment_xp", { p_user_id: userId, p_amount: xpAwarded }),
+      sb.rpc("increment_streak", { p_user_id: userId }),
+      sb.rpc("upsert_daily_activity", {
+        p_user_id: userId, p_date: today,
+        p_xp: xpAwarded, p_minutes: Math.ceil(elapsedSeconds / 60),
+        p_lessons: 1, p_words: 0,
+      }),
+      sb.rpc("increment_track_stats", {
+        p_user_id: userId, p_track: "listening", p_xp: xpAwarded, p_completed: 1,
+      }),
+    ]);
 
     updateXP(xpAwarded);
 

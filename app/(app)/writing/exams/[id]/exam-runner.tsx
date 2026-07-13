@@ -13,6 +13,7 @@ import type {
 import { createClient } from "@/lib/supabase/client";
 import { useAppStore } from "@/lib/store";
 import { useTheme, getColors } from "@/lib/use-theme";
+import { getAmsterdamDate } from "@/lib/utils";
 
 type Phase =
   | { kind: "intro" }
@@ -215,33 +216,24 @@ export function ExamRunner({ exam, sections, userId }: Props) {
       });
     }
 
+    // XP + streak + daily activity + writing-track counters — independent
+    // writes, so run them in one parallel wave. Amsterdam-local date matches
+    // what increment_streak uses server-side.
     const sb = supabase as unknown as {
       rpc: (fn: string, args: Record<string, unknown>) => Promise<unknown>;
     };
-    await sb.rpc("increment_xp", { p_user_id: userId, p_amount: xpAwarded });
-    await sb.rpc("increment_streak", { p_user_id: userId });
-    await sb.rpc("upsert_daily_activity", {
-      p_user_id: userId, p_date: now.slice(0, 10),
-      p_xp: xpAwarded, p_minutes: Math.ceil(elapsed / 60),
-      p_lessons: 1, p_words: 0,
-    });
-
-    // Bump writing-track counters on the profile
-    const { data: prof } = await (supabase as unknown as {
-      from: (t: string) => {
-        select: (cols: string) => {
-          eq: (k: string, v: unknown) => { single: () => Promise<{ data: { writing_xp_total: number; writing_completed_count: number } | null }> };
-        };
-      };
-    }).from("profiles").select("writing_xp_total,writing_completed_count").eq("id", userId).single();
-    if (prof) {
-      await (supabase as unknown as {
-        from: (t: string) => { update: (p: unknown) => { eq: (k: string, v: string) => Promise<unknown> } };
-      }).from("profiles").update({
-        writing_xp_total: prof.writing_xp_total + xpAwarded,
-        writing_completed_count: prof.writing_completed_count + 1,
-      }).eq("id", userId);
-    }
+    await Promise.all([
+      sb.rpc("increment_xp", { p_user_id: userId, p_amount: xpAwarded }),
+      sb.rpc("increment_streak", { p_user_id: userId }),
+      sb.rpc("upsert_daily_activity", {
+        p_user_id: userId, p_date: getAmsterdamDate(),
+        p_xp: xpAwarded, p_minutes: Math.ceil(elapsed / 60),
+        p_lessons: 1, p_words: 0,
+      }),
+      sb.rpc("increment_track_stats", {
+        p_user_id: userId, p_track: "writing", p_xp: xpAwarded, p_completed: 1,
+      }),
+    ]);
 
     updateXP(xpAwarded);
     if (passed) {

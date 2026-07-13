@@ -12,7 +12,7 @@ import type {
 } from "@/lib/supabase/types";
 import { createClient } from "@/lib/supabase/client";
 import { useAppStore } from "@/lib/store";
-import { getAmsterdamDate, getAmsterdamHour } from "@/lib/utils";
+import { getAmsterdamDate } from "@/lib/utils";
 import { useTheme, getColors } from "@/lib/use-theme";
 import { checkAndUnlockAchievements } from "@/lib/achievements";
 
@@ -223,7 +223,6 @@ export function WritingEditor({ task, progress, draft, phrases, userId, nextTask
     const supabase = createClient();
     const now = new Date().toISOString();
     const today = getAmsterdamDate();
-    const hour = getAmsterdamHour();
 
     const fullSelfScore: SelfScore = { ...selfScore, total };
     const submissionText = task.task_type === "form" ? JSON.stringify(formFields) : text;
@@ -283,37 +282,20 @@ export function WritingEditor({ task, progress, draft, phrases, userId, nextTask
       });
     }
 
-    // Update profile writing stats
-    await (supabase as any).from("profiles").update({
-      writing_xp_total: (supabase as any).rpc ? undefined : undefined,
-    });
-
-    await (supabase as any).rpc("increment_xp", { p_user_id: userId, p_amount: totalXP });
-    await (supabase as any).rpc("increment_streak", { p_user_id: userId });
-    await (supabase as any).rpc("upsert_daily_activity", {
-      p_user_id: userId, p_date: today,
-      p_xp: totalXP, p_minutes: Math.ceil(elapsedSeconds / 60),
-      p_lessons: 1, p_words: 0,
-    });
-
-    // Increment writing counters directly
-    await (supabase as any).from("profiles")
-      .update({
-        writing_xp_total: (supabase as any).literal
-          ? undefined
-          : undefined,
-      })
-      .eq("id", userId);
-
-    // Use raw SQL increment via rpc fallback
-    const { data: prof } = await supabase.from("profiles").select("writing_xp_total,writing_completed_count").eq("id", userId).single();
-    if (prof) {
-      const p = prof as unknown as { writing_xp_total: number; writing_completed_count: number };
-      await (supabase as any).from("profiles").update({
-        writing_xp_total: p.writing_xp_total + totalXP,
-        writing_completed_count: p.writing_completed_count + 1,
-      }).eq("id", userId);
-    }
+    // XP, streak, daily activity and writing-track counters are independent —
+    // fire them together instead of paying four sequential round-trips.
+    await Promise.all([
+      (supabase as any).rpc("increment_xp", { p_user_id: userId, p_amount: totalXP }),
+      (supabase as any).rpc("increment_streak", { p_user_id: userId }),
+      (supabase as any).rpc("upsert_daily_activity", {
+        p_user_id: userId, p_date: today,
+        p_xp: totalXP, p_minutes: Math.ceil(elapsedSeconds / 60),
+        p_lessons: 1, p_words: 0,
+      }),
+      (supabase as any).rpc("increment_track_stats", {
+        p_user_id: userId, p_track: "writing", p_xp: totalXP, p_completed: 1,
+      }),
+    ]);
 
     updateXP(totalXP);
 
@@ -333,7 +315,6 @@ export function WritingEditor({ task, progress, draft, phrases, userId, nextTask
       await (supabase as any).rpc("increment_xp", { p_user_id: userId, p_amount: bonusXP });
       updateXP(bonusXP);
     }
-    void hour;
 
     setPhase("complete");
   };

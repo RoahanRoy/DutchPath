@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import type { Lesson, UserLessonProgress, LessonContent, Question } from "@/lib/supabase/types";
 import { createClient } from "@/lib/supabase/client";
 import { useAppStore } from "@/lib/store";
-import { getAmsterdamHour, getAmsterdamDate, getStarRating } from "@/lib/utils";
+import { getAmsterdamDate, getStarRating } from "@/lib/utils";
 import { useTheme, getColors } from "@/lib/use-theme";
 import { checkAndUnlockAchievements } from "@/lib/achievements";
 
@@ -112,7 +112,6 @@ export function LessonPlayer({ lesson, progress, userId, nextLessonId }: Props) 
     const supabase = createClient();
     const now = new Date().toISOString();
     const today = getAmsterdamDate();
-    const hour = getAmsterdamHour();
 
     const bestScore = Math.max(score, progress?.score ?? 0);
     await (supabase.from("user_lesson_progress") as any).upsert({
@@ -121,18 +120,21 @@ export function LessonPlayer({ lesson, progress, userId, nextLessonId }: Props) 
       time_spent_seconds: elapsedSeconds, completed_at: now, last_attempt_at: now,
     });
 
-    const { data: nextLesson } = await supabase.from("lessons").select("id").eq("unlock_after_lesson_id", lesson.id).single();
+    const { data: nextLesson } = await supabase.from("lessons").select("id").eq("unlock_after_lesson_id", lesson.id).maybeSingle();
     if (nextLesson) {
       const nextLessonId = (nextLesson as unknown as { id: number }).id;
       await (supabase.from("user_lesson_progress") as any).upsert({ user_id: userId, lesson_id: nextLessonId, status: "available" });
     }
 
-    await (supabase as any).rpc("increment_xp", { p_user_id: userId, p_amount: totalXP });
-    await (supabase as any).rpc("increment_streak", { p_user_id: userId });
-    await (supabase as any).rpc("upsert_daily_activity", {
-      p_user_id: userId, p_date: today, p_xp: totalXP,
-      p_minutes: Math.ceil(elapsedSeconds / 60), p_lessons: 1, p_words: 0,
-    });
+    // Independent writes — one parallel wave instead of three round-trips.
+    await Promise.all([
+      (supabase as any).rpc("increment_xp", { p_user_id: userId, p_amount: totalXP }),
+      (supabase as any).rpc("increment_streak", { p_user_id: userId }),
+      (supabase as any).rpc("upsert_daily_activity", {
+        p_user_id: userId, p_date: today, p_xp: totalXP,
+        p_minutes: Math.ceil(elapsedSeconds / 60), p_lessons: 1, p_words: 0,
+      }),
+    ]);
 
     updateXP(totalXP);
 
@@ -153,8 +155,6 @@ export function LessonPlayer({ lesson, progress, userId, nextLessonId }: Props) 
       await (supabase as any).rpc("increment_xp", { p_user_id: userId, p_amount: bonusXP });
       updateXP(bonusXP);
     }
-    // Suppress unused-var warning for legacy hour reference
-    void hour;
   }, [questions.length, lesson, progress, elapsedSeconds, userId, heartsLeft, unlockedHearts, addToast, updateXP]);
 
   const advance = useCallback(async () => {
