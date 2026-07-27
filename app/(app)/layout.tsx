@@ -3,6 +3,7 @@ import { getProfile } from "@/lib/supabase/server";
 import { TopNav } from "@/components/nav/top-nav";
 import { MobileNav } from "@/components/nav/mobile-nav";
 import { ProfileHydrator } from "@/components/profile-hydrator";
+import { InstallPrompt } from "@/components/pwa/install-prompt";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   // Single network call: getProfile() verifies the JWT locally (no getUser
@@ -22,6 +23,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         {children}
       </main>
       <MobileNav />
+      <InstallPrompt />
     </div>
   );
 }

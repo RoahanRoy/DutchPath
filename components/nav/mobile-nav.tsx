@@ -32,7 +32,13 @@ export function MobileNav() {
       style={{
         position: "fixed", bottom: 0, left: 0, width: "100%", zIndex: 50,
         display: "flex", justifyContent: "center", alignItems: "center",
-        padding: "0 16px", paddingBottom: 32, height: 96, pointerEvents: "none",
+        pointerEvents: "none",
+        paddingLeft: "max(16px, env(safe-area-inset-left))",
+        paddingRight: "max(16px, env(safe-area-inset-right))",
+        // Height is the 64px pill plus this padding. Where there is no home
+        // indicator the inset is 0 and this resolves to the original 32px/96px.
+        height: "auto",
+        paddingBottom: "max(32px, calc(env(safe-area-inset-bottom) + 8px))",
       }}
       className="md:hidden"
       aria-label="Main navigation"

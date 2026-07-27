@@ -204,3 +204,29 @@ body {
 /* Hide scrollbar utility */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ---- PWA ----
+   The viewport is `viewport-fit=cover`, so the page now paints under the notch
+   and the home indicator. Hand the horizontal inset back to avoid clipping
+   content behind a landscape notch; every inset is 0 on hardware without one,
+   which is why this is invisible on desktop and on non-notched phones. */
+body {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* Installed-app-only polish. Scoped to standalone display mode, so none of it
+   can reach the site in a browser tab. */
+@media (display-mode: standalone) {
+  html,
+  body {
+    /* A browser has chrome to absorb rubber-banding; a home screen app does
+       not, and the bounce is what gives away that it is a web view. */
+    overscroll-behavior-y: none;
+  }
+
+  /* The grey tap flash reads as a web page rather than an app. */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
