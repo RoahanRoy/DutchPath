@@ -16,6 +16,37 @@ function isIosSafari(): boolean {
   return isIos && !/crios|fxios|edgios|opios/i.test(ua);
 }
 
+/**
+ * iOS share glyph — a box with an arrow leaving the top.
+ *
+ * Inline rather than a `.mso` ligature: /fonts/material-symbols-outlined.woff2
+ * is a 129-icon subset that has no `ios_share`. Because the subset does carry
+ * a-z, the missing ligature rendered as the literal text "ios_share" instead of
+ * failing visibly. The user has to match this against a real Safari button, so
+ * it has to be the actual shape.
+ */
+function ShareIcon({ color }: { color: string }) {
+  return (
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke={color}
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      role="img"
+      aria-label="Share"
+      style={{ verticalAlign: "-2px" }}
+    >
+      <path d="M12 15V4" />
+      <path d="M8.5 7.5 12 4l3.5 3.5" />
+      <path d="M8 10H6a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2h-2" />
+    </svg>
+  );
+}
+
 function isInstalled(): boolean {
   return (
     window.matchMedia("(display-mode: standalone)").matches ||
@@ -100,16 +131,9 @@ export function InstallPrompt() {
           Install DutchPath
         </p>
         <p style={{ fontSize: 13, lineHeight: 1.5, color: c.onSurfaceVariant }}>
-          Tap{" "}
-          <span
-            className="mso"
-            aria-label="Share"
-            style={{ fontSize: 16, color: c.primary, verticalAlign: "-3px" }}
-          >
-            ios_share
-          </span>{" "}
-          then <strong style={{ fontWeight: 600 }}>Add to Home Screen</strong> to open it
-          like an app.
+          Tap <ShareIcon color={c.primary} /> in the Safari toolbar, then{" "}
+          <strong style={{ fontWeight: 600 }}>Add to Home Screen</strong> to open it like
+          an app.
         </p>
       </div>
 
