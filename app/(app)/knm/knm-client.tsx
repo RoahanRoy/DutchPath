@@ -5,9 +5,11 @@ import { useTheme, getColors } from "@/lib/use-theme";
 import {
   KNM_TOPICS,
   KNM_QUESTIONS,
+  KNM_MOCK_EXAMS,
   TOPIC_COLORS,
   type KnmTopic,
   type KnmQuestion,
+  type KnmMockExam,
 } from "./knm-data";
 
 const font = {
@@ -20,9 +22,17 @@ const MOCK_EXAM_LENGTH = 40;
 const MOCK_EXAM_SECONDS = 45 * 60;
 const PASSING_PERCENT = 66;
 
+/* Thematische vragenbank + de vaste proefexamens. */
+const totalQuestions =
+  KNM_QUESTIONS.length + KNM_MOCK_EXAMS.reduce((n, m) => n + m.questions.length, 0);
+
 type View = "home" | "topic" | "exam" | "results";
 
 interface ExamState {
+  /** null for the random practice exam drawn from the question bank. */
+  mock: KnmMockExam | null;
+  title: string;
+  passingPercent: number;
   questions: KnmQuestion[];
   answers: Record<string, number>;
   startedAt: number;
@@ -93,7 +103,8 @@ export function KnmClient() {
     setView("topic");
   };
 
-  const startMockExam = () => {
+  /** Random practice exam drawn from the shared question bank. */
+  const randomExamQuestions = () => {
     const all = shuffle(KNM_QUESTIONS);
     const perTopicCap = 5;
     const byTopic: Record<string, KnmQuestion[]> = {};
@@ -108,9 +119,22 @@ export function KnmClient() {
     } else {
       picked = shuffle(picked).slice(0, MOCK_EXAM_LENGTH);
     }
-    setExam({ questions: picked, answers: {}, startedAt: Date.now(), submittedAt: null });
+    return picked;
+  };
+
+  /** Pass a mock for a fixed exam; omit it for the random practice exam. */
+  const startMockExam = (mock?: KnmMockExam | null) => {
+    setExam({
+      mock: mock ?? null,
+      title: mock?.title ?? "Willekeurig proefexamen",
+      passingPercent: mock?.passingPercent ?? PASSING_PERCENT,
+      questions: mock ? mock.questions : randomExamQuestions(),
+      answers: {},
+      startedAt: Date.now(),
+      submittedAt: null,
+    });
     setExamIdx(0);
-    setExamTimeLeft(MOCK_EXAM_SECONDS);
+    setExamTimeLeft(mock ? mock.durationMinutes * 60 : MOCK_EXAM_SECONDS);
     setExamReview(false);
     setView("exam");
   };
@@ -350,6 +374,9 @@ export function KnmClient() {
             </>
           ) : (
             <>
+              <div style={{ fontSize: 13, fontWeight: 800, color: c.primary, marginBottom: 4 }}>
+                {exam.title}
+              </div>
               <div style={{
                 display: "flex", alignItems: "center", gap: 8, marginBottom: 10,
                 fontSize: 11, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase",
@@ -400,7 +427,7 @@ export function KnmClient() {
     const total = exam.questions.length;
     const correct = exam.questions.filter((qq) => exam.answers[qq.id] === qq.correct_index).length;
     const pct = Math.round((correct / total) * 100);
-    const passed = pct >= PASSING_PERCENT;
+    const passed = pct >= exam.passingPercent;
     const minutesUsed = Math.round(((exam.submittedAt ?? Date.now()) - exam.startedAt) / 60000);
 
     const byTopic: Record<string, { correct: number; total: number; title: string; color: string }> = {};
@@ -430,8 +457,9 @@ export function KnmClient() {
             <h1 style={{ fontSize: 28, fontWeight: 800, letterSpacing: "-0.02em", marginTop: 8 }}>
               {passed ? "Geslaagd!" : "Nog niet geslaagd"}
             </h1>
+            <p style={{ fontSize: 13, fontWeight: 700, color: c.primary, marginTop: 6 }}>{exam.title}</p>
             <p style={{ fontSize: 14, color: c.onSurfaceVariant, marginTop: 4 }}>
-              Je moet minimaal {PASSING_PERCENT}% goed hebben om te slagen.
+              Je moet minimaal {exam.passingPercent}% goed hebben om te slagen.
             </p>
             <div style={{ display: "flex", justifyContent: "center", gap: 24, marginTop: 20, flexWrap: "wrap" }}>
               <Stat label="Score" value={`${correct}/${total}`} />
@@ -490,7 +518,7 @@ export function KnmClient() {
           </div>
 
           <div style={{ display: "flex", gap: 10, marginTop: 24 }}>
-            <button onClick={startMockExam} style={secondaryBtn(c, false)}>
+            <button onClick={() => startMockExam(exam.mock)} style={secondaryBtn(c, false)}>
               <span className="mso" style={{ fontSize: 18 }}>refresh</span> Opnieuw
             </button>
             <button onClick={goHome} style={primaryBtn(c, false)}>
@@ -526,7 +554,7 @@ export function KnmClient() {
         {/* Mock exam CTA */}
         <button
           className="tap-shrink"
-          onClick={startMockExam}
+          onClick={() => startMockExam()}
           style={{
             width: "100%", textAlign: "left", border: "none", cursor: "pointer",
             padding: 20, borderRadius: 24,
@@ -543,10 +571,10 @@ export function KnmClient() {
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,0.7)", letterSpacing: "0.1em", textTransform: "uppercase" }}>
-              Proefexamen
+              Willekeurig proefexamen
             </div>
             <div style={{ fontSize: 17, fontWeight: 800, color: "#fff", letterSpacing: "-0.015em" }}>
-              Start het volledige mock-examen
+              Elke keer nieuwe vragen uit de vragenbank
             </div>
             <div style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", marginTop: 2 }}>
               {MOCK_EXAM_LENGTH} vragen · 45 min · slagingsgrens {PASSING_PERCENT}%
@@ -560,8 +588,66 @@ export function KnmClient() {
           display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginBottom: 28,
         }}>
           <InfoCell c={c} icon="menu_book" label={`${KNM_TOPICS.length} thema's`} />
-          <InfoCell c={c} icon="help_center" label={`${KNM_QUESTIONS.length} vragen`} />
-          <InfoCell c={c} icon="event_available" label="Realistisch" />
+          <InfoCell c={c} icon="help_center" label={`${totalQuestions} vragen`} />
+          <InfoCell c={c} icon="event_available" label={`${KNM_MOCK_EXAMS.length} examens`} />
+        </div>
+
+        {/* Fixed full-length mock exams */}
+        <h2 style={{ fontSize: 14, fontWeight: 800, letterSpacing: "0.05em", textTransform: "uppercase", color: c.onSurfaceVariant, marginBottom: 10 }}>
+          Volledige proefexamens · A2
+        </h2>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 28 }}>
+          {KNM_MOCK_EXAMS.map((m) => (
+            <button
+              key={m.id}
+              className="tap-shrink"
+              onClick={() => startMockExam(m)}
+              aria-label={`Start ${m.title}`}
+              style={{
+                width: "100%", textAlign: "left", cursor: "pointer",
+                background: c.surfaceLowest, borderRadius: 20, padding: 18,
+                border: `1px solid ${c.outlineVariant}40`,
+                boxShadow: "0px 4px 14px rgba(26,28,27,0.04)",
+                display: "flex", flexDirection: "column", gap: 10,
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+                <div style={{
+                  width: 42, height: 42, borderRadius: 13, flexShrink: 0,
+                  background: `${c.primary}12`,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}>
+                  <span className="mso mso-fill" style={{ color: c.primary, fontSize: 22 }}>assignment</span>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: c.primary }}>
+                    Examen {m.position} · {m.level}
+                  </div>
+                  <div style={{ fontSize: 15, fontWeight: 800, letterSpacing: "-0.01em", marginTop: 2 }}>
+                    {m.title}
+                  </div>
+                  <div style={{ fontSize: 12, color: c.onSurfaceVariant, marginTop: 4, lineHeight: 1.4 }}>
+                    {m.description}
+                  </div>
+                </div>
+                <span className="mso" style={{ color: c.onSurfaceVariant, fontSize: 22 }}>chevron_right</span>
+              </div>
+              <div style={{ display: "flex", gap: 14, fontSize: 11, fontWeight: 700, color: c.onSurfaceVariant, flexWrap: "wrap" }}>
+                <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                  <span className="mso" style={{ fontSize: 14 }}>quiz</span>
+                  {m.questions.length} vragen
+                </span>
+                <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                  <span className="mso" style={{ fontSize: 14 }}>schedule</span>
+                  {m.durationMinutes} min
+                </span>
+                <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                  <span className="mso" style={{ fontSize: 14 }}>flag</span>
+                  Slagen ≥ {m.passingPercent}%
+                </span>
+              </div>
+            </button>
+          ))}
         </div>
 
         {/* Topics grid */}
