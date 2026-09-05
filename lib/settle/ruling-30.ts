@@ -24,6 +24,18 @@
 /** The date every figure in RULING_YEARS was last checked against its source. */
 export const VERIFIED_ON = "2026-09-05";
 
+/**
+ * The version of the schedule below. Stored on every saved check so a stored
+ * verdict can be replayed against the figures that actually produced it.
+ *
+ * VERIFIED_ON cannot do that job on its own: it records when the figures were
+ * last *looked at*, which is not the same as when they last *changed*. Correct a
+ * norm without moving it and older rows silently claim a vintage they no longer
+ * have. Bump this on ANY edit to RULING_YEARS — a new row, a corrected figure, a
+ * null filled in — whether or not VERIFIED_ON moves with it.
+ */
+export const RULESET_VERSION = "2026.09.05-1";
+
 /* ────────────────────────────────────────────────────────────────────────────
    The versioned schedule
    ──────────────────────────────────────────────────────────────────────────── */
@@ -42,7 +54,13 @@ export type RulingYear = {
   salaryNormUnder30Master: number | null;
   /** WNT / Balkenendenorm the percentage is capped at. Null where unconfirmed. */
   cappedAt: number | null;
-  note: string;
+  /**
+   * The percentage schedule a start year falls into, as shown to the user.
+   * Lives here rather than in bandFor() so the 2027 boundary is stated once, in
+   * the table, and an annual review that touches a row cannot leave a stale date
+   * behind in a branch.
+   */
+  band: string;
 };
 
 /**
@@ -51,7 +69,7 @@ export type RulingYear = {
  * VERIFIED_ON forward:
  *
  *   1. Add a row for the new year: `salaryNorm`, `salaryNormUnder30Master`,
- *      `percentage`, `cappedAt`.
+ *      `percentage`, `cappedAt`, `band`.
  *   2. Fill in RULING_YEARS[2027].salaryNorm and .salaryNormUnder30Master. They
  *      are null today: the Tax Plan 2025 named € 50.436 and € 38.388, but those
  *      are 2024 price levels "met jaarlijkse indexatie", and the indexed 2027
@@ -65,6 +83,11 @@ export type RulingYear = {
  *      of writing, so they are null rather than invented.
  *   5. Re-check whether the pre-2024 transitional right has expired. The earliest
  *      cohort's 60 months run out during 2028.
+ *   6. Re-check every `band` string. It is the user-facing percentage schedule
+ *      and it names 31 December 2026; that date stops being right the moment the
+ *      schedule changes.
+ *   7. Bump RULESET_VERSION. Do this for any edit to a row, not only for a new
+ *      year — saved checks are replayed against it.
  */
 export const RULING_YEARS: Record<number, RulingYear> = {
   // https://www.belastingdienst.nl/wps/wcm/connect/en/individuals/content/coming-to-work-in-the-netherlands-30-percent-facility
@@ -74,7 +97,7 @@ export const RULING_YEARS: Record<number, RulingYear> = {
     salaryNorm: 46_107,
     salaryNormUnder30Master: 35_048,
     cappedAt: null, // not confirmed on an official page — see review note 4
-    note: "30% for 2024–2026; 27% from 1 January 2027.",
+    band: "30% until 31 December 2026, then 27%",
   },
   // https://www.belastingdienst.nl/wps/wcm/connect/en/individuals/content/coming-to-work-in-the-netherlands-30-percent-facility
   2025: {
@@ -83,7 +106,7 @@ export const RULING_YEARS: Record<number, RulingYear> = {
     salaryNorm: 46_660,
     salaryNormUnder30Master: 35_468,
     cappedAt: null, // not confirmed on an official page — see review note 4
-    note: "30% for 2024–2026; 27% from 1 January 2027.",
+    band: "30% until 31 December 2026, then 27%",
   },
   // https://www.belastingdienst.nl/wps/wcm/connect/bldcontentnl/belastingdienst/zakelijk/internationaal/personeel/u_bent_niet_in_nederland_gevestigd_loonheffingen_inhouden/als_u_loonheffingen_gaat_inhouden/extraterritoriale_kosten_en_de_30procentregeling/voorwaarden_voor_de_30procentregeling1/deskundigheidsvereiste
   2026: {
@@ -94,7 +117,7 @@ export const RULING_YEARS: Record<number, RulingYear> = {
     // Max tax-free allowance for 2026 is € 78.600, i.e. 30% of a € 262.000 cap:
     // https://www.belastingdienst.nl/wps/wcm/connect/bldcontentnl/belastingdienst/zakelijk/internationaal/personeel/u_bent_niet_in_nederland_gevestigd_loonheffingen_inhouden/als_u_loonheffingen_gaat_inhouden/extraterritoriale_kosten_en_de_30procentregeling/inhoud_van_de_regeling/inhoud_van_de_regeling
     cappedAt: 262_000,
-    note: "30% for 2024–2026; 27% from 1 January 2027.",
+    band: "30% until 31 December 2026, then 27%",
   },
   // https://ondernemersplein.overheid.nl/wetswijzigingen/vergoeding-30-procent-regeling-expats-wordt-27-procent/
   2027: {
@@ -103,7 +126,7 @@ export const RULING_YEARS: Record<number, RulingYear> = {
     salaryNorm: null, // indexed figure not published as of VERIFIED_ON
     salaryNormUnder30Master: null, // idem
     cappedAt: null,
-    note: "27% from 1 January 2027. The indexed salary norms for 2027 are not published yet.",
+    band: "27% for the full term",
   },
 };
 
@@ -112,11 +135,26 @@ const KNOWN_YEARS = Object.keys(RULING_YEARS).map(Number).sort((a, b) => a - b);
 export const FIRST_KNOWN_YEAR = KNOWN_YEARS[0];
 export const LAST_KNOWN_YEAR = KNOWN_YEARS[KNOWN_YEARS.length - 1];
 
-/** The statutory maximum term, in months. */
+/**
+ * The statutory maximum term, in months — 5 years, reduced by earlier work or
+ * residence in the Netherlands.
+ * https://www.belastingdienst.nl/wps/wcm/connect/en/individuals/content/coming-to-work-in-the-netherlands-30-percent-facility
+ */
 export const MAX_TERM_MONTHS = 60;
 
-/** More than this many of the previous 24 months must have been spent >150 km out. */
+/**
+ * More than this many of the previous 24 months must have been spent more than
+ * 150 km from the Dutch border, as the crow flies, before the first Dutch
+ * working day. The condition is "more than 16", so 16 itself does not pass.
+ * https://www.belastingdienst.nl/wps/wcm/connect/en/individuals/content/coming-to-work-in-the-netherlands-30-percent-facility
+ */
 const MIN_MONTHS_ABROAD = 16;
+
+/* The three carve-outs from the term reduction are asserted in the prose of
+   evaluate()'s reasons rather than held as constants, so their source is cited
+   here: a period that ended more than 25 years ago; incidental work under 20
+   days a year; incidental stays of no more than 6 weeks a year.
+   https://www.belastingdienst.nl/wps/wcm/connect/en/individuals/content/coming-to-work-in-the-netherlands-30-percent-facility */
 
 /**
  * Employees already applying the ruling in the last payroll period of 2023 keep
@@ -398,11 +436,17 @@ const VERDICT_RANK: Record<RulingVerdict, number> = {
 function bandFor(startYear: number | undefined): string | null {
   if (startYear == null) return null;
   if (startYear < FIRST_KNOWN_YEAR) return PRE_2024_TRANSITIONAL;
-  const year = RULING_YEARS[startYear];
-  if (!year) return null;
-  return year.percentage === 30
-    ? "30% until 31 December 2026, then 27%"
-    : `${year.percentage}% for the full term`;
+  return RULING_YEARS[startYear]?.band ?? null;
+}
+
+/**
+ * The schedule row a check actually resolved, or null when the start year is
+ * outside the table. Stored with the check alongside RULESET_VERSION so the
+ * exact figures behind a saved verdict stay recoverable.
+ */
+export function rulesetYearFor(startYear: number | undefined): RulingYear | null {
+  if (startYear == null) return null;
+  return RULING_YEARS[startYear] ?? null;
 }
 
 /**

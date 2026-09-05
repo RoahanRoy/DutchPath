@@ -8,9 +8,11 @@ import { useTheme, getColors } from "@/lib/use-theme";
 import { getAmsterdamDate } from "@/lib/utils";
 import {
   RULING_QUESTIONS,
+  RULESET_VERSION,
   VERIFIED_ON,
   evaluate,
   isAnswered,
+  rulesetYearFor,
   visibleQuestions,
   type RulingAnswers,
   type RulingQuestion,
@@ -67,7 +69,7 @@ const VERDICT_META: Record<
     next: [
       "Take the reasons above to your employer's payroll team — several of them are questions they can answer from your contract.",
       "For anything touching prior residence, earlier rulings or a designated research institution, a tax adviser is the right call.",
-      "Nothing is lost by waiting: the reasons above are the exact points to raise.",
+      "The reasons above are the exact points to raise. Worth raising them promptly: the deadline for applying runs from your first Dutch working day and does not pause while a condition is being clarified.",
     ],
   },
 };
@@ -287,9 +289,16 @@ export function RulingClient({
     const row: RulingCheckInsert = {
       user_id: userId,
       answers: answers as unknown as Json,
-      // Stamped with the date the figures were verified, so a row read back in a
-      // later tax year says which schedule produced it.
-      computed: { ...computed, verified_on: VERIFIED_ON } as unknown as Json,
+      // The verdict alone is not replayable: it depends on figures that live in
+      // code and change every December. Store the ruleset version and the exact
+      // schedule row that produced it, so an old check can still be read back
+      // against the numbers it was actually computed from.
+      computed: {
+        ...computed,
+        ruleset_version: RULESET_VERSION,
+        verified_on: VERIFIED_ON,
+        ruleset_year: rulesetYearFor(answers.start_year),
+      } as unknown as Json,
       verdict: computed.verdict,
     };
 
