@@ -29,6 +29,9 @@ const NAV_LINKS: {
   { href: "/vocabulary", label: "Woordenschat" },
   { href: "/reading", label: "Lezen", hideWhen: "exam_completed" },
   { href: "/knm", label: "KNM", hideWhen: "knm_exam_completed", hideAtB1: true },
+  // Settle is the Expat OS surface, not an exam track: no hideWhen, no
+  // hideAtB1. English label because "Settle" is the surface's name.
+  { href: "/settle", label: "Settle" },
   { href: "/profile", label: "Profiel" },
 ];
 
