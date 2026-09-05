@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { SettleDisclaimer } from "@/components/settle-disclaimer";
 import { useTheme, getColors } from "@/lib/use-theme";
@@ -35,6 +36,21 @@ const GROUP_META: Record<Group, { title: string; icon: string; blurb: string }> 
 };
 
 const GROUP_ORDER: Group[] = ["overdue", "soon", "later", "done"];
+
+/**
+ * Interactive tools that belong to a rule.
+ *
+ * This maps a rule key to a ROUTE, not to a rule: the regulatory content still
+ * comes from settle_rules, and a rule with no entry here simply renders without
+ * the extra action. Adding a tool is a line here plus the route it points at.
+ */
+const TOOL_BY_RULE_KEY: Record<string, { href: string; label: string; icon: string }> = {
+  ruling_30_percent_application: {
+    href: "/settle/30-ruling",
+    label: "Check eligibility",
+    icon: "calculate",
+  },
+};
 
 const SEVERITY_LABEL: Record<SettleSeverity, string> = {
   blocking: "Blocking",
@@ -187,6 +203,38 @@ export function SettleClient({ entries }: { entries: SettleEntry[] }) {
           </div>
         )}
 
+        {/* ── Tools ──
+             A card rather than a row inside a group: the checker is not a
+             deadline, and it stays reachable for users the 30% ruling rule never
+             fires for (self-employed) or who have already marked it done. */}
+        <Link
+          href="/settle/30-ruling"
+          className="fm-fade-up tap-shrink"
+          style={{
+            display: "flex", alignItems: "center", gap: 14, marginBottom: 28,
+            background: c.surfaceLowest, borderRadius: 20, padding: 18,
+            boxShadow: "0px 4px 16px rgba(26,28,27,0.04)", textDecoration: "none",
+          }}
+        >
+          <div style={{
+            flexShrink: 0, width: 44, height: 44, borderRadius: 14, background: `${c.primary}12`,
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <span className="mso" aria-hidden="true" style={{ fontSize: 22, color: c.primary }}>calculate</span>
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: c.onSurface, lineHeight: 1.3 }}>
+              30% ruling check
+            </div>
+            <div style={{ fontSize: 12, fontWeight: 500, color: c.onSurfaceVariant, marginTop: 3, lineHeight: 1.5 }}>
+              A few questions against the Belastingdienst conditions. Guidance only — nothing is filed.
+            </div>
+          </div>
+          <span className="mso" aria-hidden="true" style={{ fontSize: 20, color: c.outline, flexShrink: 0 }}>
+            chevron_right
+          </span>
+        </Link>
+
         {/* ── Empty: a profile exists but nothing was generated ── */}
         {total === 0 && (
           <div className="fm-rise" style={{
@@ -244,6 +292,7 @@ export function SettleClient({ entries }: { entries: SettleEntry[] }) {
                   {groupRows.map(({ item, rule }) => {
                     const sev = severityColors(rule.severity, c);
                     const isPending = !!pending[item.id];
+                    const tool = TOOL_BY_RULE_KEY[rule.key];
 
                     return (
                       <article
@@ -312,6 +361,22 @@ export function SettleClient({ entries }: { entries: SettleEntry[] }) {
                               Official info
                               <span className="mso" aria-hidden="true" style={{ fontSize: 14 }}>open_in_new</span>
                             </a>
+                          )}
+
+                          {tool && !isDoneGroup && (
+                            <Link
+                              href={tool.href}
+                              className="tap-shrink"
+                              style={{
+                                display: "inline-flex", alignItems: "center", gap: 4,
+                                padding: "9px 14px", borderRadius: 9999,
+                                background: c.surfaceLow, color: c.primary,
+                                fontSize: 12, fontWeight: 700, textDecoration: "none",
+                              }}
+                            >
+                              <span className="mso" aria-hidden="true" style={{ fontSize: 14 }}>{tool.icon}</span>
+                              {tool.label}
+                            </Link>
                           )}
 
                           {isDoneGroup ? (

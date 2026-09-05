@@ -481,6 +481,27 @@ export type SettleDocument = {
   created_at: string;
 };
 
+export type SettleRulingVerdict =
+  | "likely_eligible"
+  | "likely_not_eligible"
+  | "needs_advisor";
+
+/**
+ * One completed 30% ruling eligibility check. Append-only — the migration grants
+ * no UPDATE policy, because a row records what was computed under the figures in
+ * force on a given date. `answers` holds the RulingAnswers object and `computed`
+ * the RulingResult; both are jsonb because their shape follows the tax year, and
+ * both live in lib/settle/ruling-30.ts.
+ */
+export type SettleRulingCheck = {
+  id: string;
+  user_id: string;
+  answers: Json;
+  verdict: SettleRulingVerdict;
+  computed: Json;
+  created_at: string;
+};
+
 export interface Database {
   public: {
     Tables: {
@@ -578,6 +599,13 @@ export interface Database {
         Row: SettleDocument;
         Insert: { id?: string; user_id: string; rule_key?: string | null; label: string; storage_path: string; mime_type?: string | null; size_bytes?: number | null; created_at?: string };
         Update: { id?: string; user_id?: string; rule_key?: string | null; label?: string; storage_path?: string; mime_type?: string | null; size_bytes?: number | null; created_at?: string };
+      };
+      settle_ruling_checks: {
+        Row: SettleRulingCheck;
+        Insert: { id?: string; user_id: string; answers?: Json; verdict: string; computed?: Json; created_at?: string };
+        // No UPDATE policy exists on this table (0009); the type is here only so
+        // the schema shape stays complete.
+        Update: { id?: string; user_id?: string; answers?: Json; verdict?: string; computed?: Json; created_at?: string };
       };
     };
   };
