@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useTheme, getColors } from "@/lib/use-theme";
+import { readNextParam } from "@/lib/next-redirect";
 
 const font = {
   headline: "'Plus Jakarta Sans', sans-serif",
@@ -34,7 +35,9 @@ export default function SignupPage() {
     const { error: err } = await supabase.auth.signUp({
       email,
       password,
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(readNextParam())}`,
+      },
     });
     if (err) {
       setError(err.message);
@@ -49,7 +52,9 @@ export default function SignupPage() {
     const supabase = createClient();
     await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(readNextParam())}`,
+      },
     });
   };
 

@@ -4,8 +4,12 @@ import { Providers } from "@/components/providers";
 import { ToastContainer } from "@/components/ui/toast-container";
 import { ServiceWorkerRegister } from "@/components/pwa/service-worker-register";
 import { ThemeColorSync } from "@/components/pwa/theme-color-sync";
+import { SITE_URL } from "@/lib/site";
 
 export const metadata: Metadata = {
+  // Lets the marketing routes declare relative canonicals and lets the OG image
+  // resolve to an absolute URL. Set NEXT_PUBLIC_SITE_URL in Vercel; see lib/site.
+  metadataBase: new URL(SITE_URL),
   title: "DutchPath — Learn Dutch for Inburgering",
   description:
     "A Duolingo-inspired progressive learning platform for the Dutch Inburgering (civic integration) exam. Starting at A2 level.",

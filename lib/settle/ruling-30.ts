@@ -396,6 +396,48 @@ export function isAnswered(q: RulingQuestion, a: Partial<RulingAnswers>): boolea
   return typeof value === "string" && value.length > 0;
 }
 
+/**
+ * Rebuilds a `RulingAnswers` from untrusted JSON, keeping only what the question
+ * table actually recognises.
+ *
+ * The public checker parks a run in sessionStorage across the sign-in redirect,
+ * and sessionStorage is writable by whoever owns the browser. Everything that
+ * comes back is therefore re-validated here before it can reach a stored row:
+ * unknown keys are dropped, a choice must be one of that question's own option
+ * values, and a number must be finite and inside its declared range.
+ *
+ * Driven off RULING_QUESTIONS rather than a second hand-written schema, so a new
+ * question is covered the moment it is added to the table. Returns null when the
+ * input is not an object at all; an object with no recognisable answers returns
+ * an empty record, which evaluate() handles as "nothing answered yet".
+ */
+export function parseAnswers(input: unknown): Partial<RulingAnswers> | null {
+  if (!input || typeof input !== "object" || Array.isArray(input)) return null;
+  const raw = input as Record<string, unknown>;
+  const out: Record<string, string | number> = {};
+
+  for (const q of RULING_QUESTIONS) {
+    const value = raw[q.id];
+    if (value === undefined || value === null) continue;
+
+    // `start_year` is a choice whose value is stored as a number, so the option
+    // list is compared by string on both sides rather than by q.type.
+    if (q.options) {
+      if (!q.options.some((o) => o.value === String(value))) continue;
+      out[q.id] = q.id === "start_year" ? Number(value) : String(value);
+      continue;
+    }
+
+    if (q.number) {
+      if (typeof value !== "number" || !Number.isFinite(value)) continue;
+      if (value < q.number.min || value > q.number.max) continue;
+      out[q.id] = value;
+    }
+  }
+
+  return out as Partial<RulingAnswers>;
+}
+
 /* ────────────────────────────────────────────────────────────────────────────
    Evaluation
    ──────────────────────────────────────────────────────────────────────────── */
@@ -631,4 +673,24 @@ export function evaluate(answers: Partial<RulingAnswers>): RulingResult {
   }
 
   return { verdict, reasons, salaryThresholdApplied: threshold, remainingMonths, taperBand };
+}
+
+/**
+ * The `computed` blob stored alongside a saved check.
+ *
+ * A verdict on its own is not replayable: it depends on figures that live in
+ * this file and change every December. Storing the ruleset version and the exact
+ * schedule row that produced it means an old check can still be read back
+ * against the numbers it was actually computed from.
+ *
+ * Both callers — the signed-in checker and the public one's post-sign-in save —
+ * build the payload through here, so the two cannot drift apart.
+ */
+export function storedComputed(answers: Partial<RulingAnswers>, result: RulingResult) {
+  return {
+    ...result,
+    ruleset_version: RULESET_VERSION,
+    verified_on: VERIFIED_ON,
+    ruleset_year: rulesetYearFor(answers.start_year),
+  };
 }

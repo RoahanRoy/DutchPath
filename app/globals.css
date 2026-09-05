@@ -201,6 +201,17 @@ body {
   }
 }
 
+/* Theme-conditional visibility.
+   The marketing pages are statically rendered, and useTheme() reports light on
+   its first render — so anything whose *content* depends on the theme (the
+   header's sun/moon icon) has to be chosen by CSS, not by React, or it flashes
+   the wrong glyph before hydration. Both elements ship in the HTML; the cascade
+   picks one. Left unlayered on purpose: `.mso` sets display:inline-block from
+   inside @layer base, and unlayered rules beat layered ones. */
+.only-dark { display: none; }
+.dark .only-light { display: none; }
+.dark .only-dark { display: inline-block; }
+
 /* Hide scrollbar utility */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useTheme, getColors } from "@/lib/use-theme";
+import { readNextParam } from "@/lib/next-redirect";
 
 const font = {
   headline: "'Plus Jakarta Sans', sans-serif",
@@ -32,7 +33,9 @@ export default function LoginPage() {
       setError(err.message);
       setLoading(false);
     } else {
-      router.push("/dashboard");
+      // Defaults to /dashboard when there is no ?next=, so the plain sign-in
+      // path is unchanged.
+      router.push(readNextParam());
       router.refresh();
     }
   };
@@ -42,7 +45,9 @@ export default function LoginPage() {
     const supabase = createClient();
     await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(readNextParam())}`,
+      },
     });
   };
 

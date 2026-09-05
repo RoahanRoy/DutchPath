@@ -481,6 +481,23 @@ export type SettleDocument = {
   created_at: string;
 };
 
+/**
+ * A marketing-surface email capture. Deliberately not joined to auth.users: a
+ * lead is a visitor who has not signed up, so there is no user_id to hang it on.
+ *
+ * The table is write-only from the client (migration 0010): RLS is on and only
+ * an INSERT policy exists, so nothing here can be read back with the anon or
+ * authenticated key. This type describes the row for completeness and for the
+ * service-role export path -- no client code should ever select it.
+ */
+export type Lead = {
+  id: string;
+  email: string;
+  /** Which surface captured it: "landing", "guide:<slug>". */
+  source: string;
+  created_at: string;
+};
+
 export type SettleRulingVerdict =
   | "likely_eligible"
   | "likely_not_eligible"
@@ -599,6 +616,14 @@ export interface Database {
         Row: SettleDocument;
         Insert: { id?: string; user_id: string; rule_key?: string | null; label: string; storage_path: string; mime_type?: string | null; size_bytes?: number | null; created_at?: string };
         Update: { id?: string; user_id?: string; rule_key?: string | null; label?: string; storage_path?: string; mime_type?: string | null; size_bytes?: number | null; created_at?: string };
+      };
+      leads: {
+        // Insert-only: see migration 0010. There is no SELECT policy, so reads
+        // return nothing; the Row/Update shapes are here to keep the schema
+        // complete, not because anything queries them.
+        Row: Lead;
+        Insert: { id?: string; email: string; source?: string; created_at?: string };
+        Update: { id?: string; email?: string; source?: string; created_at?: string };
       };
       settle_ruling_checks: {
         Row: SettleRulingCheck;
