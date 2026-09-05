@@ -19,7 +19,8 @@
     "seed:b1-writing": "tsx scripts/seed-b1-writing-tasks.ts",
     "seed:b1-writing-exams": "tsx scripts/seed-b1-writing-exams.ts",
     "seed:b1-lessons": "tsx scripts/seed-b1-lessons.ts",
-    "seed:b1-vocabulary": "tsx scripts/seed-b1-vocabulary.ts"
+    "seed:b1-vocabulary": "tsx scripts/seed-b1-vocabulary.ts",
+    "seed:settle-rules": "tsx scripts/seed-settle-rules.ts"
   },
   "dependencies": {
     "@fontsource/noto-serif": "^5.2.9",

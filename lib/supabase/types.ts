@@ -390,6 +390,97 @@ export type UserListeningExamSubmission = {
   updated_at: string;
 };
 
+/* ── Settle track (Expat OS) ───────────────────────────────────── */
+
+export type SettleCategory =
+  | "arrival"
+  | "money"
+  | "health"
+  | "mobility"
+  | "housing"
+  | "status";
+
+export type SettleOffsetFrom =
+  | "arrival"
+  | "permit_start"
+  | "registration"
+  | "fixed_date";
+
+export type SettleSeverity = "blocking" | "costly" | "routine";
+
+export type SettleTimelineStatus =
+  | "upcoming"
+  | "due"
+  | "done"
+  | "skipped"
+  | "not_applicable";
+
+/**
+ * One predicate inside a rule's `trigger_conditions`. A bare value means
+ * equality; `{ in: [...] }` means membership. Conditions are AND-ed.
+ */
+export type SettleTriggerPredicate =
+  | string
+  | number
+  | boolean
+  | null
+  | { in: (string | number | boolean)[] };
+
+/** Keyed by `SettleProfile` field name. An empty object applies to everyone. */
+export type SettleTriggerConditions = Record<string, SettleTriggerPredicate>;
+
+export type SettleRule = {
+  id: number;
+  key: string;
+  category: SettleCategory;
+  title_en: string;
+  summary_en: string;
+  body_en: string;
+  official_url: string | null;
+  trigger_conditions: SettleTriggerConditions;
+  offset_days: number | null;
+  offset_from: SettleOffsetFrom | null;
+  fixed_date: string | null;
+  severity: SettleSeverity;
+  effective_from: string;
+  effective_to: string | null;
+  created_at: string;
+};
+
+export type SettleProfile = {
+  user_id: string;
+  arrival_date: string | null;
+  permit_type: string | null;
+  nationality_group: string | null;
+  employer_type: string | null;
+  has_30_percent_ruling: boolean;
+  has_bsn: boolean;
+  has_digid: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type SettleTimelineItem = {
+  id: number;
+  user_id: string;
+  rule_key: string;
+  due_date: string | null;
+  status: SettleTimelineStatus;
+  completed_at: string | null;
+  created_at: string;
+};
+
+export type SettleDocument = {
+  id: string;
+  user_id: string;
+  rule_key: string | null;
+  label: string;
+  storage_path: string;
+  mime_type: string | null;
+  size_bytes: number | null;
+  created_at: string;
+};
+
 export interface Database {
   public: {
     Tables: {
@@ -467,6 +558,26 @@ export interface Database {
         Row: UserListeningProgress;
         Insert: { user_id: string; task_id: number; status?: string; best_score?: number | null; attempts?: number; last_attempt_at?: string | null; completed_at?: string | null };
         Update: { user_id?: string; task_id?: number; status?: string; best_score?: number | null; attempts?: number; last_attempt_at?: string | null; completed_at?: string | null };
+      };
+      settle_rules: {
+        Row: SettleRule;
+        Insert: { key: string; category: string; title_en: string; summary_en: string; body_en: string; official_url?: string | null; trigger_conditions?: Json; offset_days?: number | null; offset_from?: string | null; fixed_date?: string | null; severity: string; effective_from: string; effective_to?: string | null; created_at?: string };
+        Update: { id?: number; key?: string; category?: string; title_en?: string; summary_en?: string; body_en?: string; official_url?: string | null; trigger_conditions?: Json; offset_days?: number | null; offset_from?: string | null; fixed_date?: string | null; severity?: string; effective_from?: string; effective_to?: string | null; created_at?: string };
+      };
+      settle_profile: {
+        Row: SettleProfile;
+        Insert: { user_id: string; arrival_date?: string | null; permit_type?: string | null; nationality_group?: string | null; employer_type?: string | null; has_30_percent_ruling?: boolean; has_bsn?: boolean; has_digid?: boolean; created_at?: string; updated_at?: string };
+        Update: { user_id?: string; arrival_date?: string | null; permit_type?: string | null; nationality_group?: string | null; employer_type?: string | null; has_30_percent_ruling?: boolean; has_bsn?: boolean; has_digid?: boolean; created_at?: string; updated_at?: string };
+      };
+      settle_timeline_items: {
+        Row: SettleTimelineItem;
+        Insert: { user_id: string; rule_key: string; due_date?: string | null; status?: string; completed_at?: string | null; created_at?: string };
+        Update: { id?: number; user_id?: string; rule_key?: string; due_date?: string | null; status?: string; completed_at?: string | null; created_at?: string };
+      };
+      settle_documents: {
+        Row: SettleDocument;
+        Insert: { id?: string; user_id: string; rule_key?: string | null; label: string; storage_path: string; mime_type?: string | null; size_bytes?: number | null; created_at?: string };
+        Update: { id?: string; user_id?: string; rule_key?: string | null; label?: string; storage_path?: string; mime_type?: string | null; size_bytes?: number | null; created_at?: string };
       };
     };
   };
