@@ -13,7 +13,8 @@ import type {
 import { createClient } from "@/lib/supabase/client";
 import { useAppStore } from "@/lib/store";
 import { getAmsterdamDate } from "@/lib/utils";
-import { useTheme, getColors } from "@/lib/use-theme";
+import { useTheme, getColors, font } from "@/lib/use-theme";
+import { Screen, GlassHeader, Kicker, Chip, primaryButton, secondaryButton } from "@/components/ui/screen";
 import { checkAndUnlockAchievements } from "@/lib/achievements";
 
 interface Props {
@@ -24,11 +25,6 @@ interface Props {
   userId: string;
   nextTaskId: number | null;
 }
-
-const font = {
-  headline: "'Plus Jakarta Sans', sans-serif",
-  body: "'Noto Serif', serif",
-};
 
 type Phase = "write" | "review" | "complete";
 
@@ -93,7 +89,7 @@ function ScoreSlider({
     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <span style={{ fontSize: 13, fontWeight: 700, color: c.onSurface, fontFamily: font.headline }}>{label}</span>
-        <span style={{ fontSize: 16, fontWeight: 900, color: c.secondary }}>{value}/{max}</span>
+        <span style={{ fontSize: 16, fontWeight: 700, color: c.secondary }}>{value}/{max}</span>
       </div>
       <div style={{ display: "flex", gap: 8 }}>
         {Array.from({ length: max + 1 }, (_, i) => (
@@ -343,10 +339,10 @@ export function WritingEditor({ task, progress, draft, phrases, userId, nextTask
       <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: c.background, fontFamily: font.headline, padding: 24 }}>
         <div
           className="fm-rise"
-          style={{ width: "100%", maxWidth: 380, background: c.surfaceLowest, borderRadius: 24, padding: 24, textAlign: "center", boxShadow: "0px 12px 32px rgba(26,28,27,0.06)" }}
+          style={{ width: "100%", maxWidth: 380, background: c.card, borderRadius: 18, padding: 24, textAlign: "center", boxShadow: "0px 12px 32px rgba(26,28,27,0.06)" }}
         >
-          <div style={{ fontSize: 48, marginBottom: 12 }}>{pct >= 80 ? "🎉" : pct >= 50 ? "👍" : "💪"}</div>
-          <h2 style={{ fontSize: 24, fontWeight: 800, color: c.onSurface, marginBottom: 20 }}>
+          <Kicker c={c} style={{ letterSpacing: "0.2em", marginBottom: 10 }}>Opdracht voltooid</Kicker>
+          <h2 style={{ fontSize: 24, fontWeight: 700, color: c.onSurface, marginBottom: 20 }}>
             {pct >= 80 ? "Uitstekend!" : pct >= 50 ? "Goed gedaan!" : "Blijf oefenen!"}
           </h2>
 
@@ -357,7 +353,7 @@ export function WritingEditor({ task, progress, draft, phrases, userId, nextTask
               { value: formatTime(elapsedSeconds), label: "Tijd" },
             ].map((item, i) => (
               <div key={i} style={{ background: c.surfaceLow, padding: 12, borderRadius: 16, display: "flex", flexDirection: "column", alignItems: "center" }}>
-                <span style={{ fontSize: 22, fontWeight: 900, color: i === 1 ? c.tertiary : c.primary }}>{item.value}</span>
+                <span style={{ fontSize: 22, fontWeight: 700, color: i === 1 ? c.tertiary : c.primary }}>{item.value}</span>
                 <span style={{ fontSize: 10, fontWeight: 700, color: c.onSurfaceVariant, textTransform: "uppercase" }}>{item.label}</span>
               </div>
             ))}
@@ -396,7 +392,7 @@ export function WritingEditor({ task, progress, draft, phrases, userId, nextTask
         <nav style={{
           position: "sticky", top: 0, zIndex: 50, height: 64,
           display: "flex", alignItems: "center", gap: 16, padding: "0 16px",
-          background: isDark ? "rgba(18,20,19,0.8)" : "rgba(249,249,247,0.8)",
+          background: c.glassBackground,
           backdropFilter: "blur(24px)",
         }}>
           <button onClick={() => setPhase("write")} style={{ width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 9999, border: "none", background: "transparent", cursor: "pointer" }}>
@@ -409,7 +405,7 @@ export function WritingEditor({ task, progress, draft, phrases, userId, nextTask
 
           {/* Spelling issues */}
           {spellingIssues.length > 0 && (
-            <div style={{ background: `${c.secondary}1a`, borderRadius: 16, padding: 16, marginBottom: 20 }}>
+            <div style={{ background: `${c.orSoft}`, borderRadius: 16, padding: 16, marginBottom: 20 }}>
               <div style={{ fontWeight: 700, fontSize: 13, color: c.secondary, marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
                 <span className="mso" style={{ fontSize: 16 }}>spellcheck</span>
                 Spellingcontrole
@@ -422,10 +418,10 @@ export function WritingEditor({ task, progress, draft, phrases, userId, nextTask
 
           {/* Checklist */}
           {elements.length > 0 && (
-            <div style={{ background: c.surfaceLowest, borderRadius: 20, padding: 20, marginBottom: 20, boxShadow: "0px 4px 16px rgba(26,28,27,0.04)" }}>
-              <div style={{ fontWeight: 800, fontSize: 14, color: c.onSurface, marginBottom: 12, display: "flex", justifyContent: "space-between" }}>
+            <div style={{ background: c.card, borderRadius: 18, padding: 18, marginBottom: 20, boxShadow: "0px 4px 16px rgba(26,28,27,0.04)" }}>
+              <div style={{ fontWeight: 700, fontSize: 14, color: c.onSurface, marginBottom: 12, display: "flex", justifyContent: "space-between" }}>
                 <span>Verplichte elementen</span>
-                <span style={{ color: completedElements === totalElements ? "#16a34a" : c.secondary }}>
+                <span style={{ color: completedElements === totalElements ? c.gr : c.secondary }}>
                   {completedElements}/{totalElements}
                 </span>
               </div>
@@ -437,7 +433,7 @@ export function WritingEditor({ task, progress, draft, phrases, userId, nextTask
                       <div style={{
                         width: 20, height: 20, borderRadius: 9999, flexShrink: 0,
                         display: "flex", alignItems: "center", justifyContent: "center",
-                        background: checked ? "#16a34a" : c.surfaceHigh,
+                        background: checked ? c.gr : c.surfaceHigh,
                       }}>
                         {checked && <span className="mso" style={{ fontSize: 12, color: "#fff" }}>check</span>}
                       </div>
@@ -455,16 +451,16 @@ export function WritingEditor({ task, progress, draft, phrases, userId, nextTask
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 24 }}>
             <div>
               <p style={{ fontSize: 10, textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.1em", color: c.onSurfaceVariant, marginBottom: 8 }}>Jouw antwoord</p>
-              <div style={{ background: "#FFFBF5", borderRadius: 16, padding: 16, borderLeft: `4px solid ${c.secondary}`, minHeight: 120 }}>
-                <pre style={{ fontFamily: font.body, fontSize: 12, lineHeight: 1.7, color: "#1C1B1A", margin: 0, whiteSpace: "pre-wrap" }}>
+              <div style={{ background: c.card2, borderRadius: 16, padding: 16, borderLeft: `4px solid ${c.secondary}`, minHeight: 120 }}>
+                <pre style={{ fontFamily: font.body, fontSize: 12, lineHeight: 1.7, color: c.ink, margin: 0, whiteSpace: "pre-wrap" }}>
                   {submissionDisplay || "—"}
                 </pre>
               </div>
             </div>
             <div>
               <p style={{ fontSize: 10, textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.1em", color: c.onSurfaceVariant, marginBottom: 8 }}>Voorbeeldantwoord</p>
-              <div style={{ background: "#FFFBF5", borderRadius: 16, padding: 16, borderLeft: `4px solid ${c.primary}`, minHeight: 120 }}>
-                <pre style={{ fontFamily: font.body, fontSize: 12, lineHeight: 1.7, color: "#1C1B1A", margin: 0, whiteSpace: "pre-wrap" }}>
+              <div style={{ background: c.card2, borderRadius: 16, padding: 16, borderLeft: `4px solid ${c.primary}`, minHeight: 120 }}>
+                <pre style={{ fontFamily: font.body, fontSize: 12, lineHeight: 1.7, color: c.ink, margin: 0, whiteSpace: "pre-wrap" }}>
                   {task.model_answer_nl}
                 </pre>
               </div>
@@ -472,7 +468,7 @@ export function WritingEditor({ task, progress, draft, phrases, userId, nextTask
           </div>
 
           {task.model_answer_notes && (
-            <div style={{ background: `${c.primary}0d`, borderRadius: 16, padding: 16, marginBottom: 24 }}>
+            <div style={{ background: `${c.coSoft}`, borderRadius: 16, padding: 16, marginBottom: 24 }}>
               <div style={{ fontWeight: 700, fontSize: 12, color: c.primary, marginBottom: 4, display: "flex", alignItems: "center", gap: 6 }}>
                 <span className="mso" style={{ fontSize: 14 }}>lightbulb</span>
                 Waarom is dit een goed antwoord?
@@ -482,8 +478,8 @@ export function WritingEditor({ task, progress, draft, phrases, userId, nextTask
           )}
 
           {/* Self-assessment */}
-          <div style={{ background: c.surfaceLowest, borderRadius: 20, padding: 20, boxShadow: "0px 4px 16px rgba(26,28,27,0.04)", marginBottom: 24 }}>
-            <h3 style={{ fontSize: 16, fontWeight: 800, color: c.onSurface, marginBottom: 4 }}>Zelfevaluatie</h3>
+          <div style={{ background: c.card, borderRadius: 18, padding: 18, boxShadow: "0px 4px 16px rgba(26,28,27,0.04)", marginBottom: 24 }}>
+            <h3 style={{ fontSize: 16, fontWeight: 700, color: c.onSurface, marginBottom: 4 }}>Zelfevaluatie</h3>
             <p style={{ fontSize: 12, color: c.onSurfaceVariant, marginBottom: 20 }}>Beoordeel je eigen schrijfwerk eerlijk. Elke dimensie: 0 = niet, 1 = beetje, 2 = grotendeels, 3 = volledig.</p>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -495,7 +491,7 @@ export function WritingEditor({ task, progress, draft, phrases, userId, nextTask
 
             <div style={{ marginTop: 20, padding: 16, background: c.surfaceLow, borderRadius: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span style={{ fontSize: 14, fontWeight: 700, color: c.onSurface }}>Totaalscore</span>
-              <span style={{ fontSize: 24, fontWeight: 900, color: c.secondary }}>
+              <span style={{ fontSize: 24, fontWeight: 700, color: c.secondary }}>
                 {selfScore.task_completion + selfScore.structure + selfScore.vocabulary + selfScore.grammar}/12
               </span>
             </div>
@@ -503,23 +499,17 @@ export function WritingEditor({ task, progress, draft, phrases, userId, nextTask
         </div>
 
         {/* Fixed bottom bar */}
-        <div style={{
-          position: "fixed", bottom: 0, left: 0, width: "100%", zIndex: 60,
-          background: isDark ? "rgba(18,20,19,0.95)" : "rgba(249,249,247,0.95)",
-          backdropFilter: "blur(16px)", padding: "16px 24px 32px",
-        }}>
-          <button
-            onClick={handleComplete}
-            style={{
-              width: "100%", height: 56, borderRadius: 9999, border: "none", cursor: "pointer",
-              background: `linear-gradient(to bottom, ${c.secondary}, ${c.secondaryContainer})`,
-              color: "#fff", fontWeight: 800, fontSize: 18, fontFamily: font.headline,
-              boxShadow: "0 10px 15px -3px rgba(0,0,0,.1)",
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-            }}
-          >
+        <div
+          className="dp-glass"
+          style={{
+            position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)",
+            width: "100%", maxWidth: 460, zIndex: 60,
+            borderTop: `1px solid ${c.line2}`,
+            padding: "14px 20px calc(var(--app-safe-bottom, 0px) + 20px)",
+          }}
+        >
+          <button onClick={handleComplete} style={primaryButton(c)}>
             Opdracht voltooien
-            <span className="mso" style={{ fontSize: 20 }}>check_circle</span>
           </button>
         </div>
       </div>
@@ -535,49 +525,40 @@ export function WritingEditor({ task, progress, draft, phrases, userId, nextTask
     : (!wordMin || wordCount >= wordMin);
 
   return (
-    <div style={{ minHeight: "100vh", background: c.background, fontFamily: font.headline }}>
-      {/* Focus mode top bar */}
-      <nav style={{
-        position: "sticky", top: 0, zIndex: 50, height: 64,
-        display: "flex", alignItems: "center", gap: 16, padding: "0 16px",
-        background: isDark ? "rgba(18,20,19,0.8)" : "rgba(249,249,247,0.8)",
-        backdropFilter: "blur(24px)",
-      }}>
-        <button onClick={() => router.back()} style={{ width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 9999, border: "none", background: "transparent", cursor: "pointer" }}>
-          <span className="mso" style={{ color: c.onSurface, fontSize: 24 }}>close</span>
-        </button>
-        <span style={{ fontWeight: 700, fontSize: 14, color: c.onSurface, flex: 1 }}>{task.title}</span>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          {isSaving && <span style={{ fontSize: 10, color: c.onSurfaceVariant }}>Opslaan…</span>}
-          <div style={{ display: "flex", alignItems: "center", gap: 4, background: c.surfaceHigh, borderRadius: 9999, padding: "4px 10px" }}>
-            <span className="mso" style={{ fontSize: 12, color: c.onSurfaceVariant }}>timer</span>
-            <span style={{ fontSize: 12, fontWeight: 700, color: c.onSurface }}>{formatTime(elapsedSeconds)}</span>
+    <Screen style={{ minHeight: "100vh", background: c.background }}>
+      <GlassHeader
+        c={c}
+        onBack={() => router.back()}
+        closeIcon
+        title={task.title}
+        trailing={
+          <div style={{ display: "flex", alignItems: "center", gap: 7, flex: "none" }}>
+            {isSaving && <span style={{ fontSize: 10.5, color: c.ink45 }}>Opslaan…</span>}
+            <Chip fg={c.or} bg={c.orSoft} style={{ fontWeight: 700 }}>+{task.xp_reward} XP</Chip>
           </div>
-        </div>
-      </nav>
+        }
+      />
 
-      <div style={{ padding: "20px 24px 180px", maxWidth: 680, margin: "0 auto" }}>
+      <div style={{ padding: "18px 20px 180px" }}>
 
-        {/* Scenario card */}
-        <div style={{ background: "#FFFBF5", borderRadius: 20, padding: 20, borderLeft: `4px solid ${c.primaryContainer}`, marginBottom: 20, boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
+        {/* Opdracht */}
+        <div style={{ background: c.card2, border: `1px solid ${c.line}`, borderLeft: `3px solid ${c.or}`, borderRadius: 16, padding: 16, marginBottom: 16 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 }}>
-            <span style={{ fontSize: 10, textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.1em", color: "#6B6156" }}>Situatie</span>
+            <Kicker c={c} color={c.orInk}>Opdracht</Kicker>
             <button
               onClick={() => setShowEnglish((v) => !v)}
-              style={{ fontSize: 11, fontWeight: 700, color: "#3E5BA6", background: "transparent", border: "none", cursor: "pointer", padding: 0 }}
+              style={{ fontSize: 11, fontWeight: 700, color: c.co, background: "transparent", border: "none", cursor: "pointer", padding: 0 }}
             >
               {showEnglish ? "NL" : "EN"}
             </button>
           </div>
-          <p style={{ fontFamily: font.body, fontSize: 15, lineHeight: 1.7, color: "#1C1B1A", margin: 0 }}>
+          <p style={{ fontFamily: font.body, fontSize: 17, lineHeight: 1.55, color: c.ink, margin: 0 }}>
             {showEnglish && task.scenario_en ? task.scenario_en : task.scenario_nl}
           </p>
+          <div style={{ fontSize: 12, color: c.ink70, marginTop: 10, lineHeight: 1.5 }}>
+            {task.instructions_nl}
+          </div>
         </div>
-
-        {/* Instructions */}
-        <p style={{ fontSize: 13, fontWeight: 600, color: c.onSurfaceVariant, marginBottom: 20, lineHeight: 1.5 }}>
-          {task.instructions_nl}
-        </p>
 
         {/* Required elements checklist (collapsible) */}
         {elements.length > 0 && (
@@ -621,7 +602,7 @@ export function WritingEditor({ task, progress, draft, phrases, userId, nextTask
                   style={{
                     width: "100%", padding: "14px 16px", borderRadius: 16,
                     border: `1.5px solid ${formFields[el.key] ? c.secondary : c.outlineVariant}30`,
-                    background: c.surfaceLowest, fontFamily: font.body, fontSize: 15,
+                    background: c.card, fontFamily: font.body, fontSize: 15,
                     color: c.onSurface, outline: "none",
                     boxSizing: "border-box",
                   }}
@@ -638,22 +619,26 @@ export function WritingEditor({ task, progress, draft, phrases, userId, nextTask
               placeholder="Begin hier met schrijven..."
               style={{
                 width: "100%", minHeight: 240, padding: 20, borderRadius: 20,
-                border: `1.5px solid ${c.outlineVariant}30`,
-                background: c.surfaceLowest, fontFamily: font.body, fontSize: 16,
+                border: `1.5px solid ${c.line}`,
+                background: c.card, fontFamily: font.body, fontSize: 16,
                 lineHeight: 1.8, color: c.onSurface, outline: "none", resize: "vertical",
                 boxSizing: "border-box",
               }}
             />
             {/* Word count indicator */}
-            <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 8, marginTop: 8 }}>
-              <span style={{
-                fontSize: 12, fontWeight: 700,
-                color: wordMin && wordCount < wordMin ? c.error : wordMax && wordCount > wordMax ? c.error : c.secondary,
-              }}>
-                {wordCount} woorden
-                {wordMin ? ` (min. ${wordMin}` : ""}
-                {wordMax && wordMax !== Infinity ? `–${wordMax})` : wordMin ? ")" : ""}
-              </span>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
+              <Chip
+                fg={wordMin && wordCount < wordMin ? c.rd : wordMax !== Infinity && wordCount > wordMax ? c.rd : c.ink70}
+                bg={wordMin && wordCount < wordMin ? c.rdSoft : wordMax !== Infinity && wordCount > wordMax ? c.rdSoft : c.sunk}
+              >
+                {wordCount}
+                {wordMax && wordMax !== Infinity ? ` / ${wordMax}` : ""} woorden
+              </Chip>
+              {isSaving ? (
+                <Chip fg={c.ink45} bg={c.sunk}>Opslaan…</Chip>
+              ) : (
+                <Chip fg={c.co} bg={c.coSoft}>Auto-saved</Chip>
+              )}
             </div>
           </div>
         )}
@@ -672,7 +657,7 @@ export function WritingEditor({ task, progress, draft, phrases, userId, nextTask
                   title={p.when_to_use ?? p.en}
                   style={{
                     padding: "6px 12px", borderRadius: 9999, fontSize: 13, fontWeight: 600,
-                    background: `${c.secondary}1a`, color: c.secondary, border: "none",
+                    background: `${c.orSoft}`, color: c.secondary, border: "none",
                     cursor: isForm ? "default" : "pointer", fontFamily: font.body,
                   }}
                 >
@@ -685,40 +670,34 @@ export function WritingEditor({ task, progress, draft, phrases, userId, nextTask
       </div>
 
       {/* Fixed bottom bar */}
-      <div style={{
-        position: "fixed", bottom: 0, left: 0, width: "100%", zIndex: 60,
-        background: isDark ? "rgba(18,20,19,0.95)" : "rgba(249,249,247,0.95)",
-        backdropFilter: "blur(16px)", padding: "12px 24px 32px",
-        display: "flex", flexDirection: "column", gap: 8,
-      }}>
-        <div style={{ display: "flex", gap: 10 }}>
-          <button
-            onClick={() => setShowPhrases((v) => !v)}
-            style={{
-              flex: "0 0 auto", padding: "0 16px", height: 48, borderRadius: 9999,
-              border: `1.5px solid ${c.outlineVariant}50`, background: "transparent",
-              cursor: "pointer", fontFamily: font.headline, fontWeight: 700, fontSize: 13,
-              color: c.onSurfaceVariant, display: "flex", alignItems: "center", gap: 6,
-            }}
-          >
-            <span className="mso" style={{ fontSize: 18 }}>menu_book</span>
-            Zinnen
-          </button>
-          <button
-            onClick={handleCheck}
-            disabled={!wordOk}
-            style={{
-              flex: 1, height: 48, borderRadius: 9999, border: "none", cursor: wordOk ? "pointer" : "not-allowed",
-              background: wordOk ? `linear-gradient(to bottom, ${c.secondary}, ${c.secondaryContainer})` : c.surfaceHighest,
-              color: wordOk ? "#fff" : c.onSurfaceVariant,
-              fontWeight: 800, fontSize: 16, fontFamily: font.headline,
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-            }}
-          >
-            Controleer mijn schrijfwerk
-            <span className="mso" style={{ fontSize: 18 }}>arrow_forward</span>
-          </button>
-        </div>
+      <div
+        className="dp-glass"
+        style={{
+          position: "fixed", bottom: 0, left: "50%", transform: "translateX(-50%)",
+          width: "100%", maxWidth: 460, zIndex: 60,
+          borderTop: `1px solid ${c.line2}`,
+          padding: "14px 20px calc(var(--app-safe-bottom, 0px) + 20px)",
+          display: "flex", gap: 9,
+        }}
+      >
+        <button
+          onClick={() => setShowPhrases((v) => !v)}
+          style={{
+            ...secondaryButton(c),
+            flex: "0 0 auto", width: "auto", padding: "15px 18px",
+            display: "flex", alignItems: "center", gap: 6,
+          }}
+        >
+          <span className="mso" style={{ fontSize: 18 }}>menu_book</span>
+          Zinnen
+        </button>
+        <button
+          onClick={handleCheck}
+          disabled={!wordOk}
+          style={{ ...primaryButton(c, { disabled: !wordOk, compact: true }), flex: 1 }}
+        >
+          Inleveren
+        </button>
       </div>
 
       {/* Phrase drawer */}
@@ -733,24 +712,25 @@ export function WritingEditor({ task, progress, draft, phrases, userId, nextTask
               className="fm-sheet-up"
               style={{
                 position: "fixed", bottom: 0, left: 0, width: "100%", zIndex: 70,
-                background: c.surfaceLowest, borderRadius: "24px 24px 0 0",
+                background: c.card, borderRadius: "24px 24px 0 0",
                 boxShadow: "0px -8px 40px rgba(0,0,0,0.1)", padding: 24,
                 maxHeight: "60vh", overflowY: "auto",
               }}
             >
-              <div style={{ width: 48, height: 6, background: c.surfaceHighest, borderRadius: 9999, margin: "0 auto 20px" }} />
+              <div style={{ width: 48, height: 6, background: c.sunk, borderRadius: 9999, margin: "0 auto 20px" }} />
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-                <h3 style={{ fontSize: 18, fontWeight: 800, margin: 0 }}>Zinnenbibliotheek</h3>
+                <h3 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>Zinnenbibliotheek</h3>
                 <div style={{ display: "flex", gap: 6 }}>
                   {(["all", "formal", "informal"] as const).map((f) => (
                     <button
                       key={f}
                       onClick={() => setPhrasesFilter(f)}
                       style={{
-                        padding: "4px 12px", borderRadius: 9999, fontSize: 11, fontWeight: 700,
-                        border: "none", cursor: "pointer", fontFamily: font.headline,
-                        background: phrasesFilter === f ? c.primary : c.surfaceHigh,
-                        color: phrasesFilter === f ? "#fff" : c.onSurfaceVariant,
+                        padding: "6px 13px", borderRadius: 9999, fontSize: 11.5, fontWeight: 600,
+                        cursor: "pointer", fontFamily: font.headline,
+                        border: `1px solid ${phrasesFilter === f ? c.co : c.line}`,
+                        background: phrasesFilter === f ? c.coSoft : c.card,
+                        color: phrasesFilter === f ? c.coInk : c.ink70,
                       }}
                     >
                       {f === "all" ? "Alles" : f === "formal" ? "Formeel" : "Informeel"}
@@ -782,9 +762,6 @@ export function WritingEditor({ task, progress, draft, phrases, userId, nextTask
           </>
         )}
 
-      {/* Background decorations */}
-      <div style={{ position: "fixed", top: -96, right: -96, width: 256, height: 256, background: `${c.secondary}0d`, borderRadius: 9999, filter: "blur(96px)", zIndex: -1 }} />
-      <div style={{ position: "fixed", bottom: 128, left: -48, width: 192, height: 192, background: `${c.primary}0d`, borderRadius: 9999, filter: "blur(96px)", zIndex: -1 }} />
-    </div>
+    </Screen>
   );
 }

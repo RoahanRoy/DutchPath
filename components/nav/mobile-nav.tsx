@@ -2,88 +2,125 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useAppStore } from "@/lib/store";
-import { useTheme, getColors } from "@/lib/use-theme";
+import { useTheme, getColors, font } from "@/lib/use-theme";
 
-const NAV_ITEMS: {
-  href: string;
-  icon: string;
-  label: string;
-  hideWhen?: "writing_exam_completed" | "listening_exam_completed" | "knm_exam_completed" | "exam_completed";
-  hideAtB1?: boolean;
-}[] = [
-  { href: "/dashboard", icon: "home", label: "Home" },
-  { href: "/lessons", icon: "menu_book", label: "Lessons", hideWhen: "exam_completed" },
-  { href: "/writing", icon: "edit_note", label: "Writing", hideWhen: "writing_exam_completed" },
-  { href: "/listening", icon: "headphones", label: "Listening", hideWhen: "listening_exam_completed" },
-  { href: "/knm", icon: "public", label: "KNM", hideWhen: "knm_exam_completed", hideAtB1: true },
-  { href: "/vocabulary", icon: "format_list_bulleted", label: "Vocab" },
-  { href: "/profile", icon: "person", label: "Profile" },
+/**
+ * The floating tab pill.
+ *
+ * The redesign collapses the seven track entries into four destinations; the
+ * five learning tracks now live one level down, behind `/learn`. `TAB_OWNER`
+ * maps every route in the app onto the tab that owns it, so a screen opened
+ * from a hub still lights the right tab rather than none.
+ */
+const TABS: { id: string; href: string; icon: string; label: string }[] = [
+  { id: "home", href: "/dashboard", icon: "home", label: "Home" },
+  { id: "learn", href: "/learn", icon: "school", label: "Learn" },
+  { id: "settle", href: "/settle", icon: "task_alt", label: "Settle" },
+  { id: "profile", href: "/profile", icon: "person", label: "You" },
 ];
+
+/** Longest prefix wins, so `/settle/30-ruling` resolves before `/settle`. */
+const TAB_OWNER: [string, string][] = [
+  ["/dashboard", "home"],
+  ["/learn", "learn"],
+  ["/lessons", "learn"],
+  ["/writing", "learn"],
+  ["/listening", "learn"],
+  ["/vocabulary", "learn"],
+  ["/reading", "learn"],
+  ["/knm", "learn"],
+  ["/settle", "settle"],
+  ["/guides", "settle"],
+  ["/profile", "profile"],
+];
+
+function ownerFor(pathname: string): string | null {
+  let best: string | null = null;
+  let bestLen = 0;
+  for (const [prefix, id] of TAB_OWNER) {
+    if ((pathname === prefix || pathname.startsWith(`${prefix}/`)) && prefix.length > bestLen) {
+      best = id;
+      bestLen = prefix.length;
+    }
+  }
+  return best;
+}
 
 export function MobileNav() {
   const pathname = usePathname();
-  const profile = useAppStore((s) => s.profile);
   const { isDark } = useTheme();
   const c = getColors(isDark);
+
+  const active = ownerFor(pathname);
 
   return (
     <nav
       style={{
-        position: "fixed", bottom: 0, left: 0, width: "100%", zIndex: 50,
-        display: "flex", justifyContent: "center", alignItems: "center",
+        position: "fixed",
+        bottom: 0,
+        left: 0,
+        width: "100%",
+        zIndex: 50,
         pointerEvents: "none",
-        paddingLeft: "max(16px, env(safe-area-inset-left))",
-        paddingRight: "max(16px, env(safe-area-inset-right))",
-        // Height is the 64px pill plus this padding. Where there is no home
-        // indicator the inset is 0 and this resolves to the original 32px/96px.
-        height: "auto",
-        paddingBottom: "max(32px, calc(env(safe-area-inset-bottom) + 8px))",
+        padding: "0 18px calc(var(--app-safe-bottom, 0px) + 10px)",
+        display: "flex",
+        justifyContent: "center",
       }}
       className="md:hidden"
       aria-label="Main navigation"
     >
-      <div style={{
-        background: isDark ? "rgba(26,28,27,0.6)" : c.glassBackground,
-        backdropFilter: "blur(48px)", WebkitBackdropFilter: "blur(48px)",
-        borderRadius: 9999, margin: "0 24px", height: 64, width: "100%",
-        display: "flex", justifyContent: "space-around", alignItems: "center",
-        boxShadow: isDark ? "0px 24px 48px rgba(0,0,0,0.4)" : "0px 12px 32px rgba(26,28,27,0.06)",
-        pointerEvents: "auto",
-        border: c.glassBorder !== "transparent" ? `1px solid ${c.glassBorder}` : "none",
-        transition: "background 0.3s",
-      }}>
-        {NAV_ITEMS.filter(({ hideWhen, hideAtB1 }) => {
-          if (!profile) return true;
-          const p = profile as unknown as Record<string, unknown>;
-          if (hideAtB1 && p.current_level === "B1") return false;
-          if (!hideWhen) return true;
-          const flag = p.current_level === "B1"
-            ? ({ exam_completed: "b1_exam_completed", writing_exam_completed: "b1_writing_exam_completed", listening_exam_completed: "b1_listening_exam_completed" } as Record<string, string>)[hideWhen] ?? hideWhen
-            : hideWhen;
-          return !p[flag];
-        }).map(({ href, icon, label }) => {
-          const active = pathname.startsWith(href);
+      <div
+        className="dp-glass"
+        style={{
+          pointerEvents: "auto",
+          width: "100%",
+          maxWidth: 420,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-around",
+          border: `1px solid ${c.glassBorder}`,
+          borderRadius: 9999,
+          boxShadow: c.shadow,
+          padding: "7px 8px",
+        }}
+      >
+        {TABS.map(({ id, href, icon, label }) => {
+          const on = active === id;
           return (
             <Link
-              key={href}
+              key={id}
               href={href}
               aria-label={label}
-              aria-current={active ? "page" : undefined}
+              aria-current={on ? "page" : undefined}
               style={{
-                display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                width: 48, height: 48, borderRadius: 9999, border: "none", textDecoration: "none",
-                transition: "all 0.3s",
-                ...(active
-                  ? { background: c.navActiveBg, color: c.navActiveText, boxShadow: isDark ? "0 0 15px 0 rgba(71,133,255,0.4)" : "0 10px 15px -3px rgba(0,0,0,.1)" }
-                  : { background: "transparent", color: c.navInactiveText }),
+                flex: 1,
+                background: on ? c.coSoft : "transparent",
+                borderRadius: 9999,
+                padding: "8px 0 7px",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 3,
+                textDecoration: "none",
+                transition: "background 0.25s",
               }}
             >
               <span
-                className={active ? "mso mso-fill" : "mso"}
-                style={{ fontSize: 22 }}
+                className={on ? "mso mso-fill" : "mso"}
+                style={{ fontSize: 21, color: on ? c.co : c.ink45 }}
               >
                 {icon}
+              </span>
+              <span
+                style={{
+                  fontFamily: font.headline,
+                  fontSize: 9.5,
+                  fontWeight: 700,
+                  letterSpacing: "0.06em",
+                  color: on ? c.co : c.ink45,
+                }}
+              >
+                {label}
               </span>
             </Link>
           );

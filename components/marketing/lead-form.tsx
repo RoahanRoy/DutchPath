@@ -8,8 +8,8 @@ import type { Database } from "@/lib/supabase/types";
 type LeadInsert = Database["public"]["Tables"]["leads"]["Insert"];
 
 const font = {
-  headline: "'Plus Jakarta Sans', sans-serif",
-  body: "'Noto Serif', serif",
+  headline: "'Instrument Sans', system-ui, sans-serif",
+  body: "'Instrument Serif', Georgia, serif",
 };
 
 /** Postgres unique-violation. Here it means "already on the list". */
@@ -118,8 +118,8 @@ export function LeadForm({
           style={{
             flex: "0 0 auto", padding: "13px 22px", borderRadius: 14, border: "none",
             cursor: state === "sending" ? "default" : "pointer",
-            fontSize: 15, fontWeight: 800, fontFamily: font.headline, color: "#fff",
-            background: `linear-gradient(to bottom, ${c.primary}, ${c.primaryContainer})`,
+            fontSize: 15, fontWeight: 600, fontFamily: font.headline, color: "#fff",
+            background: `${c.co}`,
             opacity: state === "sending" ? 0.6 : 1,
           }}
         >

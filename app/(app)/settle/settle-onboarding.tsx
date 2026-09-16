@@ -13,8 +13,8 @@ type TimelineInsert = Database["public"]["Tables"]["settle_timeline_items"]["Ins
 type Palette = ReturnType<typeof getColors>;
 
 const font = {
-  headline: "'Plus Jakarta Sans', sans-serif",
-  body: "'Noto Serif', serif",
+  headline: "'Instrument Sans', system-ui, sans-serif",
+  body: "'Instrument Serif', Georgia, serif",
 };
 
 /**
@@ -65,7 +65,7 @@ function Choice({
   return (
     <fieldset style={{ border: "none", padding: 0, margin: 0 }}>
       <legend style={{ padding: 0, marginBottom: 4 }}>
-        <span style={{ fontSize: 15, fontWeight: 800, color: c.onSurface, letterSpacing: "-0.01em" }}>
+        <span style={{ fontSize: 15, fontWeight: 700, color: c.onSurface, letterSpacing: "-0.01em" }}>
           {legend}
         </span>
       </legend>
@@ -84,7 +84,7 @@ function Choice({
                 width: "100%", display: "flex", alignItems: "center", gap: 12,
                 padding: "14px 16px", borderRadius: 16, border: "none", cursor: "pointer",
                 fontFamily: font.headline, textAlign: "left", transition: "background 0.2s, box-shadow 0.2s",
-                background: selected ? `${c.primary}12` : c.surfaceLow,
+                background: selected ? `${c.coSoft}` : c.surfaceLow,
                 boxShadow: selected ? `0 0 0 2px ${c.primary}` : "none",
               }}
             >
@@ -126,7 +126,7 @@ function YesNo({
   return (
     <fieldset style={{ border: "none", padding: 0, margin: 0 }}>
       <legend style={{ padding: 0, marginBottom: 4 }}>
-        <span style={{ fontSize: 15, fontWeight: 800, color: c.onSurface, letterSpacing: "-0.01em" }}>
+        <span style={{ fontSize: 15, fontWeight: 700, color: c.onSurface, letterSpacing: "-0.01em" }}>
           {legend}
         </span>
       </legend>
@@ -148,7 +148,7 @@ function YesNo({
                 flex: 1, padding: "14px 16px", borderRadius: 16, border: "none", cursor: "pointer",
                 fontFamily: font.headline, fontSize: 14, fontWeight: 700,
                 transition: "background 0.2s, box-shadow 0.2s",
-                background: selected ? `${c.primary}12` : c.surfaceLow,
+                background: selected ? `${c.coSoft}` : c.surfaceLow,
                 boxShadow: selected ? `0 0 0 2px ${c.primary}` : "none",
                 color: selected ? c.primary : c.onSurface,
               }}
@@ -257,12 +257,12 @@ export function SettleOnboarding({ userId, rules }: { userId: string; rules: Set
         {/* ── Header ── */}
         <section className="fm-fade-up" style={{ marginBottom: 28 }}>
           <div style={{
-            width: 56, height: 56, borderRadius: 16, background: `${c.primary}15`,
+            width: 56, height: 56, borderRadius: 16, background: `${c.coSoft}`,
             display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 18,
           }}>
             <span className="mso mso-fill" aria-hidden="true" style={{ fontSize: 28, color: c.primary }}>flight_land</span>
           </div>
-          <h1 style={{ fontSize: 30, fontWeight: 800, color: c.primary, letterSpacing: "-0.025em", margin: 0 }}>
+          <h1 style={{ fontSize: 30, fontWeight: 700, color: c.primary, letterSpacing: "-0.025em", margin: 0 }}>
             Settle
           </h1>
           <p style={{ fontSize: 14, fontWeight: 500, color: c.onSurfaceVariant, lineHeight: 1.6, margin: "8px 0 0" }}>
@@ -278,7 +278,7 @@ export function SettleOnboarding({ userId, rules }: { userId: string; rules: Set
           {/* 1 — Arrival date */}
           <div>
             <label htmlFor="settle-arrival" style={{ display: "block", marginBottom: 4 }}>
-              <span style={{ fontSize: 15, fontWeight: 800, color: c.onSurface, letterSpacing: "-0.01em" }}>
+              <span style={{ fontSize: 15, fontWeight: 700, color: c.onSurface, letterSpacing: "-0.01em" }}>
                 When did you arrive?
               </span>
             </label>
@@ -362,7 +362,7 @@ export function SettleOnboarding({ userId, rules }: { userId: string; rules: Set
             style={{
               display: "flex", alignItems: "flex-start", gap: 8,
               padding: "12px 16px", borderRadius: 12, marginTop: 20,
-              background: `${c.error}15`, color: c.error,
+              background: `${c.rdSoft}`, color: c.error,
               fontSize: 13, fontWeight: 600, lineHeight: 1.5,
             }}
           >
@@ -378,9 +378,9 @@ export function SettleOnboarding({ userId, rules }: { userId: string; rules: Set
           style={{
             width: "100%", padding: 16, borderRadius: 9999, border: "none",
             cursor: loading ? "default" : "pointer", marginTop: 28,
-            fontSize: 16, fontWeight: 800, fontFamily: font.headline, color: "#fff",
-            background: `linear-gradient(to bottom, ${c.primary}, ${c.primaryContainer})`,
-            boxShadow: `0 10px 20px -5px ${c.primary}40`,
+            fontSize: 16, fontWeight: 700, fontFamily: font.headline, color: "#fff",
+            background: `${c.co}`,
+            boxShadow: "0 8px 24px rgba(43,74,226,.22)",
             opacity: loading ? 0.6 : 1, transition: "opacity 0.2s",
             display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
           }}

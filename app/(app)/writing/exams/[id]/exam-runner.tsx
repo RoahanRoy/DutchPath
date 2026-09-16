@@ -28,8 +28,8 @@ interface Props {
 }
 
 const font = {
-  headline: "'Plus Jakarta Sans', sans-serif",
-  body: "'Noto Serif', serif",
+  headline: "'Instrument Sans', system-ui, sans-serif",
+  body: "'Instrument Serif', Georgia, serif",
 };
 
 const TYPE_LABELS: Record<string, string> = {
@@ -68,7 +68,7 @@ function ScoreSlider({
     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <span style={{ fontSize: 12, fontWeight: 700, color: c.onSurface }}>{label}</span>
-        <span style={{ fontSize: 13, fontWeight: 900, color: c.secondary }}>{value}/3</span>
+        <span style={{ fontSize: 13, fontWeight: 700, color: c.secondary }}>{value}/3</span>
       </div>
       <div style={{ display: "flex", gap: 6 }}>
         {[0, 1, 2, 3].map((i) => (
@@ -237,7 +237,7 @@ export function ExamRunner({ exam, sections, userId }: Props) {
 
     updateXP(xpAwarded);
     if (passed) {
-      addToast({ type: "achievement", title: "🏆 Schrijfexamen geslaagd!", message: `${score}% — ${totalPoints}/${maxPoints} punten`, xp: xpAwarded });
+      addToast({ type: "achievement", title: "Schrijfexamen geslaagd", message: `${score}% — ${totalPoints}/${maxPoints} punten`, xp: xpAwarded });
     }
 
     setReviewResult({ score, totalPoints, maxPoints, passed, xpAwarded });
@@ -255,7 +255,7 @@ export function ExamRunner({ exam, sections, userId }: Props) {
             Terug naar examens
           </Link>
 
-          <h1 style={{ fontSize: 26, fontWeight: 800, color: c.secondary, letterSpacing: "-0.025em", margin: 0 }}>
+          <h1 style={{ fontSize: 26, fontWeight: 700, color: c.secondary, letterSpacing: "-0.025em", margin: 0 }}>
             {exam.title}
           </h1>
           {exam.description && (
@@ -263,7 +263,7 @@ export function ExamRunner({ exam, sections, userId }: Props) {
           )}
 
           <div style={{ background: c.surfaceLow, padding: 20, borderRadius: 16, marginTop: 24 }}>
-            <h3 style={{ fontSize: 14, fontWeight: 800, margin: 0, marginBottom: 12, color: c.onSurface }}>
+            <h3 style={{ fontSize: 14, fontWeight: 700, margin: 0, marginBottom: 12, color: c.onSurface }}>
               Examenregels
             </h3>
             <ul style={{ margin: 0, paddingLeft: 20, fontSize: 13, color: c.onSurface, lineHeight: 1.6 }}>
@@ -279,9 +279,9 @@ export function ExamRunner({ exam, sections, userId }: Props) {
             onClick={start}
             style={{
               marginTop: 24, width: "100%", padding: 16, borderRadius: 9999,
-              background: `linear-gradient(to bottom, ${c.secondary}, ${c.secondaryContainer})`,
+              background: `${c.or}`,
               color: "#fff", border: "none", cursor: "pointer",
-              fontSize: 15, fontWeight: 800, letterSpacing: "0.02em",
+              fontSize: 15, fontWeight: 700, letterSpacing: "0.02em",
               boxShadow: "0 10px 20px -5px rgba(0,0,0,0.15)",
             }}
           >
@@ -303,7 +303,7 @@ export function ExamRunner({ exam, sections, userId }: Props) {
         <nav style={{
           position: "sticky", top: 0, zIndex: 50, height: 64,
           display: "flex", alignItems: "center", gap: 16, padding: "0 16px",
-          background: isDark ? "rgba(18,20,19,0.8)" : "rgba(249,249,247,0.8)",
+          background: c.glassBackground,
           backdropFilter: "blur(24px)",
         }}>
           <button onClick={() => setPhase({ kind: "section", idx: sections.length - 1 })} style={{ width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 9999, border: "none", background: "transparent", cursor: "pointer" }}>
@@ -324,25 +324,25 @@ export function ExamRunner({ exam, sections, userId }: Props) {
                 : (texts[s.id] ?? "");
               const score = scores[s.id] ?? emptyScore();
               return (
-                <div key={s.id} style={{ background: c.surfaceLowest, padding: 18, borderRadius: 20, boxShadow: "0px 4px 16px rgba(26,28,27,0.04)" }}>
+                <div key={s.id} style={{ background: c.card, padding: 18, borderRadius: 20, boxShadow: "0px 4px 16px rgba(26,28,27,0.04)" }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: c.secondary, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4 }}>
                     Opdracht {idx + 1} · {TYPE_LABELS[s.task_type] ?? s.task_type}
                   </div>
-                  <h3 style={{ fontSize: 16, fontWeight: 800, margin: 0, marginBottom: 12 }}>{s.title}</h3>
+                  <h3 style={{ fontSize: 16, fontWeight: 700, margin: 0, marginBottom: 12 }}>{s.title}</h3>
 
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
                     <div>
                       <p style={{ fontSize: 10, textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.1em", color: c.onSurfaceVariant, marginBottom: 6 }}>Jouw werk</p>
-                      <div style={{ background: "#FFFBF5", borderRadius: 12, padding: 12, borderLeft: `4px solid ${c.secondary}`, minHeight: 100 }}>
-                        <pre style={{ fontFamily: font.body, fontSize: 11, lineHeight: 1.6, color: "#1C1B1A", margin: 0, whiteSpace: "pre-wrap" }}>
+                      <div style={{ background: c.card2, borderRadius: 12, padding: 12, borderLeft: `4px solid ${c.secondary}`, minHeight: 100 }}>
+                        <pre style={{ fontFamily: font.body, fontSize: 11, lineHeight: 1.6, color: c.ink, margin: 0, whiteSpace: "pre-wrap" }}>
                           {userText || "—"}
                         </pre>
                       </div>
                     </div>
                     <div>
                       <p style={{ fontSize: 10, textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.1em", color: c.onSurfaceVariant, marginBottom: 6 }}>Voorbeeld</p>
-                      <div style={{ background: "#FFFBF5", borderRadius: 12, padding: 12, borderLeft: `4px solid ${c.primary}`, minHeight: 100 }}>
-                        <pre style={{ fontFamily: font.body, fontSize: 11, lineHeight: 1.6, color: "#1C1B1A", margin: 0, whiteSpace: "pre-wrap" }}>
+                      <div style={{ background: c.card2, borderRadius: 12, padding: 12, borderLeft: `4px solid ${c.primary}`, minHeight: 100 }}>
+                        <pre style={{ fontFamily: font.body, fontSize: 11, lineHeight: 1.6, color: c.ink, margin: 0, whiteSpace: "pre-wrap" }}>
                           {s.model_answer_nl}
                         </pre>
                       </div>
@@ -350,7 +350,7 @@ export function ExamRunner({ exam, sections, userId }: Props) {
                   </div>
 
                   {s.model_answer_notes && (
-                    <div style={{ background: `${c.primary}0d`, borderRadius: 12, padding: 12, marginBottom: 16 }}>
+                    <div style={{ background: `${c.coSoft}`, borderRadius: 12, padding: 12, marginBottom: 16 }}>
                       <div style={{ fontSize: 11, fontWeight: 700, color: c.primary, marginBottom: 2, display: "flex", alignItems: "center", gap: 4 }}>
                         <span className="mso" style={{ fontSize: 13 }}>lightbulb</span>
                         Tip
@@ -368,7 +368,7 @@ export function ExamRunner({ exam, sections, userId }: Props) {
 
                   <div style={{ marginTop: 12, paddingTop: 12, borderTop: `1px solid ${c.outlineVariant}`, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <span style={{ fontSize: 12, fontWeight: 700, color: c.onSurfaceVariant }}>Subtotaal</span>
-                    <span style={{ fontSize: 16, fontWeight: 900, color: c.secondary }}>{score.total}/12</span>
+                    <span style={{ fontSize: 16, fontWeight: 700, color: c.secondary }}>{score.total}/12</span>
                   </div>
                 </div>
               );
@@ -377,13 +377,13 @@ export function ExamRunner({ exam, sections, userId }: Props) {
 
           <div style={{ marginTop: 20, padding: 16, background: c.surfaceLow, borderRadius: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span style={{ fontSize: 14, fontWeight: 700 }}>Totaal</span>
-            <span style={{ fontSize: 22, fontWeight: 900, color: c.secondary }}>{totalPoints}/{maxPoints}</span>
+            <span style={{ fontSize: 22, fontWeight: 700, color: c.secondary }}>{totalPoints}/{maxPoints}</span>
           </div>
         </main>
 
         <div style={{
           position: "fixed", bottom: 0, left: 0, width: "100%", zIndex: 60,
-          background: isDark ? "rgba(18,20,19,0.95)" : "rgba(249,249,247,0.95)",
+          background: c.glassBackground,
           backdropFilter: "blur(16px)", padding: "16px 24px 32px",
         }}>
           <button
@@ -391,10 +391,10 @@ export function ExamRunner({ exam, sections, userId }: Props) {
             disabled={!allRated || submitting}
             style={{
               width: "100%", height: 56, borderRadius: 9999, border: "none",
-              background: allRated ? `linear-gradient(to bottom, ${c.secondary}, ${c.secondaryContainer})` : c.surfaceHigh,
+              background: allRated ? `${c.or}` : c.surfaceHigh,
               color: allRated ? "#fff" : c.onSurfaceVariant,
               cursor: allRated && !submitting ? "pointer" : "not-allowed",
-              fontWeight: 800, fontSize: 16,
+              fontWeight: 700, fontSize: 16,
               display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
             }}
           >
@@ -413,15 +413,15 @@ export function ExamRunner({ exam, sections, userId }: Props) {
         <main style={{ padding: "24px 24px 128px", maxWidth: 480, margin: "0 auto" }}>
           <div style={{
             background: reviewResult.passed
-              ? `linear-gradient(135deg, ${c.secondary}, ${c.secondaryContainer})`
-              : `linear-gradient(135deg, ${c.error}, ${c.errorContainer ?? c.error})`,
-            color: "#fff", padding: 28, borderRadius: 24, textAlign: "center",
+              ? `${c.or}`
+              : `${c.rd}`,
+            color: "#fff", padding: 28, borderRadius: 18, textAlign: "center",
             marginBottom: 24,
           }}>
             <span className="mso mso-fill" style={{ fontSize: 48, color: "#fff" }}>
               {reviewResult.passed ? "verified" : "replay"}
             </span>
-            <h1 style={{ fontSize: 36, fontWeight: 900, margin: "8px 0 0", letterSpacing: "-0.03em" }}>
+            <h1 style={{ fontFamily: font.body, fontSize: 34, fontWeight: 400, lineHeight: 1.1, margin: "8px 0 0", letterSpacing: "-0.01em" }}>
               {reviewResult.score}%
             </h1>
             <p style={{ fontSize: 13, fontWeight: 700, margin: 0, opacity: 0.9, textTransform: "uppercase", letterSpacing: "0.1em" }}>
@@ -430,24 +430,24 @@ export function ExamRunner({ exam, sections, userId }: Props) {
             <div style={{
               display: "inline-block", marginTop: 16,
               padding: "6px 14px", borderRadius: 9999,
-              background: "rgba(255,255,255,0.2)", fontSize: 12, fontWeight: 800,
+              background: "rgba(255,255,255,0.2)", fontSize: 12, fontWeight: 700,
               textTransform: "uppercase", letterSpacing: "0.1em",
             }}>
               {reviewResult.passed ? "Geslaagd" : "Niet geslaagd"} · +{reviewResult.xpAwarded} XP
             </div>
           </div>
 
-          <h2 style={{ fontSize: 16, fontWeight: 800, marginBottom: 12 }}>Per opdracht</h2>
+          <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>Per opdracht</h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {sections.map((s, idx) => {
               const score = scores[s.id] ?? emptyScore();
               return (
-                <div key={s.id} style={{ background: c.surfaceLowest, padding: 16, borderRadius: 16 }}>
+                <div key={s.id} style={{ background: c.card, padding: 16, borderRadius: 16 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <h3 style={{ fontSize: 14, fontWeight: 800, margin: 0 }}>
+                    <h3 style={{ fontSize: 14, fontWeight: 700, margin: 0 }}>
                       {idx + 1}. {s.title}
                     </h3>
-                    <span style={{ fontSize: 13, fontWeight: 800, color: score.total >= 9 ? c.secondary : score.total >= 6 ? c.tertiary : c.onSurfaceVariant }}>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: score.total >= 9 ? c.secondary : score.total >= 6 ? c.tertiary : c.onSurfaceVariant }}>
                       {score.total}/12
                     </span>
                   </div>
@@ -482,7 +482,7 @@ export function ExamRunner({ exam, sections, userId }: Props) {
               }}
               style={{
                 flex: 1, padding: 14, borderRadius: 9999, border: "none",
-                background: c.secondary, color: "#fff", fontWeight: 800, cursor: "pointer",
+                background: c.secondary, color: "#fff", fontWeight: 700, cursor: "pointer",
               }}
             >
               Opnieuw
@@ -523,7 +523,7 @@ export function ExamRunner({ exam, sections, userId }: Props) {
       <nav style={{
         position: "sticky", top: 0, zIndex: 50, height: 64,
         display: "flex", alignItems: "center", gap: 16, padding: "0 16px",
-        background: isDark ? "rgba(18,20,19,0.8)" : "rgba(249,249,247,0.8)",
+        background: c.glassBackground,
         backdropFilter: "blur(24px)",
       }}>
         <button onClick={() => router.push("/writing/exams")} style={{ width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 9999, border: "none", background: "transparent", cursor: "pointer" }}>
@@ -542,7 +542,7 @@ export function ExamRunner({ exam, sections, userId }: Props) {
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
           <div style={{
             width: 36, height: 36, borderRadius: 10,
-            background: `${c.secondary}1a`,
+            background: `${c.orSoft}`,
             display: "flex", alignItems: "center", justifyContent: "center",
           }}>
             <span className="mso" style={{ fontSize: 18, color: c.secondary }}>{TYPE_ICONS[s.task_type] ?? "edit"}</span>
@@ -551,21 +551,21 @@ export function ExamRunner({ exam, sections, userId }: Props) {
             {TYPE_LABELS[s.task_type] ?? s.task_type}
           </span>
         </div>
-        <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0, marginBottom: 16 }}>{s.title}</h1>
+        <h1 style={{ fontSize: 22, fontWeight: 700, margin: 0, marginBottom: 16 }}>{s.title}</h1>
 
-        <div style={{ background: "#FFFBF5", borderRadius: 16, padding: 16, borderLeft: `4px solid ${c.primaryContainer}`, marginBottom: 16 }}>
+        <div style={{ background: c.card2, borderRadius: 16, padding: 16, borderLeft: `4px solid ${c.primaryContainer}`, marginBottom: 16 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
-            <span style={{ fontSize: 10, textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.1em", color: "#6B6156" }}>Situatie</span>
+            <span style={{ fontSize: 10, textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.1em", color: c.ink45 }}>Situatie</span>
             {s.scenario_en && (
               <button
                 onClick={() => setShowEnglish((v) => !v)}
-                style={{ fontSize: 11, fontWeight: 700, color: "#3E5BA6", background: "transparent", border: "none", cursor: "pointer", padding: 0 }}
+                style={{ fontSize: 11, fontWeight: 700, color: c.co, background: "transparent", border: "none", cursor: "pointer", padding: 0 }}
               >
                 {showEnglish ? "NL" : "EN"}
               </button>
             )}
           </div>
-          <p style={{ fontFamily: font.body, fontSize: 14, lineHeight: 1.6, color: "#1C1B1A", margin: 0 }}>
+          <p style={{ fontFamily: font.body, fontSize: 14, lineHeight: 1.6, color: c.ink, margin: 0 }}>
             {showEnglish && s.scenario_en ? s.scenario_en : s.scenario_nl}
           </p>
         </div>
@@ -613,7 +613,7 @@ export function ExamRunner({ exam, sections, userId }: Props) {
                   style={{
                     width: "100%", padding: "12px 14px", borderRadius: 14,
                     border: `1.5px solid ${formFields[el.key] ? c.secondary : c.outlineVariant}40`,
-                    background: c.surfaceLowest, fontFamily: font.body, fontSize: 15,
+                    background: c.card, fontFamily: font.body, fontSize: 15,
                     color: c.onSurface, outline: "none",
                     boxSizing: "border-box",
                   }}
@@ -629,8 +629,8 @@ export function ExamRunner({ exam, sections, userId }: Props) {
               placeholder="Begin hier met schrijven..."
               style={{
                 width: "100%", minHeight: 220, padding: 18, borderRadius: 18,
-                border: `1.5px solid ${c.outlineVariant}30`,
-                background: c.surfaceLowest, fontFamily: font.body, fontSize: 16,
+                border: `1.5px solid ${c.line}`,
+                background: c.card, fontFamily: font.body, fontSize: 16,
                 lineHeight: 1.7, color: c.onSurface, outline: "none", resize: "vertical",
                 boxSizing: "border-box",
               }}
@@ -661,7 +661,7 @@ export function ExamRunner({ exam, sections, userId }: Props) {
                   title={p.when_to_use ?? p.en}
                   style={{
                     padding: "6px 12px", borderRadius: 9999, fontSize: 13, fontWeight: 600,
-                    background: `${c.secondary}1a`, color: c.secondary, border: "none",
+                    background: `${c.orSoft}`, color: c.secondary, border: "none",
                     cursor: "pointer", fontFamily: font.body,
                   }}
                 >
@@ -675,7 +675,7 @@ export function ExamRunner({ exam, sections, userId }: Props) {
 
       <div style={{
         position: "fixed", bottom: 0, left: 0, width: "100%", zIndex: 60,
-        background: isDark ? "rgba(18,20,19,0.95)" : "rgba(249,249,247,0.95)",
+        background: c.glassBackground,
         backdropFilter: "blur(16px)", padding: "12px 24px 32px",
         display: "flex", gap: 10,
       }}>
@@ -684,7 +684,7 @@ export function ExamRunner({ exam, sections, userId }: Props) {
           disabled={phase.idx === 0}
           style={{
             flex: "0 0 auto", padding: "0 18px", height: 48, borderRadius: 9999,
-            border: `1.5px solid ${c.outlineVariant}50`, background: "transparent",
+            border: `1.5px solid ${c.line}`, background: "transparent",
             cursor: phase.idx === 0 ? "not-allowed" : "pointer",
             fontWeight: 700, fontSize: 13, color: c.onSurfaceVariant,
             opacity: phase.idx === 0 ? 0.4 : 1,
@@ -697,10 +697,10 @@ export function ExamRunner({ exam, sections, userId }: Props) {
           disabled={!wordOk}
           style={{
             flex: 1, height: 48, borderRadius: 9999, border: "none",
-            background: wordOk ? `linear-gradient(to bottom, ${c.secondary}, ${c.secondaryContainer})` : c.surfaceHigh,
+            background: wordOk ? `${c.or}` : c.surfaceHigh,
             color: wordOk ? "#fff" : c.onSurfaceVariant,
             cursor: wordOk ? "pointer" : "not-allowed",
-            fontWeight: 800, fontSize: 14,
+            fontWeight: 700, fontSize: 14,
             display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
           }}
         >

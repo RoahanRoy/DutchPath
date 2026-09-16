@@ -5,7 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useAppStore } from "@/lib/store";
-import { useTheme, getColors } from "@/lib/use-theme";
+import { useTheme, getColors, font } from "@/lib/use-theme";
+import { Screen, GlassHeader, Kicker, Display, Card, Chip, primaryButton, secondaryButton, optionRow } from "@/components/ui/screen";
 import { getAmsterdamDate } from "@/lib/utils";
 import { checkAndUnlockAchievements } from "@/lib/achievements";
 import type {
@@ -25,10 +26,26 @@ interface Props {
 
 type Phase = "listen" | "answer" | "review";
 
-const font = {
-  headline: "'Plus Jakarta Sans', sans-serif",
-  body: "'Noto Serif', serif",
+const TYPE_LABELS: Record<string, string> = {
+  announcement: "Aankondiging",
+  phone_message: "Telefoonbericht",
+  dialogue: "Gesprek",
+  radio_snippet: "Radiofragment",
+  instructions: "Instructies",
 };
+
+/**
+ * Bar heights for the waveform, as percentages.
+ *
+ * Deliberately a fixed pattern rather than real audio analysis: decoding the
+ * buffer to draw an accurate waveform would mean downloading and processing the
+ * whole file before the first play, which is the opposite of what this screen
+ * wants. The fill position is real; the silhouette is decoration.
+ */
+const WAVE_HEIGHTS = [
+  22, 48, 34, 72, 56, 90, 44, 66, 30, 54, 82, 40, 62, 26, 76,
+  50, 88, 36, 58, 70, 28, 64, 46, 84, 38, 60, 32, 74, 42, 24,
+];
 
 export function ListeningPlayer({ task, progress, draft, userId, nextTaskId }: Props) {
   const router = useRouter();
@@ -263,145 +280,116 @@ export function ListeningPlayer({ task, progress, draft, userId, nextTaskId }: P
     if (!isFinite(s)) return "0:00";
     return `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
   };
-
   /* ═══ Review screen ═══ */
   if (phase === "review" && reviewResult) {
+    const passed = reviewResult.score >= 70;
+    const tone = passed ? { fg: c.gr, bg: c.grSoft } : { fg: c.rd, bg: c.rdSoft };
+
     return (
-      <div style={{ minHeight: "100vh", background: c.background, fontFamily: font.headline, padding: "24px 24px 128px" }}>
-        <div style={{ maxWidth: 560, margin: "0 auto" }}>
-          <div
-            className="fm-rise"
-            style={{
-              background: c.surfaceLowest, borderRadius: 24, padding: 32, textAlign: "center",
-              boxShadow: "0px 4px 24px rgba(0,0,0,0.06)", marginBottom: 24,
-            }}
-          >
-            <div style={{
-              width: 96, height: 96, borderRadius: 9999,
-              background: reviewResult.score >= 70 ? `${c.success}1a` : `${c.error}1a`,
-              display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px",
-            }}>
-              <span className="mso mso-fill" style={{
-                fontSize: 56, color: reviewResult.score >= 70 ? c.success : c.error,
-              }}>
-                {reviewResult.score >= 70 ? "check_circle" : "replay"}
+      <Screen>
+        <GlassHeader c={c} back="/listening" title={task.title} closeIcon />
+
+        <div style={{ padding: "18px 20px calc(var(--app-tabbar, 0px) + 20px)", display: "flex", flexDirection: "column", gap: 14 }}>
+          <div className="fm-rise" style={{ background: tone.bg, borderRadius: 22, padding: 22 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 11, marginBottom: 14 }}>
+              <span style={{ width: 40, height: 40, borderRadius: 9999, background: tone.fg, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <span className="mso mso-fill" style={{ fontSize: 22, color: "#fff" }}>{passed ? "check" : "replay"}</span>
               </span>
+              <Kicker c={c} color={tone.fg} style={{ letterSpacing: "0.18em" }}>
+                {passed ? "Voldoende" : "Nog niet"}
+              </Kicker>
             </div>
-            <div style={{ fontSize: 48, fontWeight: 800, color: c.onSurface, lineHeight: 1 }}>
-              {reviewResult.score}%
-            </div>
-            <div style={{ fontSize: 14, color: c.onSurfaceVariant, marginTop: 4 }}>
+            <Display c={c} style={{ fontSize: 30 }}>
               {reviewResult.correctCount} van {reviewResult.totalQuestions} goed
-            </div>
-            <div style={{
-              display: "inline-flex", alignItems: "center", gap: 4, marginTop: 16,
-              background: c.tertiaryFixed, color: "#2a1700",
-              padding: "6px 16px", borderRadius: 9999, fontSize: 14, fontWeight: 700,
-            }}>
-              <span className="mso" style={{ fontSize: 16 }}>emoji_events</span>
-              +{reviewResult.xpAwarded} XP
+            </Display>
+            <div style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap" }}>
+              <Chip fg={tone.fg} bg={c.card}>{reviewResult.score}% score</Chip>
+              <Chip fg={c.or} bg={c.card}>+{reviewResult.xpAwarded} XP</Chip>
             </div>
           </div>
 
           {/* Per-question breakdown */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 24 }}>
+          <Card c={c} style={{ overflow: "hidden" }}>
             {questions.map((q, idx) => {
               const chosen = answers[q.id];
               const correct = chosen === q.correct_option_id;
               const chosenOpt = q.options.find((o) => o.id === chosen);
               const correctOpt = q.options.find((o) => o.id === q.correct_option_id);
               return (
-                <div key={q.id} style={{
-                  background: c.surfaceLowest, borderRadius: 16, padding: 16,
-                  borderLeft: `4px solid ${correct ? c.success : c.error}`,
-                }}>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: c.onSurfaceVariant, marginBottom: 4 }}>
-                    Vraag {idx + 1}
-                  </div>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: c.onSurface, marginBottom: 8 }}>
-                    {q.prompt_nl}
-                  </div>
-                  <div style={{ fontSize: 13, color: correct ? c.success : c.error, fontWeight: 600 }}>
-                    {correct
-                      ? `✓ ${chosenOpt?.text_nl ?? ""}`
-                      : `✗ Jouw antwoord: ${chosenOpt?.text_nl ?? "—"}`}
-                  </div>
-                  {!correct && (
-                    <div style={{ fontSize: 13, color: c.onSurface, marginTop: 4 }}>
-                      Juist antwoord: <strong>{correctOpt?.text_nl}</strong>
-                    </div>
-                  )}
-                  <div style={{
-                    fontSize: 12, color: c.onSurfaceVariant, marginTop: 8,
-                    fontFamily: font.body, lineHeight: 1.5,
-                  }}>
-                    {q.explanation_nl}
-                  </div>
+                <div
+                  key={q.id}
+                  style={{
+                    padding: "14px 16px",
+                    borderBottom: idx === questions.length - 1 ? "none" : `1px solid ${c.line2}`,
+                    display: "flex", gap: 11, alignItems: "flex-start",
+                  }}
+                >
+                  <span className="mso mso-fill" style={{ fontSize: 19, color: correct ? c.gr : c.rd, flex: "none" }}>
+                    {correct ? "check_circle" : "cancel"}
+                  </span>
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ display: "block", fontSize: 13.5, fontWeight: 600, color: c.ink }}>{q.prompt_nl}</span>
+                    <span style={{ display: "block", fontSize: 12.5, color: correct ? c.gr : c.rd, marginTop: 4, fontWeight: 600 }}>
+                      {correct ? chosenOpt?.text_nl : `Jouw antwoord: ${chosenOpt?.text_nl ?? "—"}`}
+                    </span>
+                    {!correct && (
+                      <span style={{ display: "block", fontSize: 12.5, color: c.ink, marginTop: 2 }}>
+                        Juist: <strong style={{ fontWeight: 600 }}>{correctOpt?.text_nl}</strong>
+                      </span>
+                    )}
+                    <span style={{ display: "block", fontFamily: font.body, fontSize: 14, lineHeight: 1.5, color: c.ink70, marginTop: 6 }}>
+                      {q.explanation_nl}
+                    </span>
+                  </span>
                 </div>
               );
             })}
-          </div>
+          </Card>
 
-          {/* Transcript reveal */}
-          <div style={{
-            background: c.surfaceLowest, borderRadius: 16, padding: 16, marginBottom: 16,
-          }}>
+          {/* Transcript — locked until the answers are in, which they now are. */}
+          <Card c={c} style={{ padding: 16 }}>
             <button
               onClick={() => setShowTranscript((v) => !v)}
               style={{
                 display: "flex", alignItems: "center", justifyContent: "space-between", width: "100%",
-                background: "none", border: "none", cursor: "pointer", color: c.onSurface,
-                fontSize: 14, fontWeight: 700, fontFamily: font.headline, padding: 0,
+                background: "none", border: "none", cursor: "pointer", color: c.ink,
+                fontSize: 14, fontWeight: 600, fontFamily: font.headline, padding: 0,
               }}
             >
-              <span>Transcript bekijken</span>
-              <span className="mso" style={{ fontSize: 20 }}>
+              <span>Transcript</span>
+              <span className="mso" style={{ fontSize: 20, color: c.ink25 }}>
                 {showTranscript ? "expand_less" : "expand_more"}
               </span>
             </button>
             {showTranscript && (
-              <div style={{ marginTop: 12, fontFamily: font.body, fontSize: 14, lineHeight: 1.7, color: c.onSurface, whiteSpace: "pre-wrap" }}>
-                <div style={{ marginBottom: task.transcript_en ? 16 : 0 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: c.onSurfaceVariant, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4, fontFamily: font.headline }}>
-                    Nederlands
-                  </div>
+              <div style={{ marginTop: 14, whiteSpace: "pre-wrap" }}>
+                <Kicker c={c} style={{ marginBottom: 6 }}>Nederlands</Kicker>
+                <div style={{ fontFamily: font.body, fontSize: 16, lineHeight: 1.7, color: c.ink }}>
                   {task.transcript_nl}
                 </div>
                 {task.transcript_en && (
-                  <div>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: c.onSurfaceVariant, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 4, fontFamily: font.headline }}>
-                      English
+                  <>
+                    <Kicker c={c} style={{ margin: "16px 0 6px" }}>English</Kicker>
+                    <div style={{ fontFamily: font.body, fontSize: 16, lineHeight: 1.7, color: c.ink70 }}>
+                      {task.transcript_en}
                     </div>
-                    {task.transcript_en}
-                  </div>
+                  </>
                 )}
               </div>
             )}
-          </div>
+          </Card>
 
-          <div style={{ display: "flex", gap: 12 }}>
-            <button
-              onClick={() => router.refresh()}
-              style={{
-                flex: 1, padding: 16, textAlign: "center", background: c.surfaceHigh,
-                color: c.onSurface, borderRadius: 9999, fontWeight: 800, fontSize: 15, border: "none", cursor: "pointer",
-              }}
-            >
-              Opnieuw proberen
-            </button>
+          <div style={{ display: "flex", gap: 9 }}>
+            <button onClick={() => router.refresh()} style={secondaryButton(c)}>Opnieuw proberen</button>
             <Link
               href={nextTaskId ? `/listening/${nextTaskId}` : "/listening"}
-              style={{
-                flex: 1, padding: 16, textAlign: "center",
-                background: `linear-gradient(to bottom, ${c.primary}, ${c.primaryContainer})`,
-                color: "#fff", borderRadius: 9999, fontWeight: 800, fontSize: 15, textDecoration: "none",
-              }}
+              style={{ ...primaryButton(c, { compact: true }), display: "block", textAlign: "center", textDecoration: "none" }}
             >
-              {nextTaskId ? "Volgende les" : "Terug naar overzicht"}
+              {nextTaskId ? "Volgende" : "Terug"}
             </Link>
           </div>
         </div>
-      </div>
+      </Screen>
     );
   }
 
@@ -409,169 +397,144 @@ export function ListeningPlayer({ task, progress, draft, userId, nextTaskId }: P
   const progressPct = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
-    <div style={{ minHeight: "100vh", background: c.background, fontFamily: font.headline, padding: "24px 24px 128px" }}>
-      <div style={{ maxWidth: 560, margin: "0 auto" }}>
-        {/* Header */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
-          <Link
-            href="/listening"
-            aria-label="Terug"
-            style={{
-              width: 40, height: 40, borderRadius: 9999, background: c.surfaceLowest,
-              display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none",
-            }}
-          >
-            <span className="mso" style={{ color: c.onSurface, fontSize: 22 }}>arrow_back</span>
-          </Link>
-          <div style={{ textAlign: "center", flex: 1 }}>
-            <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700, color: c.onSurfaceVariant }}>
-              Week {task.week} · Dag {task.day}
-            </div>
-            <div style={{ fontSize: 16, fontWeight: 800, color: c.onSurface }}>{task.title}</div>
-          </div>
-          <div style={{ width: 40 }} />
-        </div>
+    <Screen>
+      <GlassHeader
+        c={c}
+        back="/listening"
+        closeIcon
+        title={`Luisteren · ${task.title}`}
+        trailing={
+          <span style={{ fontSize: 11.5, fontWeight: 600, color: c.ink45, flex: "none" }}>
+            Week {task.week} · Dag {task.day}
+          </span>
+        }
+      />
 
-        {/* Scenario */}
-        <div style={{
-          background: "#FFFBF5", borderRadius: 16, padding: 16, marginBottom: 20,
-          borderLeft: `4px solid ${c.primary}`,
-        }}>
-          <p style={{ fontFamily: font.body, fontSize: 14, lineHeight: 1.6, color: "#1C1B1A", margin: 0 }}>
-            {task.scenario_nl}
-          </p>
-        </div>
-
-        {/* Audio card */}
-        <div style={{
-          background: c.surfaceLowest, borderRadius: 20, padding: 24, marginBottom: 20,
-          boxShadow: "0px 4px 24px rgba(0,0,0,0.06)",
-        }}>
+      <div style={{ padding: "20px 20px calc(var(--app-tabbar, 0px) + 20px)" }}>
+        {/* ── Audio card ── */}
+        <Card c={c} style={{ borderRadius: 22, padding: "22px 20px", marginBottom: 20 }}>
           <audio ref={audioRef} src={task.audio_url ?? undefined} preload="metadata" />
 
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <Kicker c={c} style={{ marginBottom: 6 }}>{TYPE_LABELS[task.task_type] ?? "Fragment"}</Kicker>
+          <div style={{ fontFamily: font.body, fontSize: 22, lineHeight: 1.2, color: c.ink, marginBottom: 20 }}>
+            {task.scenario_nl}
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             <button
               onClick={isPlaying ? handlePause : handlePlay}
               disabled={!task.audio_url || (hasPlayedOnce && !isPlaying && replaysRemaining <= 0 && audioRef.current?.ended !== false)}
               aria-label={isPlaying ? "Pauze" : "Afspelen"}
               style={{
-                width: 64, height: 64, borderRadius: 9999, border: "none",
-                background: `linear-gradient(to bottom, ${c.primary}, ${c.primaryContainer})`,
-                color: "#fff", cursor: task.audio_url ? "pointer" : "not-allowed",
-                display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
+                width: 54, height: 54, flex: "none", borderRadius: 9999, border: "none",
+                background: c.co, cursor: task.audio_url ? "pointer" : "not-allowed",
+                display: "flex", alignItems: "center", justifyContent: "center",
                 opacity: task.audio_url ? 1 : 0.4,
-                boxShadow: "0 10px 15px -3px rgba(0,0,0,.15)",
+                boxShadow: "0 8px 20px rgba(43,74,226,.25)",
               }}
             >
-              <span className="mso mso-fill" style={{ fontSize: 32 }}>
+              <span className="mso mso-fill" style={{ fontSize: 26, color: "#fff" }}>
                 {isPlaying ? "pause" : "play_arrow"}
               </span>
             </button>
 
-            <div style={{ flex: 1 }}>
-              <div style={{ height: 6, background: c.surfaceHighest, borderRadius: 9999, overflow: "hidden" }}>
-                <div style={{
-                  width: `${progressPct}%`, height: "100%", background: c.primary,
-                  transition: "width 0.2s linear",
-                }} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              {/* A waveform rather than a bar: the heights are a fixed pattern,
+                  the fill is real playback position. */}
+              <div style={{ display: "flex", alignItems: "flex-end", gap: 2, height: 34 }}>
+                {WAVE_HEIGHTS.map((h, i) => (
+                  <span
+                    key={i}
+                    style={{
+                      flex: 1,
+                      height: `${h}%`,
+                      borderRadius: 2,
+                      background: (i / WAVE_HEIGHTS.length) * 100 <= progressPct ? c.co : c.sunk,
+                      transition: "background 0.15s linear",
+                    }}
+                  />
+                ))}
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6, fontSize: 11, fontWeight: 600, color: c.onSurfaceVariant }}>
+              <div style={{ display: "flex", justifyContent: "space-between", marginTop: 7, fontSize: 11, fontWeight: 600, color: c.ink45 }}>
                 <span>{formatTime(currentTime)}</span>
                 <span>{formatTime(duration)}</span>
               </div>
             </div>
           </div>
 
-          <div style={{
-            marginTop: 16, display: "flex", alignItems: "center", justifyContent: "space-between",
-            fontSize: 12, fontWeight: 700,
-          }}>
-            <div style={{ color: c.onSurfaceVariant }}>
-              {hasPlayedOnce
-                ? `Herluister: ${replaysRemaining} van ${task.allow_replays} over`
-                : "Luister eerst naar het fragment"}
-            </div>
-            {!task.audio_url && (
-              <div style={{ color: c.error }}>Audio ontbreekt</div>
-            )}
+          <div style={{ display: "flex", gap: 8, marginTop: 18, flexWrap: "wrap" }}>
+            <Chip fg={c.ink70} bg={c.sunk}>
+              {hasPlayedOnce ? `Replays left: ${replaysRemaining}` : "Luister eerst"}
+            </Chip>
+            <Chip fg={c.co} bg={c.coSoft}>{task.allow_replays} toegestaan</Chip>
+            {!task.audio_url && <Chip fg={c.rd} bg={c.rdSoft}>Audio ontbreekt</Chip>}
           </div>
-        </div>
+        </Card>
 
-        {/* Continue to answer phase */}
         {phase === "listen" && hasPlayedOnce && (
-          <button
-            onClick={() => setPhase("answer")}
-            style={{
-              width: "100%", padding: 16, textAlign: "center",
-              background: `linear-gradient(to bottom, ${c.primary}, ${c.primaryContainer})`,
-              color: "#fff", borderRadius: 9999, fontWeight: 800, fontSize: 16, border: "none", cursor: "pointer",
-              boxShadow: "0 10px 15px -3px rgba(0,0,0,.1)",
-            }}
-          >
+          <button onClick={() => setPhase("answer")} style={primaryButton(c)}>
             Ga naar de vragen
           </button>
         )}
 
-        {/* Questions */}
-        {phase === "answer" && (
-            <div
-              className="fm-fade-up"
-              style={{ display: "flex", flexDirection: "column", gap: 16, marginTop: 8 }}
-            >
-              {questions.map((q, idx) => (
-                <div key={q.id} style={{
-                  background: c.surfaceLowest, borderRadius: 20, padding: 20,
-                  boxShadow: "0px 2px 12px rgba(0,0,0,0.04)",
-                }}>
-                  <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700, color: c.onSurfaceVariant, marginBottom: 6 }}>
-                    Vraag {idx + 1} van {questions.length}
-                  </div>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: c.onSurface, marginBottom: 14, lineHeight: 1.4 }}>
-                    {q.prompt_nl}
-                  </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                    {q.options.map((opt) => {
-                      const selected = answers[q.id] === opt.id;
-                      return (
-                        <button
-                          key={opt.id}
-                          onClick={() => handleAnswer(q.id, opt.id)}
-                          style={{
-                            textAlign: "left", padding: "12px 16px", borderRadius: 14,
-                            background: selected ? `${c.primary}14` : c.surfaceLow,
-                            border: `2px solid ${selected ? c.primary : "transparent"}`,
-                            color: c.onSurface, fontSize: 14, fontWeight: 600,
-                            fontFamily: font.headline, cursor: "pointer",
-                            transition: "all 0.15s",
-                          }}
-                        >
-                          {opt.text_nl}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
+        {phase === "listen" && (
+          <div
+            style={{
+              width: "100%", border: `1px dashed ${c.line}`, fontFamily: font.headline,
+              fontSize: 13, fontWeight: 600, color: c.ink45, background: "transparent",
+              padding: "13px 0", borderRadius: 14, marginTop: 14, textAlign: "center",
+            }}
+          >
+            Transcript stays locked until you answer
+          </div>
+        )}
 
-              <button
-                onClick={handleSubmit}
-                disabled={!allAnswered}
-                style={{
-                  width: "100%", padding: 16, marginTop: 8,
-                  background: allAnswered
-                    ? `linear-gradient(to bottom, ${c.primary}, ${c.primaryContainer})`
-                    : c.surfaceHighest,
-                  color: allAnswered ? "#fff" : c.onSurfaceVariant,
-                  borderRadius: 9999, fontWeight: 800, fontSize: 16, border: "none",
-                  cursor: allAnswered ? "pointer" : "not-allowed",
-                  boxShadow: allAnswered ? "0 10px 15px -3px rgba(0,0,0,.1)" : "none",
-                }}
-              >
-                {allAnswered ? "Inleveren" : `Beantwoord alle vragen (${Object.keys(answers).length}/${questions.length})`}
-              </button>
-            </div>
-          )}
+        {/* ── Questions ── */}
+        {phase === "answer" && (
+          <div className="fm-fade-up" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+            {questions.map((q, idx) => (
+              <div key={q.id}>
+                <Kicker c={c} style={{ marginBottom: 10 }}>
+                  Vraag {idx + 1} van {questions.length}
+                </Kicker>
+                <div style={{ fontSize: 16.5, fontWeight: 600, color: c.ink, letterSpacing: "-0.01em", marginBottom: 14 }}>
+                  {q.prompt_nl}
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
+                  {q.options.map((opt) => {
+                    const selected = answers[q.id] === opt.id;
+                    return (
+                      <button
+                        key={opt.id}
+                        onClick={() => handleAnswer(q.id, opt.id)}
+                        className="tap-shrink"
+                        style={optionRow(c, selected ? "selected" : "idle")}
+                      >
+                        <span style={{ width: 22, height: 22, flex: "none", borderRadius: 9999, border: `2px solid ${selected ? c.co : c.ink25}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <span style={{ width: 8, height: 8, borderRadius: 9999, background: selected ? c.co : "transparent" }} />
+                        </span>
+                        <span style={{ flex: 1, fontFamily: font.body, fontSize: 16.5, lineHeight: 1.4, color: c.ink }}>
+                          {opt.text_nl}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+
+            <button
+              onClick={handleSubmit}
+              disabled={!allAnswered}
+              style={primaryButton(c, { disabled: !allAnswered })}
+            >
+              {allAnswered
+                ? "Inleveren"
+                : `Beantwoord alle vragen (${Object.keys(answers).length}/${questions.length})`}
+            </button>
+          </div>
+        )}
       </div>
-    </div>
+    </Screen>
   );
 }

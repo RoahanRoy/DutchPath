@@ -5,8 +5,8 @@ import { guideSlug, deadlineSummary, SEVERITY_LABEL } from "@/lib/settle/guides"
 import { absoluteUrl } from "@/lib/site";
 
 const font = {
-  headline: "'Plus Jakarta Sans', sans-serif",
-  body: "'Noto Serif', serif",
+  headline: "'Instrument Sans', system-ui, sans-serif",
+  body: "'Instrument Serif', Georgia, serif",
 };
 
 /**
@@ -40,8 +40,8 @@ export default async function GuidesIndexPage() {
     <div style={{ maxWidth: 1080, margin: "0 auto", padding: "0 24px", fontFamily: font.headline }}>
       <header className="fm-fade-up" style={{ padding: "40px 0 24px", maxWidth: 720 }}>
         <h1 style={{
-          fontSize: "clamp(30px, 5vw, 44px)", fontWeight: 800, lineHeight: 1.1,
-          letterSpacing: "-0.03em", color: "var(--primary)", margin: 0,
+          fontFamily: font.body, fontSize: "clamp(30px, 5vw, 44px)", fontWeight: 400, lineHeight: 1.08,
+          letterSpacing: "-0.01em", color: "var(--ink)", margin: 0,
         }}>
           Deadlines and admin, one page each
         </h1>
@@ -58,7 +58,7 @@ export default async function GuidesIndexPage() {
       {byCategory.map(({ category, rules: group }) => (
         <section key={category} className="fm-fade-up" style={{ padding: "20px 0" }}>
           <h2 style={{
-            fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.15em",
+            fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.15em",
             color: "var(--outline)", margin: "0 0 14px",
           }}>
             {category}
@@ -81,13 +81,13 @@ export default async function GuidesIndexPage() {
                   }}
                 >
                   <span style={{
-                    fontSize: 11, fontWeight: 800, textTransform: "uppercase",
+                    fontSize: 11, fontWeight: 700, textTransform: "uppercase",
                     letterSpacing: "0.1em", color: "var(--secondary)",
                   }}>
                     {SEVERITY_LABEL[rule.severity] ?? rule.severity}
                   </span>
                   <h3 style={{
-                    fontSize: 17, fontWeight: 800, letterSpacing: "-0.01em",
+                    fontSize: 16, fontWeight: 600, letterSpacing: "-0.01em",
                     color: "var(--on-surface)", margin: "8px 0 0",
                   }}>
                     {rule.title_en}

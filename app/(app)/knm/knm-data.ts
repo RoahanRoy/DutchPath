@@ -1709,9 +1709,15 @@ export const KNM_MOCK_EXAMS: KnmMockExam[] = [
   },
 ];
 
+/**
+ * Light-mode fallback only. These four keys name the four accent tones the
+ * design system carries; `topicTone()` in knm-client.tsx resolves them against
+ * the live palette so the topics stay legible in dark mode. Anything reading
+ * this map directly gets the light values.
+ */
 export const TOPIC_COLORS: Record<KnmTopic["color"], string> = {
-  primary: "#002975",
-  secondary: "#fe6b00",
-  tertiary: "#643d00",
-  success: "#00A86B",
+  primary: "#2B4AE2",
+  secondary: "#E8720C",
+  tertiary: "#C8372B",
+  success: "#0E8A5F",
 };

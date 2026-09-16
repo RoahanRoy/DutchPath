@@ -29,16 +29,16 @@ export default function OpengraphImage() {
           flexDirection: "column",
           justifyContent: "space-between",
           padding: 72,
-          background: "#f9f9f7",
-          color: "#1a1c1b",
+          background: "#F4F4F2",
+          color: "#101114",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 14, fontSize: 30, fontWeight: 700, color: "#002975" }}>
-          🇳🇱 DutchPath
+        <div style={{ display: "flex", alignItems: "center", gap: 14, fontSize: 30, fontWeight: 700, color: "#2B4AE2" }}>
+          DutchPath
         </div>
 
         <div style={{ display: "flex", flexDirection: "column" }}>
-          <div style={{ fontSize: 68, fontWeight: 800, lineHeight: 1.1, color: "#002975", letterSpacing: "-0.03em" }}>
+          <div style={{ fontSize: 68, fontWeight: 700, lineHeight: 1.1, color: "#2B4AE2", letterSpacing: "-0.02em" }}>
             {HEADLINE}
           </div>
           <div style={{ fontSize: 30, lineHeight: 1.4, color: "#434653", marginTop: 22 }}>

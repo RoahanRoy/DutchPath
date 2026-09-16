@@ -1,12 +1,10 @@
 @import "tailwindcss";
-@import "@fontsource/plus-jakarta-sans/400.css";
-@import "@fontsource/plus-jakarta-sans/500.css";
-@import "@fontsource/plus-jakarta-sans/600.css";
-@import "@fontsource/plus-jakarta-sans/700.css";
-@import "@fontsource/plus-jakarta-sans/800.css";
-@import "@fontsource/noto-serif/400.css";
-@import "@fontsource/noto-serif/400-italic.css";
-@import "@fontsource/noto-serif/700.css";
+@import "@fontsource/instrument-sans/400.css";
+@import "@fontsource/instrument-sans/500.css";
+@import "@fontsource/instrument-sans/600.css";
+@import "@fontsource/instrument-sans/700.css";
+@import "@fontsource/instrument-serif/400.css";
+@import "@fontsource/instrument-serif/400-italic.css";
 /* Material Symbols — self-hosted from /public/fonts */
 @font-face {
   font-family: "Material Symbols Outlined";
@@ -17,86 +15,154 @@
 }
 
 :root {
-  --background: #f9f9f7;
-  --foreground: #1a1c1b;
-  --primary: #002975;
-  --primary-container: #003da5;
-  --primary-fixed: #dbe1ff;
-  --on-primary-fixed: #00174b;
-  --accent: #fe6b00;
-  --success: #00A86B;
-  --danger: #D63B3B;
-  --error: #ba1a1a;
-  --error-container: #ffdad6;
-  --gold: #FFD700;
-  --card-bg: #ffffff;
-  --border: rgba(0, 40, 100, 0.08);
-  --muted: #434653;
+  --background: #F4F4F2;
+  --foreground: #101114;
+  --primary: #2B4AE2;
+  --primary-container: #1E3ACB;
+  --primary-fixed: #E7EAFD;
+  --on-primary-fixed: #152C9E;
+  --accent: #E8720C;
+  --success: #0E8A5F;
+  --danger: #C8372B;
+  --error: #C8372B;
+  --error-container: #FBE7E4;
+  --gold: #E8A00C;
+  --card-bg: #FFFFFF;
+  --border: rgba(16, 17, 20, 0.09);
+  --muted: #4A4E56;
 
-  /* MD3 surface stack */
-  --surface: #f9f9f7;
-  --surface-container-lowest: #ffffff;
-  --surface-container-low: #f4f4f2;
-  --surface-container: #eeeeec;
-  --surface-container-high: #e8e8e6;
-  --surface-container-highest: #e2e3e1;
+  /* surface stack */
+  --surface: #F4F4F2;
+  --surface-container-lowest: #FFFFFF;
+  --surface-container-low: #F4F4F2;
+  --surface-container: #EFEFEC;
+  --surface-container-high: #E7E7E3;
+  --surface-container-highest: #E0E0DB;
 
   /* secondary / tertiary */
-  --secondary: #a04100;
-  --secondary-container: #fe6b00;
-  --secondary-fixed: #ffdbcc;
-  --tertiary-fixed: #ffddb8;
-  --on-tertiary-container: #f8a110;
+  --secondary: #E8720C;
+  --secondary-container: #C25E06;
+  --secondary-fixed: #FDEBDC;
+  --tertiary-fixed: #E0F2EA;
+  --on-tertiary-container: #E8720C;
 
   /* passage accent — tinted left border on reading cards */
-  --passage-accent: rgba(0, 41, 117, 0.25);
+  --passage-accent: #2B4AE2;
 
   /* text & outlines */
-  --on-surface: #1a1c1b;
-  --on-surface-variant: #434653;
-  --outline: #747684;
-  --outline-variant: #c4c6d5;
+  --on-surface: #101114;
+  --on-surface-variant: #4A4E56;
+  --outline: #5E636B;
+  --outline-variant: #DCDCD7;
+
+  /* ── Design tokens (mirror of lib/use-theme.ts) ── */
+  --ink: #101114;
+  --ink70: #4A4E56;
+  --ink45: #5E636B;
+  --ink25: #8C9299;
+  --line: rgba(16, 17, 20, 0.09);
+  --line2: rgba(16, 17, 20, 0.05);
+  --card: #FFFFFF;
+  --card2: #EFEFEC;
+  --sunk: #E7E7E3;
+  --co: #2B4AE2;
+  --co-soft: #E7EAFD;
+  --co-ink: #152C9E;
+  --or: #E8720C;
+  --or-soft: #FDEBDC;
+  --or-ink: #8A4204;
+  --gr: #0E8A5F;
+  --gr-soft: #E0F2EA;
+  --rd: #C8372B;
+  --rd-soft: #FBE7E4;
+  --glass: rgba(250, 250, 249, 0.72);
+  --glass-line: rgba(255, 255, 255, 0.6);
 }
 
 .dark {
-  --background: #121413;
-  --foreground: #e2e3e0;
-  --primary: #4785ff;
-  --primary-container: #1a4cb0;
-  --primary-fixed: #b0c6ff;
-  --on-primary-fixed: #002d6f;
-  --accent: #ffb68d;
-  --success: #00c97f;
-  --danger: #ff6b6b;
-  --error: #ffb4ab;
-  --error-container: #93000a;
-  --gold: #FFD700;
-  --card-bg: #1a1c1b;
-  --border: rgba(66,70,84,0.2);
-  --muted: #c2c6d6;
+  --background: #0C0D0F;
+  --foreground: #F1F1EF;
+  --primary: #7A92FF;
+  --primary-container: #3A52C4;
+  --primary-fixed: #1B2450;
+  --on-primary-fixed: #C3CEFF;
+  --accent: #FF9F4D;
+  --success: #3FD69C;
+  --danger: #FF8A7A;
+  --error: #FF8A7A;
+  --error-container: #3A1A16;
+  --gold: #FFC64D;
+  --card-bg: #17191C;
+  --border: rgba(255, 255, 255, 0.10);
+  --muted: #A7ACB4;
 
-  /* MD3 surface stack — dark */
-  --surface: #121413;
-  --surface-container-lowest: #0d0f0e;
-  --surface-container-low: #1a1c1b;
-  --surface-container: #1e201f;
-  --surface-container-high: #282a29;
-  --surface-container-highest: #333534;
+  /* surface stack — dark */
+  --surface: #0C0D0F;
+  --surface-container-lowest: #17191C;
+  --surface-container-low: #141619;
+  --surface-container: #1F2226;
+  --surface-container-high: #25282D;
+  --surface-container-highest: #2D3036;
 
   /* secondary / tertiary — dark */
-  --secondary: #ffb68d;
-  --secondary-container: #c45500;
-  --secondary-fixed: #3d1a00;
-  --tertiary-fixed: #3d2600;
-  --on-tertiary-container: #ffb95f;
+  --secondary: #FF9F4D;
+  --secondary-container: #C7701F;
+  --secondary-fixed: #3A2210;
+  --tertiary-fixed: #122A21;
+  --on-tertiary-container: #FF9F4D;
 
-  --passage-accent: rgba(71, 133, 255, 0.3);
+  --passage-accent: #7A92FF;
 
   /* text & outlines — dark */
-  --on-surface: #e2e3e0;
-  --on-surface-variant: #c2c6d6;
-  --outline: #8c909f;
-  --outline-variant: #424654;
+  --on-surface: #F1F1EF;
+  --on-surface-variant: #A7ACB4;
+  --outline: #767C85;
+  --outline-variant: #2E3237;
+
+  /* ── Design tokens — dark ── */
+  --ink: #F1F1EF;
+  --ink70: #A7ACB4;
+  --ink45: #767C85;
+  --ink25: #4A4F57;
+  --line: rgba(255, 255, 255, 0.10);
+  --line2: rgba(255, 255, 255, 0.06);
+  --card: #17191C;
+  --card2: #1F2226;
+  --sunk: #25282D;
+  --co: #7A92FF;
+  --co-soft: #1B2450;
+  --co-ink: #C3CEFF;
+  --or: #FF9F4D;
+  --or-soft: #3A2210;
+  --or-ink: #FFD1A6;
+  --gr: #3FD69C;
+  --gr-soft: #122A21;
+  --rd: #FF8A7A;
+  --rd-soft: #3A1A16;
+  --glass: rgba(20, 22, 25, 0.70);
+  --glass-line: rgba(255, 255, 255, 0.12);
+}
+
+/* ── App chrome offsets ──
+   `--app-top` is where a screen's own sticky glass header must start. On mobile
+   the screen header IS the chrome, so it starts at 0; from `md` up the desktop
+   TopNav sits above it and the header has to clear it. `--app-safe-top` pays
+   back the status-bar inset, which only exists on mobile. */
+:root {
+  --app-top: 0px;
+  --app-safe-top: env(safe-area-inset-top, 0px);
+  --app-safe-bottom: env(safe-area-inset-bottom, 0px);
+  /* Height of the floating tab pill plus its gutter — what a screen must clear
+     at the bottom so its last element is not sitting under the bar. */
+  --app-tabbar: calc(74px + var(--app-safe-bottom));
+}
+
+@media (min-width: 768px) {
+  :root {
+    --app-top: 92px;
+    --app-safe-top: 0px;
+    --app-tabbar: 0px;
+  }
 }
 
 * {
@@ -111,7 +177,7 @@ body {
   overflow-x: hidden;
   background-color: var(--background);
   color: var(--foreground);
-  font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+  font-family: "Instrument Sans", system-ui, -apple-system, sans-serif;
 }
 
 :focus-visible {
@@ -169,9 +235,45 @@ body {
 .tap-shrink { transition: transform 0.1s ease; }
 .tap-shrink:active { transform: scale(0.97); }
 
+/* ---- "New direction" motion set ----
+   These are the animations the redesign specs by name. They sit alongside the
+   older fm-* classes rather than replacing them: fm-* is still what most
+   screens mount with. */
+@keyframes dpRise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes dpPop { 0% { opacity: 0; transform: scale(0.82); } 60% { transform: scale(1.04); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes dpStamp { 0% { opacity: 0; transform: scale(1.9) rotate(-14deg); } 55% { opacity: 1; transform: scale(0.96) rotate(-7deg); } 100% { opacity: 1; transform: scale(1) rotate(-7deg); } }
+@keyframes dpGrow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes dpGlow { 0%, 100% { box-shadow: 0 0 0 0 rgba(43,74,226,.35); } 50% { box-shadow: 0 0 0 12px rgba(43,74,226,0); } }
+@keyframes dpFloat { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-54px); } }
+@keyframes dpSheet { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes dpShine { 0% { transform: translateX(-130%); } 100% { transform: translateX(130%); } }
+
+.dp-rise { animation: dpRise 0.5s ease-out both; }
+.dp-pop { animation: dpPop 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.dp-stamp { animation: dpStamp 0.6s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.dp-grow { transform-origin: left center; animation: dpGrow 0.8s ease-out both; }
+.dp-glow { animation: dpGlow 2.2s ease-out infinite; }
+.dp-sheet { animation: dpSheet 0.3s cubic-bezier(0.22, 1, 0.36, 1) both; }
+/* The travelling highlight on the home hero card. */
+.dp-shine {
+  position: absolute; top: 0; left: 0; width: 60%; height: 100%;
+  pointer-events: none;
+  background: linear-gradient(100deg, transparent, rgba(255,255,255,.14), transparent);
+  animation: dpShine 2.6s ease-in-out infinite;
+}
+
+/* Glass header shared by every stacked screen. Declared once here because it
+   carries three vendor-prefixed properties that read badly inlined. */
+.dp-glass {
+  background: var(--glass);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .fm-fade-in, .fm-fade-up, .fm-fade-up-lg, .fm-rise, .fm-fade-down,
-  .fm-scale-in, .fm-scale-in-95, .fm-slide-in-right, .fm-sheet-up, .fm-grow-x {
+  .fm-scale-in, .fm-scale-in-95, .fm-slide-in-right, .fm-sheet-up, .fm-grow-x,
+  .dp-rise, .dp-pop, .dp-stamp, .dp-grow, .dp-glow, .dp-sheet, .dp-shine {
     animation-duration: 0.01ms;
     animation-iteration-count: 1;
   }

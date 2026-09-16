@@ -6,11 +6,15 @@ import type { Profile, DailyActivity } from "@/lib/supabase/types";
 import { createClient } from "@/lib/supabase/client";
 import { useAppStore } from "@/lib/store";
 import { getInitials, getDaysUntilExam } from "@/lib/utils";
-import { useTheme, getColors } from "@/lib/use-theme";
+import { useTheme, getColors, font } from "@/lib/use-theme";
+import { Screen, Display, Card, ProgressBar, screenTopPad } from "@/components/ui/screen";
 
 /**
- * Profile — Stitch design with dark mode support.
- * All settings/save logic preserved, visual layer uses theme-aware colors.
+ * Profile — the "You" tab.
+ *
+ * Also the only place the level switcher, the exam dates, the theme toggle and
+ * sign-out live, which is why the desktop TopNav can be hidden on mobile
+ * without losing anything.
  */
 
 interface AchievementWithStatus {
@@ -64,15 +68,10 @@ const ACHIEVEMENT_TITLES: Record<string, string> = {
   perfect_gehoor: "Perfect Ear",
 };
 
-const font = {
-  headline: "'Plus Jakarta Sans', sans-serif",
-  body: "'Noto Serif', serif",
-};
-
 const GOAL_OPTIONS = [
-  { value: 10, emoji: "🌱", label: "10min" },
-  { value: 20, emoji: "⚡", label: "20min" },
-  { value: 30, emoji: "🔥", label: "30min" },
+  { value: 10, label: "10", sub: "steady" },
+  { value: 20, label: "20", sub: "serious" },
+  { value: 30, label: "30", sub: "all in" },
 ];
 
 const LEVEL_CARDS: { code: "A2" | "B1" | "B2"; name: string; available: boolean }[] = [
@@ -202,66 +201,66 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
   };
 
   return (
-    <div style={{ background: c.background, color: c.onSurface, fontFamily: font.headline, minHeight: "100vh", transition: "background 0.3s, color 0.3s" }}>
-      <main style={{ padding: "24px 24px 128px", maxWidth: 448, margin: "0 auto", display: "flex", flexDirection: "column", gap: 32 }}>
+    <Screen>
+      <main style={{ padding: `${screenTopPad} 20px 20px`, display: "flex", flexDirection: "column", gap: 26 }}>
 
-        {/* ── Hero Section ── */}
-        <section style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: 16 }}>
-          {/* Avatar */}
-          <div style={{ position: "relative" }}>
-            <div style={{
-              width: 96, height: 96, borderRadius: 9999, background: c.primary,
+        {/* ── Hero ── */}
+        <section style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <div
+            style={{
+              width: 62, height: 62, flex: "none", borderRadius: 9999, background: c.coSoft,
               display: "flex", alignItems: "center", justifyContent: "center",
-              color: isDark ? c.background : "#fff", fontSize: 30, fontWeight: 700,
-              boxShadow: "0 8px 24px rgba(0,0,0,0.12)", overflow: "hidden",
-            }}>
-              {profile.avatar_url ? (
-                <img src={profile.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              ) : (
-                getInitials(profile.username)
-              )}
-            </div>
-            <div style={{
-              position: "absolute", bottom: -4, right: -4,
-              width: 32, height: 32, borderRadius: 9999,
-              background: c.secondary, border: `4px solid ${c.background}`,
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}>
-              <span className="mso mso-fill" style={{ color: isDark ? c.background : "#fff", fontSize: 12 }}>verified</span>
+              fontFamily: font.body, fontSize: 25, color: c.coInk, overflow: "hidden",
+            }}
+          >
+            {profile.avatar_url ? (
+              <img src={profile.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            ) : (
+              getInitials(profile.username)
+            )}
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <Display c={c} as="h2" style={{ fontSize: 26 }}>{profile.username}</Display>
+            <div style={{ fontSize: 12.5, color: c.ink70, marginTop: 3 }}>
+              {currentLevel} · {profile.streak_days} day streak · {profile.xp_total.toLocaleString()} XP
             </div>
           </div>
-
-          {/* Name & Level */}
-          <div>
-            <h2 style={{ fontSize: 24, fontWeight: 800, color: c.onSurface, letterSpacing: "-0.025em", margin: 0 }}>
-              {profile.username}
-            </h2>
-            <span style={{
-              display: "inline-flex", padding: "4px 12px", marginTop: 8,
-              borderRadius: 9999, background: c.primaryContainer, color: "#fff",
-              fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em",
-            }}>
-              Level {currentLevel}
+          <button
+            type="button"
+            onClick={toggleTheme}
+            aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+            style={{
+              width: 38, height: 38, flex: "none", borderRadius: 9999,
+              border: `1px solid ${c.line}`, background: c.card, cursor: "pointer",
+              display: "flex", alignItems: "center", justifyContent: "center", padding: 0,
+            }}
+          >
+            <span className="mso" style={{ fontSize: 19, color: c.ink70 }}>
+              {isDark ? "light_mode" : "dark_mode"}
             </span>
-          </div>
+          </button>
+        </section>
 
-          {/* Stats Row */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", width: "100%", gap: 16, marginTop: 16 }}>
-            {[
-              { icon: "stars", iconColor: isDark ? c.onTertiaryContainer : c.tertiary, value: profile.xp_total.toLocaleString(), label: "Total XP" },
-              { icon: "menu_book", iconColor: c.primary, value: String(completedCount), label: "Lessons" },
-              { icon: "local_fire_department", iconColor: c.secondary, value: String(profile.streak_days), label: "Daily streak" },
-            ].map((stat, i) => (
-              <div key={i} style={{
-                background: c.surfaceLow, padding: 16, borderRadius: 16,
-                display: "flex", flexDirection: "column", alignItems: "center",
-              }}>
-                <span className="mso mso-fill" style={{ color: stat.iconColor, fontSize: 20, marginBottom: 4 }}>{stat.icon}</span>
-                <span style={{ fontSize: 18, fontWeight: 800 }}>{stat.value}</span>
-                <span style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.15em", fontWeight: 700, color: c.onSurfaceVariant }}>{stat.label}</span>
+        {/* ── Stat grid ── */}
+        <section style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
+          {[
+            { icon: "bolt", fg: c.or, value: profile.xp_total.toLocaleString(), label: "total xp" },
+            { icon: "local_fire_department", fg: c.or, value: String(profile.streak_days), label: "day streak" },
+            { icon: "menu_book", fg: c.co, value: String(completedCount), label: "lessons" },
+            { icon: "edit_note", fg: c.or, value: String(writingCompletedCount), label: "writing" },
+            { icon: "headphones", fg: c.co, value: String(listeningCompletedCount), label: "listening" },
+            { icon: "military_tech", fg: c.gr, value: `${unlockedCount}`, label: "stamps" },
+          ].map((stat) => (
+            <Card key={stat.label} c={c} style={{ padding: 14, borderRadius: 16 }}>
+              <span className="mso mso-fill" style={{ fontSize: 18, color: stat.fg }}>{stat.icon}</span>
+              <div style={{ fontFamily: font.body, fontSize: 23, lineHeight: 1, color: c.ink, marginTop: 8 }}>
+                {stat.value}
               </div>
-            ))}
-          </div>
+              <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.11em", textTransform: "uppercase", color: c.ink45, marginTop: 4 }}>
+                {stat.label}
+              </div>
+            </Card>
+          ))}
         </section>
 
         {/* ── Level Path Cards ── */}
@@ -286,10 +285,10 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
                   disabled={!lvl.available}
                   aria-pressed={isActive}
                   style={{
-                    minWidth: 200, padding: 20, borderRadius: 24,
+                    minWidth: 190, padding: 18, borderRadius: 20,
                     display: "flex", flexDirection: "column", gap: 12,
-                    background: isActive ? c.surfaceLowest : c.surfaceLow,
-                    border: isActive ? `2px solid ${c.primary}` : "2px solid transparent",
+                    background: isActive ? c.card : c.card2,
+                    border: `1.5px solid ${isActive ? c.co : c.line}`,
                     opacity: dim ? 0.4 : 1,
                     cursor: lvl.available ? "pointer" : "default",
                     textAlign: "left",
@@ -298,7 +297,7 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
                   }}
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                    <span style={{ fontSize: 24, fontWeight: 900, color: lvl.available ? c.primary : c.outline }}>{lvl.code}</span>
+                    <span style={{ fontFamily: font.body, fontSize: 26, lineHeight: 1, color: lvl.available ? c.co : c.ink25 }}>{lvl.code}</span>
                     {lvl.available ? (
                       isActive ? (
                         <span style={{ fontSize: 10, fontWeight: 800, color: c.primary, textTransform: "uppercase", letterSpacing: "0.1em" }}>Active</span>
@@ -309,7 +308,7 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
                       <span className="mso" style={{ color: c.outline, fontSize: 20 }}>lock</span>
                     )}
                   </div>
-                  <p style={{ fontFamily: font.body, fontSize: 14, fontWeight: 700, margin: 0 }}>{lvl.name}</p>
+                  <p style={{ fontSize: 13.5, fontWeight: 600, color: c.ink, margin: 0 }}>{lvl.name}</p>
                   {lvl.available ? (
                     <div style={{ width: "100%", height: 6, background: c.surfaceHighest, borderRadius: 9999, overflow: "hidden" }}>
                       <div style={{ height: "100%", width: `${pct}%`, background: c.primary }} />
@@ -328,63 +327,60 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
             {/* Reading ring */}
             <div style={{
-              background: c.surfaceLowest, padding: 20, borderRadius: 24,
+              background: c.card, border: `1px solid ${c.line2}`, padding: 16, borderRadius: 18,
               display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
-              boxShadow: "0px 12px 32px rgba(26,28,27,0.06)",
-            }}>
+              }}>
               <div style={{ position: "relative", width: 72, height: 72 }}>
                 <svg width={72} height={72} style={{ transform: "rotate(-90deg)" }}>
-                  <circle cx={36} cy={36} r={28} fill="transparent" stroke={c.surfaceHighest} strokeWidth={6} />
-                  <circle cx={36} cy={36} r={28} fill="transparent" stroke={c.primary} strokeWidth={6}
+                  <circle cx={36} cy={36} r={28} fill="transparent" stroke={c.sunk} strokeWidth={6} />
+                  <circle cx={36} cy={36} r={28} fill="transparent" stroke={c.co} strokeWidth={6}
                     strokeDasharray={176} strokeDashoffset={176 - (avgScore / 100) * 176} />
                 </svg>
                 <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <span className="mso" style={{ fontSize: 16, color: c.primary }}>menu_book</span>
+                  <span className="mso" style={{ fontSize: 16, color: c.co }}>menu_book</span>
                 </div>
               </div>
-              <span style={{ fontSize: 22, fontWeight: 900, color: c.primary }}>{avgScore}%</span>
+              <span style={{ fontFamily: font.body, fontSize: 24, lineHeight: 1, color: c.co }}>{avgScore}%</span>
               <p style={{ fontSize: 10, fontWeight: 700, color: c.onSurfaceVariant, margin: 0, textTransform: "uppercase", letterSpacing: "0.05em", textAlign: "center" }}>
                 Lezen gem.<br />{completedCount} lessen
               </p>
             </div>
             {/* Writing ring */}
             <div style={{
-              background: c.surfaceLowest, padding: 20, borderRadius: 24,
+              background: c.card, border: `1px solid ${c.line2}`, padding: 16, borderRadius: 18,
               display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
-              boxShadow: "0px 12px 32px rgba(26,28,27,0.06)",
-            }}>
+              }}>
               <div style={{ position: "relative", width: 72, height: 72 }}>
                 <svg width={72} height={72} style={{ transform: "rotate(-90deg)" }}>
-                  <circle cx={36} cy={36} r={28} fill="transparent" stroke={c.surfaceHighest} strokeWidth={6} />
-                  <circle cx={36} cy={36} r={28} fill="transparent" stroke={c.secondary} strokeWidth={6}
+                  <circle cx={36} cy={36} r={28} fill="transparent" stroke={c.sunk} strokeWidth={6} />
+                  <circle cx={36} cy={36} r={28} fill="transparent" stroke={c.or} strokeWidth={6}
                     strokeDasharray={176} strokeDashoffset={176 - (writingAvgScore / 100) * 176} />
                 </svg>
                 <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <span className="mso" style={{ fontSize: 16, color: c.secondary }}>edit_note</span>
+                  <span className="mso" style={{ fontSize: 16, color: c.or }}>edit_note</span>
                 </div>
               </div>
-              <span style={{ fontSize: 22, fontWeight: 900, color: c.secondary }}>{writingAvgScore}%</span>
+              <span style={{ fontFamily: font.body, fontSize: 24, lineHeight: 1, color: c.or }}>{writingAvgScore}%</span>
               <p style={{ fontSize: 10, fontWeight: 700, color: c.onSurfaceVariant, margin: 0, textTransform: "uppercase", letterSpacing: "0.05em", textAlign: "center" }}>
                 Schrijven gem.<br />{writingCompletedCount} opdrachten
               </p>
             </div>
             {/* Listening ring */}
             <div style={{
-              background: c.surfaceLowest, padding: 20, borderRadius: 24,
+              background: c.card, border: `1px solid ${c.line2}`, padding: 16, borderRadius: 18,
               display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
-              boxShadow: "0px 12px 32px rgba(26,28,27,0.06)",
-            }}>
+              }}>
               <div style={{ position: "relative", width: 72, height: 72 }}>
                 <svg width={72} height={72} style={{ transform: "rotate(-90deg)" }}>
-                  <circle cx={36} cy={36} r={28} fill="transparent" stroke={c.surfaceHighest} strokeWidth={6} />
-                  <circle cx={36} cy={36} r={28} fill="transparent" stroke={c.tertiary} strokeWidth={6}
+                  <circle cx={36} cy={36} r={28} fill="transparent" stroke={c.sunk} strokeWidth={6} />
+                  <circle cx={36} cy={36} r={28} fill="transparent" stroke={c.gr} strokeWidth={6}
                     strokeDasharray={176} strokeDashoffset={176 - (listeningAvgScore / 100) * 176} />
                 </svg>
                 <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <span className="mso" style={{ fontSize: 16, color: c.tertiary }}>headphones</span>
+                  <span className="mso" style={{ fontSize: 16, color: c.gr }}>headphones</span>
                 </div>
               </div>
-              <span style={{ fontSize: 22, fontWeight: 900, color: c.tertiary }}>{listeningAvgScore}%</span>
+              <span style={{ fontFamily: font.body, fontSize: 24, lineHeight: 1, color: c.gr }}>{listeningAvgScore}%</span>
               <p style={{ fontSize: 10, fontWeight: 700, color: c.onSurfaceVariant, margin: 0, textTransform: "uppercase", letterSpacing: "0.05em", textAlign: "center" }}>
                 Luisteren gem.<br />{listeningCompletedCount} taken
               </p>
@@ -392,7 +388,7 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
           </div>
 
           {activity.length > 0 && (
-            <div style={{ background: c.surfaceLow, padding: 24, borderRadius: 24, display: "flex", flexDirection: "column", gap: 16 }}>
+            <div style={{ background: c.card, border: `1px solid ${c.line2}`, padding: 18, borderRadius: 18, display: "flex", flexDirection: "column", gap: 16 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
                 <h4 style={{ fontSize: 10, textTransform: "uppercase", fontWeight: 700, letterSpacing: "0.15em", margin: 0 }}>XP History</h4>
                 <span style={{ fontSize: 12, fontWeight: 700, color: c.onSurfaceVariant }}>Last 30 days</span>
@@ -405,7 +401,7 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
                     <div key={i} style={{
                       flex: 1, borderRadius: "2px 2px 0 0", minHeight: 4,
                       height: `${Math.max(h, 4)}%`,
-                      background: isMax ? c.secondary : c.surfaceHighest,
+                      background: isMax ? c.or : c.sunk,
                     }} />
                   );
                 })}
@@ -415,9 +411,9 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
         </section>
 
         {/* ── Settings Card ── */}
-        <section style={{ background: c.surfaceLow, padding: 24, borderRadius: 24, display: "flex", flexDirection: "column", gap: 24 }}>
+        <section style={{ background: c.card, border: `1px solid ${c.line2}`, padding: 18, borderRadius: 18, display: "flex", flexDirection: "column", gap: 24 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <h3 style={{ fontSize: 18, fontWeight: 800, letterSpacing: "-0.025em", margin: 0 }}>Learning goals</h3>
+            <h3 style={{ fontFamily: font.body, fontWeight: 400, fontSize: 24, letterSpacing: "-0.01em", margin: 0, color: c.ink }}>Learning goals</h3>
             <span className="mso" style={{ color: c.onSurfaceVariant, fontSize: 24 }}>settings</span>
           </div>
 
@@ -432,7 +428,7 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
                 <span style={{ fontSize: 14, fontWeight: 700 }}>Leesexamendatum</span>
               </div>
               {examCompleted ? (
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 800, color: "#16a34a", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 800, color: c.gr, textTransform: "uppercase", letterSpacing: "0.1em" }}>
                   <span className="mso mso-fill" style={{ fontSize: 16 }}>check_circle</span>
                   Completed
                 </span>
@@ -491,7 +487,7 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
                 <span style={{ fontSize: 14, fontWeight: 700 }}>Schrijfexamendatum</span>
               </div>
               {writingExamCompleted ? (
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 800, color: "#16a34a", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 800, color: c.gr, textTransform: "uppercase", letterSpacing: "0.1em" }}>
                   <span className="mso mso-fill" style={{ fontSize: 16 }}>check_circle</span>
                   Completed
                 </span>
@@ -551,7 +547,7 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
                 <span style={{ fontSize: 14, fontWeight: 700 }}>KNM-examendatum</span>
               </div>
               {knmExamCompleted ? (
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 800, color: "#16a34a", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 800, color: c.gr, textTransform: "uppercase", letterSpacing: "0.1em" }}>
                   <span className="mso mso-fill" style={{ fontSize: 16 }}>check_circle</span>
                   Completed
                 </span>
@@ -611,7 +607,7 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
                 <span style={{ fontSize: 14, fontWeight: 700 }}>Luisterexamendatum</span>
               </div>
               {listeningExamCompleted ? (
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 800, color: "#16a34a", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 800, color: c.gr, textTransform: "uppercase", letterSpacing: "0.1em" }}>
                   <span className="mso mso-fill" style={{ fontSize: 16 }}>check_circle</span>
                   Completed
                 </span>
@@ -670,18 +666,19 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
                   key={goal.value}
                   onClick={() => { setGoalMinutes(goal.value); saveFields({ daily_goal_minutes: goal.value }); }}
                   style={{
-                    flex: 1, padding: "12px 4px", borderRadius: 12, border: "none", cursor: "pointer",
-                    display: "flex", flexDirection: "column", alignItems: "center",
-                    fontSize: 10, fontWeight: 700, fontFamily: font.headline,
-                    background: goalMinutes === goal.value ? c.primaryContainer : c.surfaceHigh,
-                    color: goalMinutes === goal.value ? "#fff" : c.onSurface,
-                    boxShadow: goalMinutes === goal.value ? "0 8px 16px rgba(0,0,0,0.12)" : "none",
-                    transform: goalMinutes === goal.value ? "scale(1.05)" : "scale(1)",
-                    transition: "all 0.2s",
+                    flex: 1, padding: "14px 4px", borderRadius: 16, cursor: "pointer",
+                    display: "flex", flexDirection: "column", alignItems: "center", gap: 2,
+                    fontFamily: font.headline,
+                    border: `1.5px solid ${goalMinutes === goal.value ? c.co : c.line}`,
+                    background: goalMinutes === goal.value ? c.coSoft : c.card,
+                    transition: "border-color 0.2s, background 0.2s",
                   }}
                 >
-                  <span style={{ fontSize: 16 }}>{goal.emoji}</span>
-                  {goal.label}
+                  <span style={{ fontFamily: font.body, fontSize: 24, lineHeight: 1, color: goalMinutes === goal.value ? c.coInk : c.ink }}>
+                    {goal.label}
+                    <span style={{ fontFamily: font.headline, fontSize: 11, fontWeight: 600 }}> min</span>
+                  </span>
+                  <span style={{ fontSize: 10.5, color: c.ink45 }}>{goal.sub}</span>
                 </button>
               ))}
             </div>
@@ -738,49 +735,67 @@ export function ProfileClient({ profile, activity, achievements, userId, avgScor
           </button>
         </section>
 
-        {/* ── Achievements ── */}
-        <section style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", padding: "0 4px" }}>
-            <h3 style={{ fontSize: 18, fontWeight: 800, margin: 0 }}>Achievements</h3>
-            <span style={{ fontSize: 10, fontWeight: 700, color: c.onSurfaceVariant, textTransform: "uppercase", letterSpacing: "0.15em" }}>
-              {unlockedCount}/{achievements.length} Unlocked
+        {/* ── Paspoort ──
+            The design frames achievements as passport stamps: a slightly
+            rotated, stamped-looking tile for anything earned and a dashed
+            outline for anything not. */}
+        <section>
+          <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 12 }}>
+            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: c.ink45 }}>
+              Paspoort
+            </span>
+            <span style={{ flex: 1, height: 1, background: c.line }} />
+            <span style={{ fontSize: 10.5, fontWeight: 600, color: c.ink45, flex: "none" }}>
+              {unlockedCount} / {achievements.length}
             </span>
           </div>
 
-          <div style={{ height: 8, background: c.surfaceHighest, borderRadius: 9999, overflow: "hidden" }}>
-            <div
-              className="fm-grow-x"
-              style={{ width: `${achievements.length > 0 ? (unlockedCount / achievements.length) * 100 : 0}%`, height: "100%", borderRadius: 9999, background: "linear-gradient(to right, #fbbf24, #f59e0b)" }}
-            />
-          </div>
+          <p style={{ fontSize: 13, lineHeight: 1.6, color: c.ink70, margin: "0 0 14px" }}>
+            Nothing in this country is real until something gets stamped. Same here.
+          </p>
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12 }}>
-            {achievements.map((ach) => (
-              <div
-                key={ach.id}
-                title={ACHIEVEMENT_TITLES[ach.key] ?? ach.title}
-                style={{
-                  display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
-                  opacity: ach.unlocked ? 1 : 0.3,
-                  filter: ach.unlocked ? "none" : "grayscale(1)",
-                }}
-              >
-                <div style={{
-                  aspectRatio: "1", width: "100%", borderRadius: 16,
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  background: ach.unlocked ? c.secondaryFixed : c.surfaceHighest,
-                  boxShadow: ach.unlocked ? "0 1px 3px rgba(0,0,0,0.08)" : "none",
-                }}>
-                  <span style={{ fontSize: 20 }}>{ach.icon}</span>
-                </div>
-                <span style={{ fontSize: 8, fontWeight: 900, textTransform: "uppercase", textAlign: "center", lineHeight: 1.1 }}>
-                  {ACHIEVEMENT_TITLES[ach.key] ?? ach.title}
+          <ProgressBar
+            c={c}
+            pct={achievements.length > 0 ? (unlockedCount / achievements.length) * 100 : 0}
+            height={6}
+            fill={c.or}
+          />
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginTop: 16 }}>
+            {achievements.map((ach) => {
+              const label = ACHIEVEMENT_TITLES[ach.key] ?? ach.title;
+              return (
+                <span
+                  key={ach.id}
+                  title={`${label} — ${ach.description}`}
+                  style={{
+                    aspectRatio: "1",
+                    borderRadius: 13,
+                    background: ach.unlocked ? c.orSoft : "transparent",
+                    border: `1.5px ${ach.unlocked ? "solid" : "dashed"} ${ach.unlocked ? c.or : c.line}`,
+                    display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                    gap: 4, padding: 4,
+                    opacity: ach.unlocked ? 1 : 0.5,
+                    transform: ach.unlocked ? "rotate(-7deg)" : "none",
+                  }}
+                >
+                  <span style={{ fontSize: 18, lineHeight: 1 }}>{ach.icon}</span>
+                  <span
+                    style={{
+                      fontSize: 6.5, fontWeight: 700, letterSpacing: "0.05em", textTransform: "uppercase",
+                      color: ach.unlocked ? c.orInk : c.ink45,
+                      textAlign: "center", lineHeight: 1.2,
+                    }}
+                  >
+                    {label}
+                  </span>
                 </span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
+
       </main>
-    </div>
+    </Screen>
   );
 }

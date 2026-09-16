@@ -6,12 +6,17 @@ import type { Lesson, UserLessonProgress, LessonContent, Question } from "@/lib/
 import { createClient } from "@/lib/supabase/client";
 import { useAppStore } from "@/lib/store";
 import { getAmsterdamDate, getStarRating } from "@/lib/utils";
-import { useTheme, getColors } from "@/lib/use-theme";
+import { useTheme, getColors, font } from "@/lib/use-theme";
+import { Screen, GlassHeader, Kicker, Display, Card, Chip, primaryButton, secondaryButton, optionRow } from "@/components/ui/screen";
 import { checkAndUnlockAchievements } from "@/lib/achievements";
 
 /**
- * Lesson Player — Stitch "focus mode" design.
- * All game logic preserved, visual layer replaced with inline-style Stitch design.
+ * Lesson player.
+ *
+ * Three phases behind one component: the passage intro, the question loop, and
+ * the completion card. The scoring, hearts, XP and the completion write-order
+ * (progress upsert -> unlock next -> RPC wave -> achievements -> bonus XP) are
+ * untouched by the redesign; only the surface changed.
  */
 
 interface Props {
@@ -22,11 +27,6 @@ interface Props {
 }
 
 type Phase = "intro" | "question" | "result" | "complete";
-
-const font = {
-  headline: "'Plus Jakarta Sans', sans-serif",
-  body: "'Noto Serif', serif",
-};
 
 export function LessonPlayer({ lesson, progress, userId, nextLessonId }: Props) {
   const { isDark } = useTheme();
@@ -169,56 +169,52 @@ export function LessonPlayer({ lesson, progress, userId, nextLessonId }: Props) 
   }, [isLastQuestion, heartsLeft, completeLesson]);
 
   const formatTime = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
-
   /* ═══ Complete screen ═══ */
   if (phase === "complete") {
     const score = Math.round((correctCount / questions.length) * 100);
     const stars = getStarRating(score);
 
     return (
-      <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: c.background, fontFamily: font.headline, padding: 24 }}>
-        <div
-          className="fm-rise"
-          style={{ width: "100%", maxWidth: 380, background: c.surfaceLowest, borderRadius: 24, padding: 24, textAlign: "center", boxShadow: "0px 12px 32px rgba(26,28,27,0.06)" }}
-        >
-          <div style={{ fontSize: 48, marginBottom: 12 }}>{score >= 80 ? "🎉" : score >= 50 ? "👍" : "💪"}</div>
-          <h2 style={{ fontSize: 24, fontWeight: 800, color: c.onSurface, marginBottom: 8 }}>
-            {score >= 80 ? "Uitstekend!" : score >= 50 ? "Goed gedaan!" : "Blijf oefenen!"}
-          </h2>
+      <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", background: c.background, fontFamily: font.headline, padding: "24px 24px calc(var(--app-tabbar, 0px) + 24px)" }}>
+        <div className="fm-rise" style={{ width: "100%", maxWidth: 420, margin: "0 auto" }}>
+          <div style={{ textAlign: "center", marginBottom: 20 }}>
+            <Kicker c={c} style={{ letterSpacing: "0.2em" }}>Les voltooid</Kicker>
+            <Display c={c} style={{ fontSize: 34, margin: "9px 0 0" }}>
+              {score >= 80 ? <>Uitstekend<br /><em>gedaan</em></> : score >= 50 ? <>Goed<br /><em>gedaan</em></> : <>Blijf<br /><em>oefenen</em></>}
+            </Display>
+          </div>
 
-          <div style={{ display: "flex", justifyContent: "center", gap: 4, marginBottom: 24 }}>
+          <div style={{ display: "flex", justifyContent: "center", gap: 6, marginBottom: 20 }}>
             {[1, 2, 3].map((s) => (
-              <span key={s} className={s <= stars ? "mso mso-fill" : "mso"} style={{ fontSize: 36, color: s <= stars ? c.onTertiaryContainer : c.outlineVariant }}>star</span>
+              <span key={s} className={s <= stars ? "mso mso-fill" : "mso"} style={{ fontSize: 34, color: s <= stars ? c.or : c.ink25 }}>star</span>
             ))}
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 24 }}>
-            <div style={{ background: c.surfaceLow, padding: 12, borderRadius: 16, display: "flex", flexDirection: "column", alignItems: "center" }}>
-              <span style={{ fontSize: 24, fontWeight: 900, color: c.primary }}>{score}%</span>
-              <span style={{ fontSize: 10, fontWeight: 700, color: c.onSurfaceVariant, textTransform: "uppercase" }}>Score</span>
-            </div>
-            <div style={{ background: c.surfaceLow, padding: 12, borderRadius: 16, display: "flex", flexDirection: "column", alignItems: "center" }}>
-              <span style={{ fontSize: 24, fontWeight: 900, color: c.tertiary }}>+{xpEarned}</span>
-              <span style={{ fontSize: 10, fontWeight: 700, color: c.onSurfaceVariant, textTransform: "uppercase" }}>XP Verdiend</span>
-            </div>
-            <div style={{ background: c.surfaceLow, padding: 12, borderRadius: 16, display: "flex", flexDirection: "column", alignItems: "center" }}>
-              <span style={{ fontSize: 24, fontWeight: 900, color: c.onSurface }}>{formatTime(elapsedSeconds)}</span>
-              <span style={{ fontSize: 10, fontWeight: 700, color: c.onSurfaceVariant, textTransform: "uppercase" }}>Tijd</span>
-            </div>
+          <div style={{ display: "flex", gap: 10, marginBottom: 20 }}>
+            {[
+              { value: `${score}%`, label: "score", fg: c.co },
+              { value: `+${xpEarned}`, label: "xp", fg: c.or },
+              { value: formatTime(elapsedSeconds), label: "tijd", fg: c.ink },
+            ].map((s) => (
+              <Card key={s.label} c={c} style={{ flex: 1, padding: 13, textAlign: "center", borderRadius: 15 }}>
+                <div style={{ fontFamily: font.body, fontSize: 24, lineHeight: 1, color: s.fg }}>{s.value}</div>
+                <Kicker c={c} style={{ letterSpacing: "0.13em", marginTop: 4 }}>{s.label}</Kicker>
+              </Card>
+            ))}
           </div>
 
-          <div style={{ display: "flex", gap: 12 }}>
-            <button
-              onClick={() => { setPhase("intro"); setCurrentQ(0); setCorrectCount(0); setSelectedAnswer(null); setIsCorrect(null); setHeartsLeft(unlockedHearts ? 999 : 5); }}
-              style={{ flex: 1, padding: 14, borderRadius: 9999, border: `1.5px solid ${c.outlineVariant}`, background: "transparent", fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: font.headline, color: c.onSurface }}
-            >
-              Probeer opnieuw
-            </button>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
             <button
               onClick={() => router.push(nextLessonId ? `/lessons/${nextLessonId}` : "/lessons")}
-              style={{ flex: 1, padding: 14, borderRadius: 9999, border: "none", background: c.primary, color: "#fff", fontWeight: 700, fontSize: 14, cursor: "pointer", fontFamily: font.headline }}
+              style={primaryButton(c)}
             >
-              {nextLessonId ? "Volgende les" : "Terug naar kaart"}
+              {nextLessonId ? "Volgende les" : "Terug naar het lespad"}
+            </button>
+            <button
+              onClick={() => { setPhase("intro"); setCurrentQ(0); setCorrectCount(0); correctCountRef.current = 0; setSelectedAnswer(null); setIsCorrect(null); setFillWords([]); setHeartsLeft(unlockedHearts ? 999 : 5); }}
+              style={secondaryButton(c)}
+            >
+              Probeer opnieuw
             </button>
           </div>
         </div>
@@ -229,147 +225,120 @@ export function LessonPlayer({ lesson, progress, userId, nextLessonId }: Props) 
   /* ═══ Intro phase ═══ */
   if (phase === "intro") {
     return (
-      <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: c.background, fontFamily: font.headline }}>
-        {/* Top bar */}
-        <nav style={{
-          position: "sticky", top: 0, zIndex: 50, height: 64,
-          display: "flex", alignItems: "center", gap: 16, padding: "0 16px",
-          background: isDark ? "rgba(18,20,19,0.8)" : "rgba(249,249,247,0.7)", backdropFilter: "blur(24px)",
-        }}>
-          <button onClick={() => router.back()} style={{ width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 9999, border: "none", background: "transparent", cursor: "pointer" }}>
-            <span className="mso" style={{ color: c.onSurface, fontSize: 24 }}>close</span>
-          </button>
-          <span style={{ fontWeight: 700, fontSize: 14, color: c.onSurface, flex: 1 }}>{lesson.title}</span>
-          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-            <span className="mso" style={{ fontSize: 14, color: c.tertiary }}>emoji_events</span>
-            <span style={{ fontSize: 12, fontWeight: 700, color: c.onSurfaceVariant }}>+{lesson.xp_reward} XP</span>
-          </div>
-        </nav>
+      <Screen style={{ minHeight: "100vh", background: c.background }}>
+        <GlassHeader
+          c={c}
+          onBack={() => router.back()}
+          closeIcon
+          title={lesson.title}
+          trailing={<Chip fg={c.or} bg={c.orSoft} style={{ fontWeight: 700 }}>+{lesson.xp_reward} XP</Chip>}
+        />
 
-        <div style={{ flex: 1, padding: "24px 24px 128px", maxWidth: 672, margin: "0 auto", width: "100%" }}>
-          {/* Source label */}
-          <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: c.onSurfaceVariant, marginBottom: 16 }}>
-            <span className="mso" style={{ fontSize: 16 }}>description</span>
-            <span style={{ fontWeight: 600 }}>{content.passage?.source_label}</span>
-            <span>·</span>
-            <span>{lesson.estimated_minutes} min</span>
-          </div>
+        <div style={{ padding: "20px 20px calc(var(--app-tabbar, 0px) + 24px)", flex: 1, display: "flex", flexDirection: "column" }}>
+          <Kicker c={c} style={{ marginBottom: 14 }}>
+            {content.passage?.source_label} · {lesson.estimated_minutes} min
+          </Kicker>
 
-          {/* Passage */}
-          <div style={{ background: isDark ? c.surfaceContainer : "#FFFBF5", borderRadius: 32, padding: 24, borderLeft: `4px solid ${c.primaryContainer}`, marginBottom: 24, boxShadow: isDark ? "0 1px 3px rgba(0,0,0,0.3)" : "0 1px 3px rgba(0,0,0,0.05)" }}>
-            <pre style={{ fontFamily: font.body, whiteSpace: "pre-wrap", fontSize: 16, lineHeight: 1.8, color: c.onSurface, margin: 0 }}>
+          <div style={{ background: c.card, border: `1px solid ${c.line2}`, borderLeft: `3px solid ${c.co}`, borderRadius: 16, padding: 18, marginBottom: 20 }}>
+            <pre style={{ fontFamily: font.body, whiteSpace: "pre-wrap", fontSize: 18, lineHeight: 1.62, color: c.ink, margin: 0 }}>
               {content.passage?.text}
             </pre>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, color: c.onSurfaceVariant, marginBottom: 24 }}>
-            <span>{questions.length} vragen</span>
-            <span>·</span>
-            <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
-              {unlockedHearts ? (
-                <span>♾️ Onbeperkte harten</span>
-              ) : (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <span key={i} className="mso mso-fill" style={{ fontSize: 14, color: i < heartsLeft ? c.error : c.outlineVariant }}>favorite</span>
-                ))
-              )}
-            </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
+            <Chip fg={c.ink70} bg={c.sunk}>{questions.length} vragen</Chip>
+            {unlockedHearts ? (
+              <Chip fg={c.co} bg={c.coSoft}>Onbeperkte harten</Chip>
+            ) : (
+              <span style={{ display: "flex", alignItems: "center", gap: 2 }}>
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <span key={i} className="mso mso-fill" style={{ fontSize: 16, color: i < heartsLeft ? c.rd : c.ink25 }}>favorite</span>
+                ))}
+              </span>
+            )}
           </div>
 
-          <button
-            onClick={() => setPhase("question")}
-            style={{
-              width: "100%", height: 56, borderRadius: 9999, border: "none", cursor: "pointer",
-              background: `linear-gradient(to bottom, ${c.primary}, ${c.primaryContainer})`,
-              color: "#fff", fontWeight: 800, fontSize: 18, fontFamily: font.headline,
-              boxShadow: "0 10px 15px -3px rgba(0,0,0,.1)",
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-            }}
-          >
-            Start vragen
-            <span className="mso" style={{ fontSize: 20 }}>arrow_forward</span>
-          </button>
+          <div style={{ flex: 1, minHeight: 12 }} />
+          <button onClick={() => setPhase("question")} style={primaryButton(c)}>Start vragen</button>
         </div>
-
-        {/* Background decorations */}
-        <div style={{ position: "fixed", top: -96, right: -96, width: 256, height: 256, background: `${c.primary}0d`, borderRadius: 9999, filter: "blur(96px)", zIndex: -1 }} />
-        <div style={{ position: "fixed", bottom: 128, left: -48, width: 192, height: 192, background: `${c.secondary}0d`, borderRadius: 9999, filter: "blur(96px)", zIndex: -1 }} />
-      </div>
+      </Screen>
     );
   }
 
   /* ═══ Question phase ═══ */
+  const fb = isCorrect === null
+    ? null
+    : isCorrect
+      ? { bg: c.grSoft, fg: c.gr, icon: "check_circle", title: "Goed gedaan!" }
+      : { bg: c.rdSoft, fg: c.rd, icon: "cancel", title: "Niet helemaal juist" };
+
+  const explanation = "explanation" in question ? (question as any).explanation : null;
+
   return (
-    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", background: c.background, fontFamily: font.headline }}>
-      {/* Focus Mode Top Bar */}
-      <nav style={{
-        position: "sticky", top: 0, zIndex: 50, height: 64,
-        display: "flex", alignItems: "center", gap: 16, padding: "0 16px",
-        background: isDark ? "rgba(18,20,19,0.8)" : "rgba(249,249,247,0.7)", backdropFilter: "blur(24px)",
-      }}>
-        <button onClick={() => router.back()} style={{ width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 9999, border: "none", background: "transparent", cursor: "pointer" }}>
-          <span className="mso" style={{ color: c.onSurface, fontSize: 24 }}>close</span>
-        </button>
-
-        {/* Segmented progress */}
-        <div style={{ flex: 1, height: 10, display: "flex", gap: 6, padding: "0 8px" }}>
-          {Array.from({ length: questions.length }).map((_, i) => (
-            <div key={i} style={{
-              flex: 1, height: "100%", borderRadius: 9999,
-              background: i < currentQ ? c.secondary : i === currentQ ? c.secondary : c.surfaceHighest,
-              opacity: i === currentQ ? 0.4 : 1,
-            }} />
-          ))}
-        </div>
-
-        {/* Hearts */}
-        <div style={{ display: "flex", alignItems: "center", gap: 4, paddingRight: 8 }}>
-          {unlockedHearts ? (
-            <span style={{ fontSize: 14 }}>♾️</span>
-          ) : (
-            <>
-              <span className="mso mso-fill" style={{ color: c.error, fontSize: 20 }}>favorite</span>
-              <span style={{ fontWeight: 700, fontSize: 14, color: c.onSurface }}>{heartsLeft}</span>
-            </>
-          )}
-        </div>
-      </nav>
+    <Screen style={{ minHeight: "100vh", background: c.background }}>
+      {/* ── Header: close, segments, hearts ── */}
+      <GlassHeader
+        c={c}
+        onBack={() => router.back()}
+        closeIcon
+        center={
+          <div style={{ flex: 1, display: "flex", gap: 4, height: 7 }}>
+            {Array.from({ length: questions.length }).map((_, i) => (
+              <span
+                key={i}
+                style={{
+                  flex: 1,
+                  borderRadius: 9999,
+                  background: i < currentQ ? c.co : i === currentQ ? `${c.co}66` : c.sunk,
+                  transition: "background 0.3s",
+                }}
+              />
+            ))}
+          </div>
+        }
+        trailing={
+          <div style={{ display: "flex", alignItems: "center", gap: 3, flex: "none" }}>
+            <span className="mso mso-fill" style={{ fontSize: 17, color: c.rd }}>favorite</span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: c.ink70 }}>
+              {unlockedHearts ? "∞" : heartsLeft}
+            </span>
+          </div>
+        }
+      />
 
       {/* XP float */}
       {showXP && (
-          <div
-            className="xp-float"
-            style={{ position: "fixed", top: 80, right: 24, zIndex: 50, color: c.tertiary, fontWeight: 800, fontSize: 18, pointerEvents: "none" }}
-          >
-            +{xpAmount} XP
-          </div>
-        )}
+        <div
+          className="xp-float"
+          style={{ position: "fixed", top: 90, right: 24, zIndex: 50, color: c.or, fontWeight: 700, fontSize: 18, pointerEvents: "none", fontFamily: font.headline }}
+        >
+          +{xpAmount} XP
+        </div>
+      )}
 
-      {/* Sticky passage */}
-      <div style={{ position: "sticky", top: 64, zIndex: 10, background: c.background, padding: "12px 24px 8px", borderBottom: `1px solid ${c.surfaceHighest}` }}>
-        <div style={{ maxWidth: 672, margin: "0 auto" }}>
-          <div style={{
-            maxHeight: "28vh", overflowY: "auto", borderRadius: 16, padding: 12,
-            background: isDark ? c.surfaceContainer : "#FFFBF5", borderLeft: `3px solid ${c.primaryContainer}`,
-          }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-              <span className="mso" style={{ fontSize: 12, color: c.onSurfaceVariant }}>description</span>
-              <p style={{ fontSize: 10, fontWeight: 600, color: c.onSurfaceVariant, textTransform: "uppercase", letterSpacing: "0.1em", margin: 0 }}>
-                {content.passage?.source_label}
-              </p>
-            </div>
-            <pre style={{ fontFamily: font.body, whiteSpace: "pre-wrap", fontSize: 13, lineHeight: 1.6, color: c.onSurface, margin: 0 }}>
-              {content.passage?.text}
+      <div style={{ padding: "20px 20px 10px", flex: 1 }}>
+        <Kicker c={c} style={{ marginBottom: 14 }}>
+          {content.passage?.source_label ?? "Lezen"} · vraag {currentQ + 1} van {questions.length}
+        </Kicker>
+
+        {content.passage?.text && (
+          <div
+            style={{
+              background: c.card,
+              border: `1px solid ${c.line2}`,
+              borderLeft: `3px solid ${c.co}`,
+              borderRadius: 16,
+              padding: 18,
+              marginBottom: 20,
+              maxHeight: "30vh",
+              overflowY: "auto",
+            }}
+          >
+            <pre style={{ fontFamily: font.body, whiteSpace: "pre-wrap", fontSize: 17, lineHeight: 1.62, color: c.ink, margin: 0 }}>
+              {content.passage.text}
             </pre>
           </div>
-        </div>
-      </div>
-
-      {/* Question area */}
-      <div style={{ flex: 1, padding: "20px 24px 200px", maxWidth: 672, margin: "0 auto", width: "100%" }}>
-        <p style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 800, color: c.onSurfaceVariant, marginBottom: 8 }}>
-          Vraag {currentQ + 1} van {questions.length}
-        </p>
+        )}
 
         <div key={currentQ} className="fm-slide-in-right">
           <div className={isShaking ? "wrong-shake" : undefined}>
@@ -385,86 +354,53 @@ export function LessonPlayer({ lesson, progress, userId, nextLessonId }: Props) 
         </div>
       </div>
 
-      {/* Bottom Action Bar */}
-      <div style={{
-        position: "fixed", bottom: 0, left: 0, width: "100%", zIndex: 60,
-        background: `${c.surfaceLow}cc`, backdropFilter: "blur(16px)",
-        padding: "16px 24px 32px", display: "flex", flexDirection: "column", gap: 16,
-      }}>
-        {/* Feedback */}
-        {isCorrect !== null && (
-          <div
-            className="fm-fade-up-lg"
-            style={{
-              borderRadius: 16, padding: 16,
-              display: "flex", alignItems: "center", justifyContent: "space-between",
-              background: isCorrect ? "rgba(187,247,208,0.8)" : "rgba(254,202,202,0.8)",
-              border: `1px solid ${isCorrect ? "rgba(134,239,172,0.6)" : "rgba(252,165,165,0.6)"}`,
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <div style={{
-                width: 40, height: 40, borderRadius: 9999,
-                background: isCorrect ? "#22c55e" : c.danger,
-                display: "flex", alignItems: "center", justifyContent: "center", color: "#fff",
-              }}>
-                <span className="mso mso-fill" style={{ fontSize: 24 }}>{isCorrect ? "check_circle" : "cancel"}</span>
-              </div>
-              <div>
-                <h4 style={{ fontWeight: 700, color: isCorrect ? "#14532d" : "#7f1d1d", fontSize: 14, margin: 0 }}>
-                  {isCorrect ? "Goed gedaan!" : "Niet helemaal juist"}
-                </h4>
-                {"explanation" in question && (
-                  <p style={{ fontSize: 12, color: isCorrect ? "#166534" : "#991b1b", fontWeight: 500, margin: 0, marginTop: 2 }}>
-                    {(question as any).explanation}
-                  </p>
-                )}
-              </div>
+      {/* ── Bottom bar ── */}
+      <div
+        className={fb ? "dp-sheet" : "dp-glass"}
+        style={{
+          position: "sticky",
+          bottom: 0,
+          zIndex: 30,
+          background: fb ? fb.bg : undefined,
+          borderTop: `1px solid ${c.line2}`,
+          padding: "16px 20px calc(var(--app-tabbar, 0px) + 20px)",
+        }}
+      >
+        {fb ? (
+          <>
+            <div style={{ display: "flex", alignItems: "center", gap: 11, marginBottom: explanation ? 10 : 14 }}>
+              <span style={{ width: 34, height: 34, flex: "none", borderRadius: 9999, background: fb.fg, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <span className="mso mso-fill" style={{ fontSize: 19, color: "#fff" }}>{fb.icon}</span>
+              </span>
+              <span style={{ fontSize: 16, fontWeight: 600, color: fb.fg }}>{fb.title}</span>
+              {isCorrect && (
+                <span style={{ marginLeft: "auto", fontSize: 12.5, fontWeight: 700, color: fb.fg }}>+{xpAmount} XP</span>
+              )}
             </div>
-            {isCorrect && (
-              <span style={{ color: c.tertiary, fontWeight: 800, fontSize: 18 }}>+{xpAmount} XP</span>
+            {explanation && (
+              <div style={{ fontFamily: font.body, fontSize: 15, lineHeight: 1.55, color: c.ink70, marginBottom: 14 }}>
+                {explanation}
+              </div>
             )}
+            <button onClick={advance} style={{ ...primaryButton(c, { compact: true }), background: fb.fg, boxShadow: "none", fontSize: 16, padding: "16px 0" }}>
+              {isLastQuestion || heartsLeft === 0 ? "Bekijk resultaten" : "Doorgaan"}
+            </button>
+          </>
+        ) : question.type === "fill_blank" ? (
+          <button
+            onClick={() => submitAnswer(fillWords)}
+            disabled={fillWords.length === 0}
+            style={{ ...primaryButton(c, { disabled: fillWords.length === 0 }), fontSize: 16, padding: "16px 0", borderRadius: 15 }}
+          >
+            Controleer antwoord
+          </button>
+        ) : (
+          <div style={{ fontSize: 13, fontWeight: 600, color: c.ink45, textAlign: "center", padding: "6px 0" }}>
+            Kies een antwoord
           </div>
         )}
-
-        {/* Action button */}
-        {isCorrect === null ? (
-          question.type === "fill_blank" && (
-            <button
-              onClick={() => submitAnswer(fillWords)}
-              disabled={fillWords.length === 0}
-              style={{
-                width: "100%", height: 56, borderRadius: 9999, border: "none", cursor: "pointer",
-                background: fillWords.length === 0 ? c.surfaceHighest : `linear-gradient(to bottom, ${c.primary}, ${c.primaryContainer})`,
-                color: fillWords.length === 0 ? c.onSurfaceVariant : "#fff",
-                fontWeight: 700, fontSize: 18, fontFamily: font.headline,
-                display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-              }}
-            >
-              Controleer antwoord
-            </button>
-          )
-        ) : (
-          <button
-            onClick={advance}
-            style={{
-              width: "100%", height: 56, borderRadius: 9999, border: "none", cursor: "pointer",
-              background: `linear-gradient(to bottom, ${c.primary}, ${c.primaryContainer})`,
-              color: "#fff", fontWeight: 700, fontSize: 18, fontFamily: font.headline,
-              boxShadow: "0 10px 15px -3px rgba(0,0,0,.1)",
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-            }}
-          >
-            {isLastQuestion || heartsLeft === 0 ? "Bekijk resultaten" : "Doorgaan"}
-            <span className="mso" style={{ fontSize: 20 }}>arrow_forward</span>
-          </button>
-        )}
       </div>
-
-      {/* Background decorations */}
-      <div style={{ position: "fixed", top: -96, right: -96, width: 256, height: 256, background: `${c.primary}0d`, borderRadius: 9999, filter: "blur(96px)", zIndex: -1 }} />
-      <div style={{ position: "fixed", bottom: 128, left: -48, width: 192, height: 192, background: `${c.secondary}0d`, borderRadius: 9999, filter: "blur(96px)", zIndex: -1 }} />
-    </div>
+    </Screen>
   );
 }
 
@@ -479,57 +415,66 @@ function QuestionRenderer({
   setFillWords: (w: string[]) => void;
   onAnswer: (a: number | boolean | string[]) => void;
 }) {
-  const font = { headline: "'Plus Jakarta Sans', sans-serif", body: "'Noto Serif', serif" };
   const { isDark } = useTheme();
   const c = getColors(isDark);
+
+  /** Radio dot + serif answer + result mark — the design's choice row. */
+  const Choice = ({
+    label, state, onClick, disabled,
+  }: {
+    label: string;
+    state: "idle" | "selected" | "correct" | "wrong";
+    onClick: () => void;
+    disabled: boolean;
+  }) => {
+    const dot = {
+      idle: { line: c.ink25, bg: "transparent", inner: "transparent" },
+      selected: { line: c.co, bg: "transparent", inner: c.co },
+      correct: { line: c.gr, bg: "transparent", inner: c.gr },
+      wrong: { line: c.rd, bg: "transparent", inner: c.rd },
+    }[state];
+    const mark = state === "correct" ? "check_circle" : state === "wrong" ? "cancel" : "";
+    const markFg = state === "correct" ? c.gr : c.rd;
+
+    return (
+      <button
+        onClick={onClick}
+        disabled={disabled}
+        className={disabled ? undefined : "tap-shrink"}
+        style={optionRow(c, disabled && state === "idle" ? "disabled" : state)}
+      >
+        <span style={{ width: 22, height: 22, flex: "none", borderRadius: 9999, border: `2px solid ${dot.line}`, background: dot.bg, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <span style={{ width: 8, height: 8, borderRadius: 9999, background: dot.inner }} />
+        </span>
+        <span style={{ flex: 1, fontFamily: font.body, fontSize: 16.5, lineHeight: 1.4, color: c.ink }}>{label}</span>
+        {mark && <span className="mso mso-fill" style={{ fontSize: 19, color: markFg }}>{mark}</span>}
+      </button>
+    );
+  };
 
   if (question.type === "multiple_choice" || question.type === "reading_comp") {
     const q = question as any;
     return (
       <div>
-        <h1 style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-0.025em", marginBottom: 24, color: c.primary, lineHeight: 1.2, fontFamily: font.headline }}>
+        <div style={{ fontSize: 16.5, fontWeight: 600, color: c.ink, letterSpacing: "-0.01em", marginBottom: 14, fontFamily: font.headline }}>
           {q.prompt}
-        </h1>
-        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
           {q.options.map((option: string, i: number) => {
             const isSelected = selectedAnswer === i;
-            const isRight = isCorrect !== null && i === q.correct_index;
-            const isWrong = isCorrect === false && isSelected;
-
-            let bg = c.surfaceLowest;
-            let border = `1.5px solid ${c.outlineVariant}30`;
-            let color = c.onSurface;
-            let weight = 500;
-
-            if (isRight) { bg = "rgba(0,168,107,0.08)"; border = `1.5px solid ${c.success}`; color = c.success; weight = 700; }
-            else if (isWrong) { bg = "rgba(214,59,59,0.08)"; border = `1.5px solid ${c.danger}`; color = c.danger; weight = 700; }
-            else if (isSelected) { bg = `${c.primary}0d`; border = `1.5px solid ${c.primary}`; color = c.primary; weight = 700; }
-
+            const state: "idle" | "selected" | "correct" | "wrong" =
+              isCorrect !== null && i === q.correct_index ? "correct"
+              : isCorrect === false && isSelected ? "wrong"
+              : isSelected ? "selected"
+              : "idle";
             return (
-              <button
+              <Choice
                 key={i}
-                onClick={() => isCorrect === null && onAnswer(i)}
+                label={option}
+                state={state}
                 disabled={isCorrect !== null}
-                style={{
-                  width: "100%", textAlign: "left", padding: 20, borderRadius: 16,
-                  display: "flex", alignItems: "center", justifyContent: "space-between",
-                  border, background: bg, cursor: isCorrect !== null ? "default" : "pointer",
-                  fontFamily: font.headline, transition: "all 0.2s",
-                }}
-              >
-                <span style={{ fontSize: 15, color, fontWeight: weight }}>{option}</span>
-                {isRight ? (
-                  <span className="mso mso-fill" style={{ fontSize: 20, color: c.success }}>check_circle</span>
-                ) : isWrong ? (
-                  <span className="mso mso-fill" style={{ fontSize: 20, color: c.danger }}>cancel</span>
-                ) : isSelected ? (
-                  <div style={{ width: 24, height: 24, borderRadius: 9999, background: c.primary, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <div style={{ width: 10, height: 10, borderRadius: 9999, background: "#fff" }} />
-                  </div>
-                ) : (
-                  <div style={{ width: 24, height: 24, borderRadius: 9999, border: `2px solid ${c.outlineVariant}` }} />
-                )}
-              </button>
+                onClick={() => isCorrect === null && onAnswer(i)}
+              />
             );
           })}
         </div>
@@ -541,36 +486,25 @@ function QuestionRenderer({
     const q = question as any;
     return (
       <div>
-        <h1 style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-0.025em", marginBottom: 24, color: c.primary, lineHeight: 1.2, fontFamily: font.headline }}>
+        <div style={{ fontSize: 16.5, fontWeight: 600, color: c.ink, letterSpacing: "-0.01em", marginBottom: 14, fontFamily: font.headline }}>
           {q.prompt}
-        </h1>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
           {[true, false].map((val) => {
             const isSelected = selectedAnswer === val;
-            const isRight = isCorrect !== null && val === q.correct_answer;
-            const isWrong = isCorrect === false && isSelected;
-
-            let bg = c.surfaceLowest;
-            let border = `2px solid ${c.outlineVariant}30`;
-            let color = c.onSurface;
-
-            if (isRight) { bg = "rgba(0,168,107,0.08)"; border = `2px solid ${c.success}`; color = c.success; }
-            else if (isWrong) { bg = "rgba(214,59,59,0.08)"; border = `2px solid ${c.danger}`; color = c.danger; }
-            else if (isSelected) { bg = `${c.primary}0d`; border = `2px solid ${c.primary}`; color = c.primary; }
-
+            const state: "idle" | "selected" | "correct" | "wrong" =
+              isCorrect !== null && val === q.correct_answer ? "correct"
+              : isCorrect === false && isSelected ? "wrong"
+              : isSelected ? "selected"
+              : "idle";
             return (
-              <button
+              <Choice
                 key={String(val)}
-                onClick={() => isCorrect === null && onAnswer(val)}
+                label={val ? "Waar" : "Onwaar"}
+                state={state}
                 disabled={isCorrect !== null}
-                style={{
-                  padding: 24, borderRadius: 16, border, background: bg, color,
-                  fontWeight: 700, fontSize: 16, cursor: isCorrect !== null ? "default" : "pointer",
-                  fontFamily: font.headline, transition: "all 0.2s",
-                }}
-              >
-                {val ? "Waar" : "Onwaar"}
-              </button>
+                onClick={() => isCorrect === null && onAnswer(val)}
+              />
             );
           })}
         </div>
@@ -581,29 +515,31 @@ function QuestionRenderer({
   if (question.type === "fill_blank") {
     const q = question as any;
     const parts = q.prompt.split("___");
+    const blankFg = isCorrect === true ? c.gr : isCorrect === false ? c.rd : c.co;
+
     return (
       <div>
-        <h1 style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.025em", marginBottom: 20, color: c.primary, lineHeight: 1.2, fontFamily: font.headline }}>
+        <div style={{ fontSize: 16.5, fontWeight: 600, color: c.ink, letterSpacing: "-0.01em", marginBottom: 14, fontFamily: font.headline }}>
           Vul de ontbrekende woorden in
-        </h1>
-        <div style={{ background: isDark ? c.surfaceContainer : "#FFFBF5", borderRadius: 16, padding: 16, marginBottom: 20, fontFamily: font.body, fontSize: 16, lineHeight: 1.8, color: c.onSurface }}>
+        </div>
+
+        <div style={{ background: c.card, border: `1px solid ${c.line2}`, borderLeft: `3px solid ${c.co}`, borderRadius: 16, padding: 18, marginBottom: 18, fontFamily: font.body, fontSize: 18, lineHeight: 1.7, color: c.ink }}>
           {parts.map((part: string, i: number) => (
             <span key={i}>
               {part}
               {i < parts.length - 1 && (
                 <span style={{
-                  display: "inline-block", minWidth: 80, borderBottom: `2px solid ${isCorrect === true ? c.success : isCorrect === false ? c.danger : c.primary}`,
-                  margin: "0 4px", textAlign: "center", fontWeight: 700,
-                  color: isCorrect === true ? c.success : isCorrect === false ? c.danger : c.primary,
+                  display: "inline-block", minWidth: 80, textAlign: "center",
+                  borderBottom: `2px solid ${blankFg}`, margin: "0 4px", color: blankFg,
                 }}>
-                  {fillWords[i] ?? "___"}
+                  {fillWords[i] ?? "   "}
                 </span>
               )}
             </span>
           ))}
         </div>
 
-        <p style={{ fontSize: 12, color: c.onSurfaceVariant, marginBottom: 8 }}>Tik op woorden om de lege plekken in te vullen:</p>
+        <Kicker c={c} style={{ marginBottom: 10 }}>Woordbank</Kicker>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
           {q.word_bank.map((word: string) => {
             const usedIdx = fillWords.indexOf(word);
@@ -617,12 +553,13 @@ function QuestionRenderer({
                   else if (fillWords.length < parts.length - 1) setFillWords([...fillWords, word]);
                 }}
                 disabled={isCorrect !== null}
+                className={isCorrect !== null ? undefined : "tap-shrink"}
                 style={{
-                  padding: "8px 12px", borderRadius: 12, fontSize: 14, fontWeight: 600,
+                  padding: "9px 13px", borderRadius: 12, fontSize: 14, fontWeight: 600,
                   fontFamily: font.headline, cursor: isCorrect !== null ? "default" : "pointer",
-                  border: used ? `1.5px solid ${c.primary}` : `1.5px solid ${c.outlineVariant}`,
-                  background: used ? `${c.primary}0d` : c.surfaceLowest,
-                  color: used ? c.primary : c.onSurface, transition: "all 0.2s",
+                  border: `1.5px solid ${used ? c.co : c.line}`,
+                  background: used ? c.coSoft : c.card,
+                  color: used ? c.coInk : c.ink, transition: "all 0.2s",
                 }}
               >
                 {word}
@@ -634,7 +571,7 @@ function QuestionRenderer({
         {fillWords.length > 0 && isCorrect === null && (
           <button
             onClick={() => setFillWords([])}
-            style={{ marginTop: 12, fontSize: 12, color: c.onSurfaceVariant, background: "none", border: "none", cursor: "pointer", textDecoration: "underline", fontFamily: font.headline }}
+            style={{ marginTop: 12, fontSize: 12.5, fontWeight: 600, color: c.ink45, background: "none", border: "none", cursor: "pointer", fontFamily: font.headline, padding: 0 }}
           >
             Alles wissen
           </button>

@@ -8,8 +8,8 @@ import { SettleDisclaimer } from "@/components/settle-disclaimer";
 import { LeadForm } from "@/components/marketing/lead-form";
 
 const font = {
-  headline: "'Plus Jakarta Sans', sans-serif",
-  body: "'Noto Serif', serif",
+  headline: "'Instrument Sans', system-ui, sans-serif",
+  body: "'Instrument Serif', Georgia, serif",
 };
 
 /**
@@ -84,14 +84,14 @@ export default async function GuidePage({ params }: { params: Promise<{ slug: st
 
       <header className="fm-fade-up" style={{ padding: "20px 0 8px" }}>
         <span style={{
-          fontSize: 11, fontWeight: 800, textTransform: "uppercase",
+          fontSize: 11, fontWeight: 700, textTransform: "uppercase",
           letterSpacing: "0.1em", color: "var(--secondary)",
         }}>
           {SEVERITY_LABEL[rule.severity] ?? rule.severity}
         </span>
         <h1 style={{
-          fontSize: "clamp(28px, 5vw, 42px)", fontWeight: 800, lineHeight: 1.12,
-          letterSpacing: "-0.03em", color: "var(--primary)", margin: "10px 0 0",
+          fontFamily: font.body, fontSize: "clamp(28px, 5vw, 42px)", fontWeight: 400, lineHeight: 1.1,
+          letterSpacing: "-0.01em", color: "var(--ink)", margin: "10px 0 0",
         }}>
           {rule.title_en}
         </h1>
@@ -114,7 +114,7 @@ export default async function GuidePage({ params }: { params: Promise<{ slug: st
           </span>
           <div>
             <p style={{
-              margin: 0, fontSize: 11, fontWeight: 800, textTransform: "uppercase",
+              margin: 0, fontSize: 11, fontWeight: 700, textTransform: "uppercase",
               letterSpacing: "0.1em", color: "var(--outline)",
             }}>
               When it is due
@@ -155,7 +155,7 @@ export default async function GuidePage({ params }: { params: Promise<{ slug: st
           </span>
           <span style={{ flex: 1, minWidth: 0 }}>
             <span style={{
-              display: "block", fontSize: 11, fontWeight: 800, textTransform: "uppercase",
+              display: "block", fontSize: 11, fontWeight: 700, textTransform: "uppercase",
               letterSpacing: "0.1em", color: "var(--outline)",
             }}>
               Official source
@@ -213,14 +213,14 @@ function hostOf(url: string): string {
 
 const ctaPrimary = {
   display: "inline-flex", alignItems: "center", gap: 8,
-  padding: "14px 24px", borderRadius: 9999, textDecoration: "none",
-  fontSize: 15, fontWeight: 800, color: "#fff",
-  background: "linear-gradient(to bottom, var(--primary), var(--primary-container))",
+  padding: "16px 26px", borderRadius: 16, textDecoration: "none",
+  fontSize: 15, fontWeight: 600, color: "#fff",
+  background: "var(--co)",
 } as const;
 
 const ctaSecondary = {
   display: "inline-flex", alignItems: "center", gap: 8,
   padding: "14px 24px", borderRadius: 9999, textDecoration: "none",
-  fontSize: 15, fontWeight: 800,
+  fontSize: 15, fontWeight: 600,
   background: "var(--surface-container-low)", color: "var(--on-surface)",
 } as const;

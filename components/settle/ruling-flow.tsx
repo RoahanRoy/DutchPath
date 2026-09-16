@@ -38,8 +38,8 @@ import {
 type Palette = ReturnType<typeof getColors>;
 
 const font = {
-  headline: "'Plus Jakarta Sans', sans-serif",
-  body: "'Noto Serif', serif",
+  headline: "'Instrument Sans', system-ui, sans-serif",
+  body: "'Instrument Serif', Georgia, serif",
 };
 
 /** The Belastingdienst's own page for this scheme — more use here than the
@@ -157,7 +157,7 @@ function ChoiceField({
               padding: "14px 16px", borderRadius: 16, border: "none", cursor: "pointer",
               fontFamily: font.headline, textAlign: "left",
               transition: "background 0.2s, box-shadow 0.2s",
-              background: selected ? `${c.primary}12` : c.surfaceLow,
+              background: selected ? `${c.coSoft}` : c.surfaceLow,
               boxShadow: selected ? `0 0 0 2px ${c.primary}` : "none",
             }}
           >
@@ -196,7 +196,7 @@ function NumberField({
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
       {spec.prefix && (
-        <span style={{ fontSize: 20, fontWeight: 800, color: c.onSurfaceVariant }}>{spec.prefix}</span>
+        <span style={{ fontSize: 20, fontWeight: 700, color: c.onSurfaceVariant }}>{spec.prefix}</span>
       )}
       <input
         id={`ruling-${q.id}`}
@@ -234,7 +234,7 @@ function FactRow({ label, value, c }: { label: string; value: string; c: Palette
       <span style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: c.onSurfaceVariant }}>
         {label}
       </span>
-      <span style={{ fontSize: 14, fontWeight: 800, color: c.onSurface, textAlign: "right" }}>
+      <span style={{ fontSize: 14, fontWeight: 700, color: c.onSurface, textAlign: "right" }}>
         {value}
       </span>
     </div>
@@ -377,12 +377,12 @@ export function RulingFlow({ prefill, backLink, onComplete, resultCta }: RulingF
 
           <section className="fm-fade-up" style={{ marginBottom: 24 }}>
             <div style={{
-              width: 56, height: 56, borderRadius: 16, background: `${c.primary}15`,
+              width: 56, height: 56, borderRadius: 16, background: `${c.coSoft}`,
               display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 18,
             }}>
               <span className="mso mso-fill" aria-hidden="true" style={{ fontSize: 28, color: c.primary }}>calculate</span>
             </div>
-            <h1 style={{ fontSize: 30, fontWeight: 800, color: c.primary, letterSpacing: "-0.025em", margin: 0 }}>
+            <h1 style={{ fontSize: 30, fontWeight: 700, color: c.primary, letterSpacing: "-0.025em", margin: 0 }}>
               30% ruling check
             </h1>
             <p style={{ fontSize: 14, fontWeight: 500, color: c.onSurfaceVariant, lineHeight: 1.6, margin: "8px 0 0" }}>
@@ -395,7 +395,7 @@ export function RulingFlow({ prefill, backLink, onComplete, resultCta }: RulingF
 
           <ul className="fm-fade-up" style={{
             listStyle: "none", padding: 18, margin: "0 0 24px", borderRadius: 20,
-            background: c.surfaceLowest, boxShadow: "0px 4px 16px rgba(26,28,27,0.04)",
+            background: c.card, boxShadow: "0px 4px 16px rgba(26,28,27,0.04)",
             display: "flex", flexDirection: "column", gap: 12,
           }}>
             {[
@@ -416,9 +416,9 @@ export function RulingFlow({ prefill, backLink, onComplete, resultCta }: RulingF
             onClick={() => setPhase("questions")}
             style={{
               width: "100%", padding: 16, borderRadius: 9999, border: "none", cursor: "pointer",
-              fontSize: 16, fontWeight: 800, fontFamily: font.headline, color: "#fff",
-              background: `linear-gradient(to bottom, ${c.primary}, ${c.primaryContainer})`,
-              boxShadow: `0 10px 20px -5px ${c.primary}40`,
+              fontSize: 16, fontWeight: 700, fontFamily: font.headline, color: "#fff",
+              background: `${c.co}`,
+              boxShadow: "0 8px 24px rgba(43,74,226,.22)",
               display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
             }}
           >
@@ -446,10 +446,10 @@ export function RulingFlow({ prefill, backLink, onComplete, resultCta }: RulingF
       <div style={shell}>
         <main style={main}>
           <section className="fm-rise" style={{
-            background: `${tone}12`, borderRadius: 24, padding: 24, marginBottom: 20,
+            background: `${tone}12`, borderRadius: 18, padding: 24, marginBottom: 20,
           }}>
             <span className="mso mso-fill" aria-hidden="true" style={{ fontSize: 40, color: tone }}>{meta.icon}</span>
-            <h1 style={{ fontSize: 24, fontWeight: 800, color: c.onSurface, letterSpacing: "-0.02em", margin: "10px 0 0" }}>
+            <h1 style={{ fontSize: 24, fontWeight: 700, color: c.onSurface, letterSpacing: "-0.02em", margin: "10px 0 0" }}>
               {meta.title}
             </h1>
             <p style={{ fontSize: 13, fontWeight: 500, color: c.onSurfaceVariant, lineHeight: 1.6, margin: "8px 0 0" }}>
@@ -461,7 +461,7 @@ export function RulingFlow({ prefill, backLink, onComplete, resultCta }: RulingF
             <div className="fm-fade-down" role="status" style={{
               display: "flex", alignItems: "flex-start", gap: 8,
               padding: "12px 16px", borderRadius: 12, marginBottom: 20,
-              background: `${c.secondary}15`, color: c.secondary,
+              background: `${c.orSoft}`, color: c.secondary,
               fontSize: 13, fontWeight: 600, lineHeight: 1.5,
             }}>
               <span className="mso" aria-hidden="true" style={{ fontSize: 18, flexShrink: 0 }}>cloud_off</span>
@@ -471,12 +471,12 @@ export function RulingFlow({ prefill, backLink, onComplete, resultCta }: RulingF
 
           {/* ── Why ── */}
           <section className="fm-fade-up" style={{ marginBottom: 20 }}>
-            <h2 style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.15em", color: c.onSurfaceVariant, margin: "0 0 12px" }}>
+            <h2 style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.15em", color: c.onSurfaceVariant, margin: "0 0 12px" }}>
               Why
             </h2>
             <ul style={{
               listStyle: "none", padding: 18, margin: 0, borderRadius: 20,
-              background: c.surfaceLowest, boxShadow: "0px 4px 16px rgba(26,28,27,0.04)",
+              background: c.card, boxShadow: "0px 4px 16px rgba(26,28,27,0.04)",
               display: "flex", flexDirection: "column", gap: 12,
             }}>
               {result.reasons.map((reason) => (
@@ -497,11 +497,11 @@ export function RulingFlow({ prefill, backLink, onComplete, resultCta }: RulingF
 
           {/* ── The figures used ── */}
           <section className="fm-fade-up" style={{ marginBottom: 20 }}>
-            <h2 style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.15em", color: c.onSurfaceVariant, margin: "0 0 12px" }}>
+            <h2 style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.15em", color: c.onSurfaceVariant, margin: "0 0 12px" }}>
               Figures used
             </h2>
             <div style={{
-              padding: "6px 18px", borderRadius: 20, background: c.surfaceLowest,
+              padding: "6px 18px", borderRadius: 20, background: c.card,
               boxShadow: "0px 4px 16px rgba(26,28,27,0.04)",
             }}>
               <FactRow
@@ -532,20 +532,20 @@ export function RulingFlow({ prefill, backLink, onComplete, resultCta }: RulingF
 
           {/* ── What to do next ── */}
           <section className="fm-fade-up" style={{ marginBottom: 24 }}>
-            <h2 style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.15em", color: c.onSurfaceVariant, margin: "0 0 12px" }}>
+            <h2 style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.15em", color: c.onSurfaceVariant, margin: "0 0 12px" }}>
               What to do next
             </h2>
             <ol style={{
               listStyle: "none", padding: 18, margin: 0, borderRadius: 20,
-              background: c.surfaceLowest, boxShadow: "0px 4px 16px rgba(26,28,27,0.04)",
+              background: c.card, boxShadow: "0px 4px 16px rgba(26,28,27,0.04)",
               display: "flex", flexDirection: "column", gap: 14, counterReset: "step",
             }}>
               {meta.next.map((step, i) => (
                 <li key={step} style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
                   <span style={{
                     flexShrink: 0, width: 22, height: 22, borderRadius: 9999,
-                    background: `${c.primary}12`, color: c.primary,
-                    fontSize: 11, fontWeight: 800,
+                    background: `${c.coSoft}`, color: c.primary,
+                    fontSize: 11, fontWeight: 700,
                     display: "flex", alignItems: "center", justifyContent: "center",
                   }}>
                     {i + 1}
@@ -567,7 +567,7 @@ export function RulingFlow({ prefill, backLink, onComplete, resultCta }: RulingF
               style={{
                 flex: 1, minWidth: 140, padding: "14px 16px", borderRadius: 9999,
                 border: "none", cursor: busy ? "default" : "pointer",
-                fontFamily: font.headline, fontSize: 14, fontWeight: 800,
+                fontFamily: font.headline, fontSize: 14, fontWeight: 700,
                 background: c.surfaceLow, color: c.onSurface,
                 opacity: busy ? 0.6 : 1,
                 display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6,
@@ -608,11 +608,11 @@ export function RulingFlow({ prefill, backLink, onComplete, resultCta }: RulingF
               <span className="mso" aria-hidden="true" style={{ fontSize: 18 }}>arrow_back</span>
               Back
             </button>
-            <span style={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.12em", color: c.onSurfaceVariant }}>
+            <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: c.onSurfaceVariant }}>
               Question {index + 1} of {visible.length}
             </span>
           </div>
-          <div style={{ width: "100%", height: 8, background: c.surfaceHighest, borderRadius: 9999, overflow: "hidden" }}>
+          <div style={{ width: "100%", height: 8, background: c.sunk, borderRadius: 9999, overflow: "hidden" }}>
             <div style={{ width: `${pct}%`, height: "100%", background: c.primary, borderRadius: 9999, transition: "width 0.3s ease-out" }} />
           </div>
         </div>
@@ -621,13 +621,13 @@ export function RulingFlow({ prefill, backLink, onComplete, resultCta }: RulingF
           // Keyed on the question id so each step animates in as its own element.
           <section key={question.id} className="fm-slide-in-right">
             <div style={{
-              width: 44, height: 44, borderRadius: 14, background: `${c.primary}12`,
+              width: 44, height: 44, borderRadius: 14, background: `${c.coSoft}`,
               display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 14,
             }}>
               <span className="mso" aria-hidden="true" style={{ fontSize: 22, color: c.primary }}>{question.icon}</span>
             </div>
 
-            <h1 style={{ fontSize: 21, fontWeight: 800, color: c.onSurface, letterSpacing: "-0.02em", lineHeight: 1.3, margin: 0 }}>
+            <h1 style={{ fontSize: 21, fontWeight: 700, color: c.onSurface, letterSpacing: "-0.02em", lineHeight: 1.3, margin: 0 }}>
               {question.prompt}
             </h1>
             <p style={{ fontSize: 13, fontWeight: 500, color: c.onSurfaceVariant, lineHeight: 1.6, margin: "10px 0 20px" }}>
@@ -658,9 +658,9 @@ export function RulingFlow({ prefill, backLink, onComplete, resultCta }: RulingF
               style={{
                 width: "100%", padding: 16, borderRadius: 9999, border: "none",
                 cursor: answered ? "pointer" : "default", marginTop: 24,
-                fontSize: 16, fontWeight: 800, fontFamily: font.headline, color: "#fff",
-                background: `linear-gradient(to bottom, ${c.primary}, ${c.primaryContainer})`,
-                boxShadow: answered ? `0 10px 20px -5px ${c.primary}40` : "none",
+                fontSize: 16, fontWeight: 700, fontFamily: font.headline, color: "#fff",
+                background: `${c.co}`,
+                boxShadow: answered ? "0 8px 24px rgba(43,74,226,.22)" : "none",
                 opacity: answered ? 1 : 0.4, transition: "opacity 0.2s",
                 display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
               }}

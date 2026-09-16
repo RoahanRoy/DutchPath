@@ -23,6 +23,8 @@
     "seed:settle-rules": "tsx scripts/seed-settle-rules.ts"
   },
   "dependencies": {
+    "@fontsource/instrument-sans": "^5.3.0",
+    "@fontsource/instrument-serif": "^5.3.0",
     "@fontsource/noto-serif": "^5.2.9",
     "@fontsource/plus-jakarta-sans": "^5.2.8",
     "@supabase/ssr": "^0.9.0",

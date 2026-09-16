@@ -1,8 +1,8 @@
 import Link from "next/link";
 
 const font = {
-  headline: "'Plus Jakarta Sans', sans-serif",
-  body: "'Noto Serif', serif",
+  headline: "'Instrument Sans', system-ui, sans-serif",
+  body: "'Instrument Serif', Georgia, serif",
 };
 
 /**
@@ -27,9 +27,9 @@ export function MarketingFooter() {
         <div style={{ flex: "1 1 260px", minWidth: 0 }}>
           <div style={{
             display: "inline-flex", alignItems: "center", gap: 8,
-            fontSize: 16, fontWeight: 800, color: "var(--primary)", letterSpacing: "-0.02em",
+            fontFamily: font.body, fontSize: 22, fontWeight: 400, color: "var(--ink)", letterSpacing: "-0.01em",
           }}>
-            <span aria-hidden="true">🇳🇱</span>
+            
             DutchPath
           </div>
           <p style={{
@@ -62,7 +62,7 @@ export function MarketingFooter() {
 
 const heading = {
   fontSize: 11,
-  fontWeight: 800,
+  fontWeight: 600,
   textTransform: "uppercase",
   letterSpacing: "0.1em",
   color: "var(--outline)",

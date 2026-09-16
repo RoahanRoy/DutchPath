@@ -3,8 +3,8 @@
 import { useTheme, getColors } from "@/lib/use-theme";
 
 const font = {
-  headline: "'Plus Jakarta Sans', sans-serif",
-  body: "'Noto Serif', serif",
+  headline: "'Instrument Sans', system-ui, sans-serif",
+  body: "'Instrument Serif', Georgia, serif",
 };
 
 /**
@@ -45,7 +45,7 @@ export function SettleDisclaimer({
           style={{
             margin: 0,
             fontSize: 11,
-            fontWeight: 800,
+            fontWeight: 700,
             textTransform: "uppercase",
             letterSpacing: "0.1em",
             color: c.onSurfaceVariant,

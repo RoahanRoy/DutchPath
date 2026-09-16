@@ -4,14 +4,19 @@ import Link from "next/link";
 import { useMemo } from "react";
 import type { Profile, DailyActivity, Lesson, WritingTask, ListeningTask } from "@/lib/supabase/types";
 import { getDaysUntilExam } from "@/lib/utils";
-import { useTheme, getColors } from "@/lib/use-theme";
-
-const font = {
-  headline: "'Plus Jakarta Sans', sans-serif",
-  body: "'Noto Serif', serif",
-};
+import { useTheme, getColors, font, type Palette } from "@/lib/use-theme";
+import { Screen, Kicker, Display, Card, ProgressBar, Chip } from "@/components/ui/screen";
 
 /* ───── Props ───── */
+export interface NextDeadline {
+  key: string;
+  title: string;
+  summary: string;
+  dueLabel: string;
+  daysAway: number | null;
+  severity: string | null;
+}
+
 interface Props {
   profile: Profile | null;
   activity: DailyActivity[];
@@ -24,52 +29,39 @@ interface Props {
   completedWritingCount: number;
   completedListeningCount: number;
   todayXP: number;
+  nextDeadline: NextDeadline | null;
 }
 
 const DAILY_XP_GOAL = 50;
 
-/* ───── Heatmap helpers ───── */
-const WEEKS = 12;
-const DAYS = 7;
-function getIntensity(xp: number) {
-  if (xp === 0) return 0;
-  if (xp < 20) return 1;
-  if (xp < 50) return 2;
-  if (xp < 100) return 3;
-  return 4;
-}
-function getHeatColors(c: ReturnType<typeof getColors>) {
-  return [
-    c.surfaceHigh,
-    `${c.secondary}1a`,
-    `${c.secondary}4d`,
-    `${c.secondary}99`,
-    c.secondary,
-  ];
-}
-const MONTH_NAMES = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
-
-/* ───── Greeting helper ───── */
+/* ───── Greeting — Dutch, matching the design's "Goedemorgen" ───── */
 function getGreeting(): string {
   const h = new Date().getHours();
-  if (h < 12) return "Good morning";
-  if (h < 18) return "Good afternoon";
-  return "Good evening";
+  if (h < 12) return "Goedemorgen";
+  if (h < 18) return "Goedemiddag";
+  return "Goedenavond";
+}
+
+function initials(name: string | null | undefined) {
+  if (!name) return "??";
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase() ?? "")
+    .join("");
 }
 
 function lessonTypeLabel(type: string) {
   switch (type) {
-    case "reading": return "Reading";
-    case "vocabulary": return "Vocab";
-    case "grammar": return "Grammar";
-    case "listening": return "Listening";
+    case "reading": return "Lezen";
+    case "vocabulary": return "Woordenschat";
+    case "grammar": return "Grammatica";
+    case "listening": return "Luisteren";
     default: return type;
   }
 }
 
-/* ═══════════════════════════════════════════════════════
-   Dashboard Client — Stitch "Modern Scholastic" design
-   ═══════════════════════════════════════════════════════ */
 const WRITING_TYPE_LABELS: Record<string, string> = {
   form: "Formulier",
   note: "Briefje",
@@ -86,18 +78,353 @@ const LISTENING_TYPE_LABELS: Record<string, string> = {
   instructions: "Instructies",
 };
 
+/* ═══════════════════════════════════════════════════════
+   Home feed
+   ═══════════════════════════════════════════════════════ */
 export function DashboardClient({
   profile, activity, nextLesson, nextWritingTask, nextListeningTask, vocabDueCount,
-  completedLessonsCount, masteredVocabCount, completedWritingCount, completedListeningCount, todayXP,
+  completedLessonsCount, todayXP, nextDeadline,
 }: Props) {
-  const { isDark } = useTheme();
+  const { isDark, toggle } = useTheme();
   const c = getColors(isDark);
 
   const xpProgress = Math.min(100, (todayXP / DAILY_XP_GOAL) * 100);
-  const circumference = 2 * Math.PI * 28;
-  const xpDashoffset = circumference - (circumference * xpProgress) / 100;
 
-  /* Build heatmap grid */
+  /* The countdown card lists whichever exams still have a date. */
+  const exams = useMemo(() => {
+    if (!profile) return [];
+    const isB1 = profile.current_level === "B1";
+    const rows: { name: string; date: string | null; done: boolean | null }[] = [
+      {
+        name: "Lezen",
+        date: isB1 ? profile.b1_exam_target_date ?? null : profile.exam_target_date,
+        done: isB1 ? profile.b1_exam_completed : profile.exam_completed,
+      },
+      {
+        name: "Schrijven",
+        date: isB1 ? profile.b1_writing_exam_target_date ?? null : profile.writing_exam_target_date ?? null,
+        done: isB1 ? profile.b1_writing_exam_completed : profile.writing_exam_completed,
+      },
+      {
+        name: "Luisteren",
+        date: isB1
+          ? profile.b1_listening_exam_target_date ?? null
+          : profile.listening_exam_target_date ?? null,
+        done: isB1 ? profile.b1_listening_exam_completed : profile.listening_exam_completed,
+      },
+    ];
+
+    return rows.flatMap((r) => {
+      if (r.done) return [];
+      const days = getDaysUntilExam(r.date);
+      if (days === null) return [];
+      const tone =
+        days <= 14 ? { fg: c.rd, bg: c.rdSoft, state: "Soon" }
+        : days <= 45 ? { fg: c.or, bg: c.orSoft, state: "Close" }
+        : { fg: c.co, bg: c.coSoft, state: "On track" };
+      return [{
+        name: r.name,
+        days,
+        date: new Date(`${r.date}T00:00:00`).toLocaleDateString("en-GB", {
+          day: "numeric", month: "short", year: "numeric",
+        }),
+        ...tone,
+      }];
+    });
+  }, [profile, c]);
+
+  if (!profile) return null;
+
+  const examDone = profile.current_level === "B1" ? profile.b1_exam_completed : profile.exam_completed;
+  const writingDone = profile.current_level === "B1"
+    ? profile.b1_writing_exam_completed : profile.writing_exam_completed;
+  const listeningDone = profile.current_level === "B1"
+    ? profile.b1_listening_exam_completed : profile.listening_exam_completed;
+
+  return (
+    <Screen>
+      {/* ─── Glass header ─── */}
+      <div
+        className="dp-glass"
+        style={{
+          position: "sticky",
+          top: "var(--app-top, 0px)",
+          zIndex: 20,
+          borderBottom: `1px solid ${c.line2}`,
+          padding: "calc(var(--app-safe-top, 0px) + 12px) 20px 12px",
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+        }}
+      >
+        <div
+          style={{
+            width: 38, height: 38, flex: "none", borderRadius: 9999,
+            background: c.coSoft, display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 14, fontWeight: 600, color: c.coInk,
+          }}
+        >
+          {initials(profile.username)}
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 14.5, fontWeight: 600, color: c.ink, letterSpacing: "-0.01em" }}>
+            {getGreeting()}, {profile.username}
+          </div>
+          <div style={{ fontSize: 11.5, color: c.ink45, marginTop: 1 }}>
+            {profile.current_level}
+            {completedLessonsCount > 0 ? ` · ${completedLessonsCount} lessons done` : " · your first lesson awaits"}
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={toggle}
+          aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+          style={{
+            width: 38, height: 38, borderRadius: 9999, border: `1px solid ${c.line}`,
+            background: c.card, cursor: "pointer", display: "flex",
+            alignItems: "center", justifyContent: "center", padding: 0,
+          }}
+        >
+          <span className="mso" style={{ fontSize: 19, color: c.ink70 }}>
+            {isDark ? "light_mode" : "dark_mode"}
+          </span>
+        </button>
+      </div>
+
+      <div style={{ padding: "18px 20px 8px", display: "flex", flexDirection: "column", gap: 14 }}>
+
+        {/* ─── Streak + XP ─── */}
+        <div style={{ display: "flex", gap: 10 }}>
+          <Card c={c} style={{ flex: 1, padding: "14px 15px", display: "flex", alignItems: "center", gap: 11 }}>
+            <span className="mso mso-fill" style={{ fontSize: 24, color: c.or }}>local_fire_department</span>
+            <span>
+              <span style={{ display: "block", fontFamily: font.body, fontSize: 25, lineHeight: 1, color: c.ink }}>
+                {profile.streak_days}
+              </span>
+              <Kicker c={c} style={{ letterSpacing: "0.13em", marginTop: 3 }}>day streak</Kicker>
+            </span>
+          </Card>
+          <Card c={c} style={{ flex: 1, padding: "14px 15px" }}>
+            <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 9 }}>
+              <span style={{ fontFamily: font.body, fontSize: 25, lineHeight: 1, color: c.ink }}>
+                {todayXP}
+                <span style={{ fontSize: 13, color: c.ink45 }}>/{DAILY_XP_GOAL}</span>
+              </span>
+              <Kicker c={c} style={{ letterSpacing: "0.13em" }}>xp</Kicker>
+            </div>
+            <ProgressBar c={c} pct={xpProgress} height={6} fill={c.or} />
+          </Card>
+        </div>
+
+        {/* ─── Today's lesson — the hero ─── */}
+        {!examDone && nextLesson ? (
+          <Link
+            href={`/lessons/${nextLesson.id}`}
+            className="tap-shrink"
+            style={{
+              textDecoration: "none",
+              display: "block",
+              background: c.co,
+              borderRadius: 22,
+              padding: 20,
+              boxShadow: "0 12px 30px rgba(43,74,226,.22)",
+              position: "relative",
+              overflow: "hidden",
+            }}
+          >
+            <span className="dp-shine" aria-hidden />
+            <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
+              <span style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: "rgba(255,255,255,.72)" }}>
+                Vandaag · {lessonTypeLabel(nextLesson.type)}
+              </span>
+              <span style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: "0.06em", color: "rgba(255,255,255,.72)" }}>
+                · {nextLesson.estimated_minutes} min · +{nextLesson.xp_reward} XP
+              </span>
+            </div>
+            <div style={{ position: "relative", fontFamily: font.body, fontSize: 29, lineHeight: 1.12, color: "#fff", letterSpacing: "-0.01em" }}>
+              Week {nextLesson.week} · Dag {nextLesson.day}
+              <br />
+              <em>{nextLesson.title}</em>
+            </div>
+            <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 18 }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,.85)" }}>
+                Continue where you stopped
+              </span>
+              <span style={{ width: 36, height: 36, borderRadius: 9999, background: "rgba(255,255,255,.18)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <span className="mso" style={{ fontSize: 20, color: "#fff" }}>arrow_forward</span>
+              </span>
+            </div>
+          </Link>
+        ) : !examDone ? (
+          <Card c={c} style={{ padding: 20, textAlign: "center" }}>
+            <Display c={c} style={{ fontSize: 24 }}>Alle lessen af</Display>
+            <p style={{ fontSize: 13.5, color: c.ink70, margin: "8px 0 0", lineHeight: 1.55 }}>
+              You finished every lesson at this level. Time to book the exam.
+            </p>
+          </Card>
+        ) : null}
+
+        {/* ─── Secondary tracks ─── */}
+        {nextWritingTask && !writingDone && (
+          <CompactTrackRow
+            c={c}
+            href={`/writing/${nextWritingTask.id}`}
+            icon="edit_note"
+            tone="or"
+            kicker={`Schrijven · ${WRITING_TYPE_LABELS[nextWritingTask.task_type] ?? nextWritingTask.task_type} · ${nextWritingTask.estimated_minutes} min`}
+            title={nextWritingTask.title}
+          />
+        )}
+        {nextListeningTask && !listeningDone && (
+          <CompactTrackRow
+            c={c}
+            href={`/listening/${nextListeningTask.id}`}
+            icon="headphones"
+            tone="co"
+            kicker={`Luisteren · ${LISTENING_TYPE_LABELS[nextListeningTask.task_type] ?? nextListeningTask.task_type} · ${nextListeningTask.estimated_minutes} min`}
+            title={nextListeningTask.title}
+          />
+        )}
+        {vocabDueCount > 0 && (
+          <CompactTrackRow
+            c={c}
+            href="/vocabulary"
+            icon="style"
+            tone="or"
+            kicker={`Woordenschat · ${vocabDueCount} due`}
+            title={`${vocabDueCount} word${vocabDueCount === 1 ? "" : "s"} to review`}
+          />
+        )}
+
+        {/* ─── Exam countdown ─── */}
+        {exams.length > 0 && (
+          <Card c={c} style={{ overflow: "hidden" }}>
+            <div style={{ padding: "13px 15px 11px", display: "flex", alignItems: "center", gap: 7, borderBottom: `1px solid ${c.line2}` }}>
+              <span className="mso" style={{ fontSize: 16, color: c.ink45 }}>schedule</span>
+              <Kicker c={c} style={{ letterSpacing: "0.16em" }}>Exam countdown</Kicker>
+            </div>
+            {exams.map((e, i) => (
+              <div
+                key={e.name}
+                style={{
+                  padding: "13px 15px",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  borderBottom: i === exams.length - 1 ? "none" : `1px solid ${c.line2}`,
+                }}
+              >
+                <span style={{ fontFamily: font.body, fontSize: 26, lineHeight: 1, color: e.fg, width: 52, flex: "none" }}>
+                  {e.days}
+                </span>
+                <span style={{ flex: 1, minWidth: 0 }}>
+                  <span style={{ display: "block", fontSize: 13.5, fontWeight: 600, color: c.ink }}>{e.name}</span>
+                  <span style={{ display: "block", fontSize: 11.5, color: c.ink45, marginTop: 1 }}>{e.date}</span>
+                </span>
+                <Chip fg={e.fg} bg={e.bg} style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", padding: "4px 9px" }}>
+                  {e.state}
+                </Chip>
+              </div>
+            ))}
+          </Card>
+        )}
+
+        {/* ─── Next Settle deadline ─── */}
+        {nextDeadline && (
+          <Link
+            href="/settle"
+            className="tap-shrink"
+            style={{
+              textDecoration: "none", display: "block",
+              border: `1px solid ${c.line2}`, background: c.card, borderRadius: 18, padding: 16,
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+              <span style={{ width: 6, height: 6, borderRadius: 9999, background: nextDeadline.severity === "blocking" ? c.rd : c.or }} />
+              <Kicker c={c} color={nextDeadline.severity === "blocking" ? c.rd : c.or} style={{ letterSpacing: "0.16em" }}>
+                Next deadline{nextDeadline.severity === "blocking" ? " · blocking" : ""}
+              </Kicker>
+            </div>
+            <div style={{ fontSize: 15.5, fontWeight: 600, color: c.ink, letterSpacing: "-0.01em" }}>
+              {nextDeadline.title}
+            </div>
+            <div style={{ fontFamily: font.body, fontSize: 14.5, lineHeight: 1.55, color: c.ink70, marginTop: 6 }}>
+              {nextDeadline.summary}
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 13, flexWrap: "wrap" }}>
+              <Chip fg={c.ink70} bg={c.sunk}>{nextDeadline.dueLabel}</Chip>
+              {nextDeadline.daysAway !== null && (
+                <Chip fg={nextDeadline.daysAway < 0 ? c.rd : c.co} bg={nextDeadline.daysAway < 0 ? c.rdSoft : c.coSoft}>
+                  {nextDeadline.daysAway < 0
+                    ? `${Math.abs(nextDeadline.daysAway)} days overdue`
+                    : nextDeadline.daysAway === 0
+                      ? "Today"
+                      : `In ${nextDeadline.daysAway} days`}
+                </Chip>
+              )}
+            </div>
+          </Link>
+        )}
+
+        {/* ─── Activity ─── */}
+        <ActivityCard c={c} activity={activity} />
+      </div>
+    </Screen>
+  );
+}
+
+/* ───── Compact "next up" row, the design's alternate hero shape ───── */
+function CompactTrackRow({
+  c, href, icon, tone, kicker, title,
+}: {
+  c: Palette; href: string; icon: string; tone: "co" | "or"; kicker: string; title: string;
+}) {
+  const t = tone === "co" ? { fg: c.co, bg: c.co } : { fg: c.or, bg: c.or };
+  return (
+    <Link
+      href={href}
+      className="tap-shrink"
+      style={{
+        textDecoration: "none",
+        border: `1px solid ${c.line2}`,
+        background: c.card,
+        borderRadius: 22,
+        padding: 18,
+        display: "flex",
+        alignItems: "center",
+        gap: 14,
+      }}
+    >
+      <span style={{ width: 48, height: 48, flex: "none", borderRadius: 15, background: t.bg, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <span className="mso" style={{ fontSize: 24, color: "#fff" }}>{icon}</span>
+      </span>
+      <span style={{ flex: 1, minWidth: 0 }}>
+        <span style={{ display: "block", fontSize: 9.5, fontWeight: 700, letterSpacing: "0.16em", textTransform: "uppercase", color: t.fg }}>
+          {kicker}
+        </span>
+        <span style={{ display: "block", fontFamily: font.body, fontSize: 21, lineHeight: 1.15, color: c.ink, marginTop: 4 }}>
+          {title}
+        </span>
+      </span>
+      <span className="mso" style={{ fontSize: 22, color: c.ink25 }}>chevron_right</span>
+    </Link>
+  );
+}
+
+/* ───── Activity heatmap ───── */
+const WEEKS = 12;
+const DAYS = 7;
+const MONTH_NAMES = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+
+function getIntensity(xp: number) {
+  if (xp === 0) return 0;
+  if (xp < 20) return 1;
+  if (xp < 50) return 2;
+  if (xp < 100) return 3;
+  return 4;
+}
+
+function ActivityCard({ c, activity }: { c: Palette; activity: DailyActivity[] }) {
   const { grid, monthLabels } = useMemo(() => {
     const actMap = new Map<string, number>();
     activity.forEach((a) => actMap.set(a.date, a.xp_earned));
@@ -112,7 +439,7 @@ export function DashboardClient({
     let lastM = -1;
 
     for (let w = WEEKS - 1; w >= 0; w--) {
-      const week: typeof cells[0] = [];
+      const week: (typeof cells)[0] = [];
       for (let d = 0; d < DAYS; d++) {
         const dt = new Date(sun);
         dt.setDate(sun.getDate() - w * 7 - (DAYS - 1 - d));
@@ -129,304 +456,34 @@ export function DashboardClient({
     return { grid: cells, monthLabels: months };
   }, [activity]);
 
-  if (!profile) return null;
-
-  const daysUntilExam = profile.exam_completed ? null : getDaysUntilExam(profile.exam_target_date);
-  const daysUntilWritingExam = profile.writing_exam_completed ? null : getDaysUntilExam(profile.writing_exam_target_date ?? null);
-
-  /* The last 3 unique month labels for the header */
-  const displayedMonths = monthLabels.slice(-3);
-
-  const HEAT_COLORS = getHeatColors(c);
-
-  const stats = [
-    { icon: "bolt", color: c.onTertiaryContainer, value: profile.xp_total.toLocaleString(), label: "Total XP" },
-    { icon: "menu_book", color: c.primary, value: masteredVocabCount, label: "Words" },
-    { icon: "local_fire_department", color: c.secondary, value: profile.streak_days, label: "Day Streak" },
-    { icon: "check_circle", color: "#16a34a", value: completedLessonsCount, label: "Lessons" },
-    { icon: "edit_note", color: c.secondaryContainer, value: completedWritingCount, label: "Writing" },
-    { icon: "headphones", color: c.tertiary, value: completedListeningCount, label: "Listening" },
-    { icon: "trending_up", color: c.primary, value: profile.current_level, label: "Level" },
-  ];
+  const heat = [c.sunk, `${c.or}26`, `${c.or}59`, `${c.or}a6`, c.or];
 
   return (
-    <div style={{ fontFamily: font.headline }}>
-
-      {/* ─── Main Content ─── */}
-      <main style={{ paddingTop: 16, paddingLeft: 24, paddingRight: 24, maxWidth: 390, margin: "0 auto" }}>
-
-        {/* Greeting */}
-        <section style={{ marginBottom: 32 }}>
-          <h1 style={{ fontSize: 24, fontWeight: 700, letterSpacing: "-0.025em", color: c.onSurface, fontFamily: font.headline, margin: 0 }}>
-            {getGreeting()}, {profile.username} 👋
-          </h1>
-          <p style={{ fontSize: 14, fontWeight: 500, color: `${c.onSurfaceVariant}b3`, marginTop: 4, fontFamily: font.headline }}>
-            {profile.current_level} · {daysUntilExam !== null && daysUntilExam > 0 ? `${daysUntilExam} days until your exam` : "Keep going!"}
-          </p>
-        </section>
-
-        {/* ─── Streak + XP Card ─── */}
-        <section style={{
-          background: c.surfaceLowest, padding: 24, borderRadius: 20,
-          boxShadow: "0px 12px 32px rgba(26,28,27,0.06)", marginBottom: 32,
-        }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-              <div style={{ width: 56, height: 56, background: c.secondaryFixed, borderRadius: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <span className="mso mso-fill" style={{ color: c.secondary, fontSize: 30 }}>local_fire_department</span>
-              </div>
-              <div>
-                <div style={{ fontSize: 30, fontWeight: 800, color: c.onSurface }}>{profile.streak_days}</div>
-                <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700, color: `${c.onSurfaceVariant}99` }}>day streak</div>
-              </div>
-            </div>
-            {/* XP Ring */}
-            <div style={{ position: "relative", width: 64, height: 64 }}>
-              <svg width="64" height="64" style={{ transform: "rotate(-90deg)" }}>
-                <circle cx="32" cy="32" r="28" fill="transparent" stroke={c.tertiaryFixed} strokeWidth="6" />
-                <circle cx="32" cy="32" r="28" fill="transparent" stroke={c.tertiary} strokeWidth="6"
-                  strokeDasharray={circumference.toFixed(1)}
-                  strokeDashoffset={xpDashoffset.toFixed(1)}
-                  strokeLinecap="round"
-                  style={{ transition: "stroke-dashoffset 0.8s ease-out" }}
-                />
-              </svg>
-              <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <span style={{ fontSize: 12, fontWeight: 700, color: c.tertiary }}>XP</span>
-              </div>
-            </div>
-          </div>
-          {/* XP Progress */}
-          <div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 8 }}>
-              <span style={{ fontSize: 12, fontWeight: 700, color: c.onSurface }}>{todayXP} / {DAILY_XP_GOAL} XP today</span>
-              <span style={{ fontSize: 10, fontWeight: 700, color: c.secondary, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                {Math.round(xpProgress)}% Complete
-              </span>
-            </div>
-            <div style={{ height: 8, width: "100%", background: c.surfaceHigh, borderRadius: 9999, overflow: "hidden" }}>
-              <div style={{ height: "100%", width: `${xpProgress}%`, background: c.secondary, borderRadius: 9999, transition: "width 0.8s ease-out" }} />
-            </div>
-            {xpProgress >= 100 && (
-              <p style={{ fontSize: 12, fontWeight: 600, color: "#16a34a", marginTop: 6 }}>✓ Daily goal reached! Amazing!</p>
-            )}
-          </div>
-        </section>
-
-        {/* ─── Exam Countdown Banners ─── */}
-        {(daysUntilExam !== null && daysUntilExam > 0) || (daysUntilWritingExam !== null && daysUntilWritingExam > 0) ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 32 }}>
-            {daysUntilExam !== null && daysUntilExam > 0 && (
-              <div style={{
-                background: `${c.primary}0d`, padding: 16, borderRadius: 12,
-                display: "flex", alignItems: "center", justifyContent: "space-between",
-              }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <span style={{ fontSize: 18 }}>📖</span>
-                  <div>
-                    <div style={{ fontSize: 10, textTransform: "uppercase", fontWeight: 700, color: c.onSurfaceVariant, letterSpacing: "0.05em" }}>Leesvaardigheid</div>
-                    <span style={{ fontSize: 14, fontWeight: 700, color: c.primary, letterSpacing: "-0.025em" }}>{daysUntilExam} days to your exam</span>
-                  </div>
-                </div>
-                <Link href="/profile" aria-label="Edit exam date">
-                  <span className="mso" style={{ color: c.primary, fontSize: 20 }}>calendar_today</span>
-                </Link>
-              </div>
-            )}
-            {daysUntilWritingExam !== null && daysUntilWritingExam > 0 && (
-              <div style={{
-                background: `${c.secondary}0d`, padding: 16, borderRadius: 12,
-                display: "flex", alignItems: "center", justifyContent: "space-between",
-              }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <span style={{ fontSize: 18 }}>✍️</span>
-                  <div>
-                    <div style={{ fontSize: 10, textTransform: "uppercase", fontWeight: 700, color: c.onSurfaceVariant, letterSpacing: "0.05em" }}>Schrijfvaardigheid</div>
-                    <span style={{ fontSize: 14, fontWeight: 700, color: c.secondary, letterSpacing: "-0.025em" }}>{daysUntilWritingExam} days to your exam</span>
-                  </div>
-                </div>
-                <Link href="/profile" aria-label="Edit writing exam date">
-                  <span className="mso" style={{ color: c.secondary, fontSize: 20 }}>calendar_today</span>
-                </Link>
-              </div>
-            )}
-          </div>
-        ) : null}
-
-        {/* ─── Continue Learning Hero CTA ─── */}
-        {profile.exam_completed ? null : nextLesson ? (
-          <Link href={`/lessons/${nextLesson.id}`} style={{ textDecoration: "none" }}>
-            <button style={{
-              width: "100%", textAlign: "left", background: c.primary, padding: 24, borderRadius: 32,
-              boxShadow: "0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -4px rgba(0,0,0,.1)",
-              display: "flex", alignItems: "center", justifyContent: "space-between",
-              border: "none", cursor: "pointer", marginBottom: 32,
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-                <div style={{ width: 48, height: 48, background: "rgba(255,255,255,0.1)", borderRadius: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <span className="mso" style={{ color: "#ffffff", fontSize: 24 }}>auto_stories</span>
-                </div>
-                <div>
-                  <h3 style={{ color: "#ffffff", fontWeight: 700, fontSize: 18, lineHeight: 1.25, margin: 0, fontFamily: font.headline }}>
-                    Week {nextLesson.week} · Day {nextLesson.day}:{" "}
-                    <span style={{ fontFamily: font.body, fontStyle: "italic", marginLeft: 4 }}>{nextLesson.title}</span>
-                  </h3>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, color: "rgba(255,255,255,0.7)", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", marginTop: 4 }}>
-                    <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                      <span className="mso" style={{ fontSize: 12, color: "rgba(255,255,255,0.7)" }}>description</span>
-                      {lessonTypeLabel(nextLesson.type)}
-                    </span>
-                    <span>· {nextLesson.estimated_minutes} min · +{nextLesson.xp_reward} XP</span>
-                  </div>
-                </div>
-              </div>
-              <span className="mso" style={{ color: "rgba(255,255,255,0.5)", fontSize: 24 }}>chevron_right</span>
-            </button>
-          </Link>
-        ) : (
-          <div style={{
-            background: "rgba(22,163,106,0.08)", border: "1px solid rgba(22,163,106,0.2)",
-            borderRadius: 20, padding: 24, textAlign: "center", marginBottom: 32,
-          }}>
-            <p style={{ fontSize: 28, marginBottom: 8 }}>🎉</p>
-            <p style={{ fontWeight: 700, color: "#16a34a", fontSize: 16 }}>All lessons completed!</p>
-            <p style={{ fontSize: 14, color: c.onSurfaceVariant, marginTop: 4 }}>Congratulations! You finished all 30 lessons.</p>
-          </div>
-        )}
-
-        {/* ─── Writing Continue CTA ─── */}
-        {nextWritingTask && !profile.writing_exam_completed && (
-          <Link href={`/writing/${nextWritingTask.id}`} style={{ textDecoration: "none" }}>
-            <button style={{
-              width: "100%", textAlign: "left",
-              background: `linear-gradient(to bottom, ${c.secondary}, ${c.secondaryContainer})`,
-              padding: 24, borderRadius: 32,
-              boxShadow: "0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -4px rgba(0,0,0,.1)",
-              display: "flex", alignItems: "center", justifyContent: "space-between",
-              border: "none", cursor: "pointer", marginBottom: 16,
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-                <div style={{ width: 48, height: 48, background: "rgba(255,255,255,0.1)", borderRadius: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <span className="mso" style={{ color: "#ffffff", fontSize: 24 }}>edit_note</span>
-                </div>
-                <div>
-                  <h3 style={{ color: "#ffffff", fontWeight: 700, fontSize: 18, lineHeight: 1.25, margin: 0, fontFamily: font.headline }}>
-                    Week {nextWritingTask.week} · Dag {nextWritingTask.day}:{" "}
-                    <span style={{ fontFamily: font.body, fontStyle: "italic", marginLeft: 4 }}>{nextWritingTask.title}</span>
-                  </h3>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, color: "rgba(255,255,255,0.7)", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", marginTop: 4 }}>
-                    <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                      <span className="mso" style={{ fontSize: 12, color: "rgba(255,255,255,0.7)" }}>edit_note</span>
-                      {WRITING_TYPE_LABELS[nextWritingTask.task_type] ?? nextWritingTask.task_type}
-                    </span>
-                    <span>· {nextWritingTask.estimated_minutes} min · +{nextWritingTask.xp_reward} XP</span>
-                  </div>
-                </div>
-              </div>
-              <span className="mso" style={{ color: "rgba(255,255,255,0.5)", fontSize: 24 }}>chevron_right</span>
-            </button>
-          </Link>
-        )}
-
-        {/* ─── Listening Continue CTA ─── */}
-        {nextListeningTask && !profile.listening_exam_completed && (
-          <Link href={`/listening/${nextListeningTask.id}`} style={{ textDecoration: "none" }}>
-            <button style={{
-              width: "100%", textAlign: "left",
-              background: `linear-gradient(to bottom, ${c.tertiary}, ${c.tertiaryContainer ?? c.tertiary})`,
-              padding: 24, borderRadius: 32,
-              boxShadow: "0 10px 15px -3px rgba(0,0,0,.1),0 4px 6px -4px rgba(0,0,0,.1)",
-              display: "flex", alignItems: "center", justifyContent: "space-between",
-              border: "none", cursor: "pointer", marginBottom: 16,
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-                <div style={{ width: 48, height: 48, background: "rgba(255,255,255,0.15)", borderRadius: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  <span className="mso" style={{ color: "#ffffff", fontSize: 24 }}>headphones</span>
-                </div>
-                <div>
-                  <h3 style={{ color: "#ffffff", fontWeight: 700, fontSize: 18, lineHeight: 1.25, margin: 0, fontFamily: font.headline }}>
-                    Week {nextListeningTask.week} · Dag {nextListeningTask.day}:{" "}
-                    <span style={{ fontFamily: font.body, fontStyle: "italic", marginLeft: 4 }}>{nextListeningTask.title}</span>
-                  </h3>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, color: "rgba(255,255,255,0.8)", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", marginTop: 4 }}>
-                    <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                      <span className="mso" style={{ fontSize: 12, color: "rgba(255,255,255,0.8)" }}>headphones</span>
-                      {LISTENING_TYPE_LABELS[nextListeningTask.task_type] ?? nextListeningTask.task_type}
-                    </span>
-                    <span>· {nextListeningTask.estimated_minutes} min · +{nextListeningTask.xp_reward} XP</span>
-                  </div>
-                </div>
-              </div>
-              <span className="mso" style={{ color: "rgba(255,255,255,0.6)", fontSize: 24 }}>chevron_right</span>
-            </button>
-          </Link>
-        )}
-
-        {/* ─── Stats Grid 2×3 ─── */}
-        <section style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 32 }}>
-          {stats.map((stat, i) => (
-            <div key={i} style={{
-              background: c.surfaceLowest, padding: 16, borderRadius: 16,
-              boxShadow: "0px 4px 16px rgba(26,28,27,0.04)",
-              display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 6,
-            }}>
-              <span className="mso mso-fill" style={{ color: stat.color, fontSize: 20 }}>{stat.icon}</span>
-              <div>
-                <div style={{ fontSize: 16, fontWeight: 700 }}>{stat.value}</div>
-                <div style={{ fontSize: 9, color: `${c.onSurfaceVariant}99`, textTransform: "uppercase", fontWeight: 700, letterSpacing: "-0.01em" }}>{stat.label}</div>
-              </div>
-            </div>
-          ))}
-        </section>
-
-        {/* ─── Vocab Review Card ─── */}
-        {vocabDueCount > 0 && (
-          <Link href="/vocabulary" style={{ textDecoration: "none" }}>
-            <section style={{
-              background: "rgba(240,253,244,0.5)", padding: 20, borderRadius: 16,
-              display: "flex", alignItems: "center", gap: 16, marginBottom: 32, cursor: "pointer",
-            }}>
-              <div style={{ width: 48, height: 48, background: "#dcfce7", borderRadius: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <span className="mso mso-fill" style={{ color: "#15803d", fontSize: 24 }}>bookmark</span>
-              </div>
-              <div>
-                <h4 style={{ fontWeight: 700, color: "#14532d", margin: 0, fontSize: 16 }}>Vocabulary Review</h4>
-                <p style={{ color: "rgba(21,128,61,0.8)", fontSize: 14, fontWeight: 500, margin: 0, marginTop: 2 }}>
-                  {vocabDueCount} word{vocabDueCount !== 1 ? "s" : ""} due for review
-                </p>
-              </div>
-            </section>
-          </Link>
-        )}
-
-        {/* ─── Activity Heatmap ─── */}
-        <section style={{ marginBottom: 32 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 16 }}>
-            <h2 style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: `${c.onSurfaceVariant}99`, margin: 0 }}>Activity</h2>
-            <div style={{ display: "flex", gap: 16, fontSize: 10, fontWeight: 700, color: `${c.onSurfaceVariant}66` }}>
-              {displayedMonths.map((m) => <span key={m.label}>{m.label}</span>)}
-            </div>
-          </div>
-          <div style={{
-            background: c.surfaceLowest, padding: 24, borderRadius: 16,
-            boxShadow: "0px 8px 24px rgba(26,28,27,0.04)",
-          }}>
-            <div className="no-scrollbar" style={{
-              display: "grid", gridTemplateRows: `repeat(${DAYS}, 1fr)`,
-              gridAutoFlow: "column", gap: 6, overflowX: "auto", paddingBottom: 4,
-            }}>
-              {grid.flat().map((cell, i) => (
-                <div
-                  key={i}
-                  title={cell.xp > 0 ? `${cell.date}: ${cell.xp} XP` : cell.date}
-                  style={{ width: 14, height: 14, borderRadius: 2, background: HEAT_COLORS[cell.intensity] }}
-                />
-              ))}
-            </div>
-          </div>
-        </section>
-
-      </main>
-    </div>
+    <Card c={c} style={{ padding: 16 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 13 }}>
+        <Kicker c={c}>Activity · 12 weeks</Kicker>
+        <span style={{ fontSize: 11, fontWeight: 600, color: c.ink45 }}>
+          {monthLabels.slice(-3).map((m) => m.label).join(" · ")}
+        </span>
+      </div>
+      <div
+        className="no-scrollbar"
+        style={{
+          display: "grid",
+          gridTemplateRows: `repeat(${DAYS}, 1fr)`,
+          gridAutoFlow: "column",
+          gap: 4,
+          overflowX: "auto",
+        }}
+      >
+        {grid.flat().map((cell, i) => (
+          <div
+            key={i}
+            title={cell.xp > 0 ? `${cell.date}: ${cell.xp} XP` : cell.date}
+            style={{ width: 11, height: 11, borderRadius: 2, background: heat[cell.intensity] }}
+          />
+        ))}
+      </div>
+    </Card>
   );
 }

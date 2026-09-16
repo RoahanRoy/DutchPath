@@ -5,11 +5,15 @@ import type { VocabCard, UserVocab } from "@/lib/supabase/types";
 import { createClient } from "@/lib/supabase/client";
 import { useAppStore } from "@/lib/store";
 import { calculateNextReview, previewNextInterval, getAmsterdamDate } from "@/lib/utils";
-import { useTheme, getColors } from "@/lib/use-theme";
+import { useTheme, getColors, font } from "@/lib/use-theme";
+import { Screen, GlassHeader, Kicker, Display, Card, Chip, ProgressBar, primaryButton, screenTopPad } from "@/components/ui/screen";
 
 /**
- * Vocabulary Review — Stitch "flip card" design.
- * All SRS logic preserved, visual layer replaced with inline-style Stitch design.
+ * Vocabulary review.
+ *
+ * Two modes in one component: a browse list and a flip-card queue. The SM-2
+ * scheduling, the mastered-at-21-days rule and the RPC write wave are untouched
+ * by the redesign.
  */
 
 interface CardWithStatus extends VocabCard {
@@ -23,17 +27,12 @@ interface Props {
 
 type Category = "all" | "forms" | "everyday" | "time" | "people";
 
-const font = {
-  headline: "'Plus Jakarta Sans', sans-serif",
-  body: "'Noto Serif', serif",
-};
-
 const CATEGORIES: { value: Category; label: string }[] = [
   { value: "all", label: "Alle" },
-  { value: "forms", label: "📝 Formulieren" },
-  { value: "everyday", label: "🏠 Dagelijks" },
-  { value: "time", label: "⏰ Tijd" },
-  { value: "people", label: "👥 Mensen" },
+  { value: "forms", label: "Formulieren" },
+  { value: "everyday", label: "Dagelijks" },
+  { value: "time", label: "Tijd" },
+  { value: "people", label: "Mensen" },
 ];
 
 const CATEGORY_ICONS: Record<string, string> = {
@@ -44,9 +43,9 @@ const CATEGORY_ICONS: Record<string, string> = {
 };
 
 const RATING_BUTTONS = [
-  { rating: "hard" as const, emoji: "😅", label: "Moeilijk", color: "#ba1a1a" },
-  { rating: "ok" as const, emoji: "😊", label: "OK", color: "#a04100" },
-  { rating: "easy" as const, emoji: "😎", label: "Makkelijk", color: "#2e7d32" },
+  { rating: "hard" as const, label: "Moeilijk" },
+  { rating: "ok" as const, label: "OK" },
+  { rating: "easy" as const, label: "Makkelijk" },
 ];
 
 export function VocabularyClient({ cards, userId }: Props) {
@@ -148,7 +147,7 @@ export function VocabularyClient({ cards, userId }: Props) {
     });
 
     if (newStatus === "mastered") {
-      addToast({ type: "success", title: "Woord geleerd! 📖", message: cards.find((c) => c.id === cardId)?.dutch });
+      addToast({ type: "success", title: "Woord geleerd", message: cards.find((c) => c.id === cardId)?.dutch });
     }
 
     if (reviewIndex + 1 >= reviewQueue.length) {
@@ -162,293 +161,248 @@ export function VocabularyClient({ cards, userId }: Props) {
   /* ═══ Review complete ═══ */
   if (reviewQueue !== null && reviewDone) {
     return (
-      <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: c.background, fontFamily: font.headline, padding: 24 }}>
-        <div className="fm-scale-in" style={{ fontSize: 48, marginBottom: 16 }}>🎉</div>
-        <h2 style={{ fontSize: 24, fontWeight: 800, marginBottom: 8, color: c.onSurface }}>Herhaling voltooid!</h2>
-        <p style={{ fontSize: 14, color: c.onSurfaceVariant, marginBottom: 24 }}>{reviewQueue.length} kaarten herhaald</p>
-        <button
-          onClick={() => setReviewQueue(null)}
-          style={{
-            padding: "14px 32px", borderRadius: 9999, border: "none", cursor: "pointer",
-            background: `linear-gradient(to bottom, ${c.primary}, ${c.primaryContainer})`,
-            color: "#fff", fontWeight: 700, fontSize: 16, fontFamily: font.headline,
-          }}
-        >
-          Terug naar woordenschat
-        </button>
-      </div>
+      <Screen style={{ minHeight: "100vh", justifyContent: "center", padding: "24px 24px calc(var(--app-tabbar, 0px) + 24px)" }}>
+        <div className="fm-rise" style={{ textAlign: "center" }}>
+          <Kicker c={c} style={{ letterSpacing: "0.2em" }}>Herhaling voltooid</Kicker>
+          <Display c={c} style={{ fontSize: 34, margin: "10px 0 0" }}>
+            {reviewQueue.length} kaart{reviewQueue.length === 1 ? "" : "en"}<br /><em>herhaald</em>
+          </Display>
+          <p style={{ fontSize: 13.5, lineHeight: 1.6, color: c.ink70, margin: "14px 0 24px" }}>
+            Spaced repetition does the rest. The cards come back exactly when they should.
+          </p>
+          <button onClick={() => setReviewQueue(null)} style={primaryButton(c)}>
+            Terug naar woordenschat
+          </button>
+        </div>
+      </Screen>
     );
   }
 
-  /* ═══ Review mode — Flip card ═══ */
+  /* ═══ Review mode — flip card ═══ */
   if (reviewQueue !== null) {
     const cardId = reviewQueue[reviewIndex];
-    const card = cards.find((c) => c.id === cardId)!;
+    const card = cards.find((cd) => cd.id === cardId)!;
     const uv = cardStates.get(cardId);
-    const categoryLabel = card.category.toUpperCase();
+
+    /* Face down the card is cobalt; turning it over returns it to paper. */
+    const face = isFlipped
+      ? { bg: c.card, line: c.line2, fg: c.ink, kicker: c.ink45 }
+      : { bg: c.co, line: c.co, fg: "#fff", kicker: "rgba(255,255,255,.6)" };
 
     return (
-      <div style={{ background: c.background, color: c.onSurface, fontFamily: font.headline, minHeight: "100vh" }}>
-        {/* Top Nav */}
-        <header style={{
-          position: "fixed", top: 0, width: "100%", zIndex: 50, height: 64,
-          display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 24px",
-          background: "rgba(249,249,247,0.7)", backdropFilter: "blur(24px)",
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            <button onClick={() => setReviewQueue(null)} style={{ width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 9999, border: "none", background: "transparent", cursor: "pointer" }}>
-              <span className="mso" style={{ color: c.primary, fontSize: 24 }}>arrow_back</span>
-            </button>
-            <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: c.onSurfaceVariant }}>
-              Kaart {reviewIndex + 1} van {reviewQueue.length}
-            </span>
-          </div>
-          <div style={{ flex: 1, maxWidth: 140, margin: "0 16px" }}>
-            <div style={{ height: 6, width: "100%", background: c.surfaceHighest, borderRadius: 9999, overflow: "hidden" }}>
-              <div
-                style={{ width: `${((reviewIndex + 1) / reviewQueue.length) * 100}%`, height: "100%", background: c.secondary, borderRadius: 9999, transition: "width 0.4s ease" }}
-              />
-            </div>
-          </div>
-          <button style={{ width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 9999, border: "none", background: "transparent", cursor: "pointer" }}>
-            <span className="mso" style={{ color: c.primary, fontSize: 24 }}>more_vert</span>
-          </button>
-        </header>
+      <Screen style={{ minHeight: "100vh", background: c.background }}>
+        <GlassHeader
+          c={c}
+          onBack={() => setReviewQueue(null)}
+          title="Woordenschat"
+          trailing={
+            <Chip fg={c.co} bg={c.coSoft} style={{ fontWeight: 700 }}>
+              {reviewQueue.length - reviewIndex} left
+            </Chip>
+          }
+        />
 
-        <main style={{ paddingTop: 80, paddingBottom: 128, padding: "80px 24px 128px", maxWidth: 448, margin: "0 auto", display: "flex", flexDirection: "column", gap: 32 }}>
-          {/* Flip Card */}
-          <section
-            onClick={() => setIsFlipped(!isFlipped)}
-            style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: 420, cursor: "pointer" }}
-          >
-            <div style={{ perspective: 1000, width: "100%", height: 420 }}>
-              <div
+        <div style={{ padding: "20px 20px calc(var(--app-tabbar, 0px) + 20px)", flex: 1, display: "flex", flexDirection: "column" }}>
+          {/* One segment per card in the queue. */}
+          <div style={{ display: "flex", gap: 4, height: 5, marginBottom: 22 }}>
+            {reviewQueue.map((id, i) => (
+              <span
+                key={id}
                 style={{
-                  transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
-                  transition: "transform 0.5s",
-                  transformStyle: "preserve-3d", width: "100%", height: "100%", position: "relative",
+                  flex: 1,
+                  borderRadius: 9999,
+                  background: i < reviewIndex ? c.co : i === reviewIndex ? `${c.co}66` : c.sunk,
                 }}
-              >
-                {/* Front */}
-                <div style={{
-                  position: "absolute", inset: 0, backfaceVisibility: "hidden", borderRadius: 32,
-                  background: `linear-gradient(135deg, ${c.primary}, ${c.primaryContainer})`,
-                  boxShadow: "0px 12px 32px rgba(0,41,117,0.15)",
-                  borderBottom: `4px solid ${c.primaryContainer}80`,
-                  display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                  padding: 32, textAlign: "center",
-                }}>
-                  <div style={{ position: "absolute", top: 24, right: 24, padding: "4px 12px", background: "rgba(255,255,255,0.1)", backdropFilter: "blur(12px)", borderRadius: 9999 }}>
-                    <span style={{ fontSize: 10, fontWeight: 800, color: "#fff", textTransform: "uppercase", letterSpacing: "0.15em" }}>{categoryLabel}</span>
-                  </div>
-                  <h2 style={{ fontFamily: font.body, fontSize: 36, fontWeight: 700, color: "#fff", marginBottom: 16 }}>{card.dutch}</h2>
-                  <p style={{ color: "rgba(255,255,255,0.6)", fontSize: 12, fontWeight: 500, textTransform: "uppercase", letterSpacing: "0.2em", marginTop: 32 }}>Tik om te onthullen</p>
-                  <div style={{ marginTop: 48, opacity: 0.2 }}>
-                    <span className="mso" style={{ fontSize: 64, color: "#fff" }}>style</span>
-                  </div>
-                </div>
+              />
+            ))}
+          </div>
 
-                {/* Back */}
-                <div style={{
-                  position: "absolute", inset: 0, backfaceVisibility: "hidden", transform: "rotateY(180deg)",
-                  borderRadius: 32, background: c.surfaceLowest,
-                  boxShadow: "0px 12px 32px rgba(26,28,27,0.06)",
-                  border: `2px solid ${c.success}33`, display: "flex", flexDirection: "column",
-                  padding: 32,
-                }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 32 }}>
-                    <span style={{ padding: "4px 12px", background: `${c.success}1a`, color: c.success, fontSize: 10, fontWeight: 800, borderRadius: 9999 }}>VERTALING</span>
-                    <span className="mso mso-fill" style={{ color: c.success, fontSize: 20 }}>check_circle</span>
-                  </div>
-                  <h3 style={{ fontSize: 28, fontWeight: 800, color: c.success, marginBottom: 24 }}>{card.english}</h3>
+          <button
+            onClick={() => setIsFlipped((f) => !f)}
+            style={{ width: "100%", border: "none", cursor: "pointer", background: "transparent", padding: 0, textAlign: "left", fontFamily: font.headline }}
+          >
+            <div
+              style={{
+                background: face.bg,
+                border: `1px solid ${face.line}`,
+                borderRadius: 24,
+                padding: "28px 24px",
+                minHeight: 250,
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                boxShadow: c.shadowSoft,
+                transition: "background 0.3s, border-color 0.3s",
+              }}
+            >
+              <div style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: face.kicker, marginBottom: 14 }}>
+                {card.category} · {uv?.status ?? "nieuw"}
+              </div>
+              <div style={{ fontFamily: font.body, fontSize: 38, lineHeight: 1.1, color: face.fg }}>
+                {card.dutch}
+              </div>
+
+              {isFlipped ? (
+                <div style={{ marginTop: 16 }}>
+                  <div style={{ fontSize: 16, fontWeight: 600, color: face.fg }}>{card.english}</div>
                   {card.example_sentence_nl && (
-                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                      <div style={{ padding: 16, background: c.surfaceLow, borderRadius: 16 }}>
-                        <p style={{ fontFamily: font.body, fontSize: 16, fontStyle: "italic", color: c.onSurface, margin: 0 }}>
-                          &ldquo;{card.example_sentence_nl}&rdquo;
-                        </p>
+                    <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${c.line}` }}>
+                      <div style={{ fontFamily: font.body, fontStyle: "italic", fontSize: 16, lineHeight: 1.55, color: c.ink70 }}>
+                        {card.example_sentence_nl}
                       </div>
                       {card.example_sentence_en && (
-                        <p style={{ fontSize: 14, color: c.onSurfaceVariant, lineHeight: 1.5, margin: 0 }}>{card.example_sentence_en}</p>
+                        <div style={{ fontSize: 12.5, lineHeight: 1.5, color: c.ink45, marginTop: 5 }}>
+                          {card.example_sentence_en}
+                        </div>
                       )}
                     </div>
                   )}
-                  {uv && (
-                    <div style={{ marginTop: "auto", display: "flex", alignItems: "center", gap: 8, color: c.success }}>
-                      <span className="mso" style={{ fontSize: 14 }}>trending_up</span>
-                      <span style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em" }}>
-                        {uv.status === "mastered" ? "Geleerd" : `Reeks: ${uv.streak}`}
-                      </span>
-                    </div>
-                  )}
                 </div>
-              </div>
+              ) : (
+                <div style={{ fontSize: 13, color: "rgba(255,255,255,.7)", marginTop: 18 }}>Tap to reveal</div>
+              )}
             </div>
-          </section>
+          </button>
 
-          {/* Rating Buttons */}
-          {isFlipped && (
-              <section
-                className="fm-fade-up-lg"
-                style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}
-              >
-                {RATING_BUTTONS.map((btn) => {
-                  const days = previewNextInterval(btn.rating, {
-                    ease_factor: uv?.ease_factor,
-                    interval_days: uv?.interval_days,
-                    repetitions: uv?.repetitions,
-                  });
-                  return (
+          <div style={{ flex: 1, minHeight: 18 }} />
+
+          {isFlipped ? (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 9 }}>
+              {RATING_BUTTONS.map((btn) => {
+                const days = previewNextInterval(btn.rating, {
+                  ease_factor: uv?.ease_factor,
+                  interval_days: uv?.interval_days,
+                  repetitions: uv?.repetitions,
+                });
+                const fg = btn.rating === "hard" ? c.rd : btn.rating === "ok" ? c.or : c.gr;
+                return (
                   <button
                     key={btn.rating}
-                    onClick={(e) => { e.stopPropagation(); handleRating(btn.rating); }}
+                    onClick={() => handleRating(btn.rating)}
+                    className="tap-shrink"
                     style={{
-                      display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
-                      padding: 16, background: c.surfaceLowest, borderRadius: 24,
-                      boxShadow: "0 1px 3px rgba(0,0,0,0.05)", border: "none", cursor: "pointer",
-                      fontFamily: font.headline,
+                      border: `1px solid ${c.line}`, cursor: "pointer", fontFamily: font.headline,
+                      background: c.card, borderRadius: 16, padding: "14px 0",
+                      display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
                     }}
                   >
-                    <span style={{ fontSize: 24 }}>{btn.emoji}</span>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: c.onSurface }}>{btn.label}</span>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: btn.color }}>+{days}d</span>
+                    <span style={{ fontSize: 14, fontWeight: 600, color: fg }}>{btn.label}</span>
+                    <span style={{ fontSize: 10.5, color: c.ink45 }}>
+                      {days === 1 ? "morgen" : `${days} dagen`}
+                    </span>
                   </button>
-                  );
-                })}
-              </section>
-            )}
-        </main>
-
-        {/* Background decorations */}
-        <div style={{ position: "fixed", top: "-10%", left: "-20%", width: "60%", height: "40%", background: `${c.primary}0d`, borderRadius: 9999, filter: "blur(120px)", zIndex: -1 }} />
-        <div style={{ position: "fixed", bottom: "-5%", right: "-10%", width: "50%", height: "30%", background: `${c.secondary}0d`, borderRadius: 9999, filter: "blur(100px)", zIndex: -1 }} />
-      </div>
-    );
-  }
-
-  /* ═══ Main vocabulary page ═══ */
-  return (
-    <div style={{ background: c.background, color: c.onSurface, fontFamily: font.headline, minHeight: "100vh" }}>
-      <main style={{ padding: "24px 24px 128px", maxWidth: 448, margin: "0 auto", display: "flex", flexDirection: "column", gap: 32 }}>
-
-        {/* Header */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-          <div>
-            <h1 style={{ fontSize: 30, fontWeight: 800, color: c.primary, letterSpacing: "-0.025em", margin: 0 }}>Woordenschat</h1>
-            <p style={{ fontSize: 14, color: c.onSurfaceVariant, fontWeight: 600, margin: 0, marginTop: 4 }}>
-              {cards.length} woorden · {dueCards.length} vandaag te herhalen
-            </p>
-          </div>
-          {dueCards.length > 0 && (
-            <button
-              onClick={startReview}
-              style={{
-                padding: "10px 20px", borderRadius: 9999, border: "none", cursor: "pointer",
-                background: c.primary, color: "#fff", fontSize: 14, fontWeight: 700, fontFamily: font.headline,
-                display: "flex", alignItems: "center", gap: 8,
-              }}
-            >
-              <span className="mso" style={{ fontSize: 16 }}>replay</span>
-              Herhalen ({dueCards.length})
+                );
+              })}
+            </div>
+          ) : (
+            <button onClick={() => setIsFlipped(true)} style={{ ...primaryButton(c), fontSize: 16, padding: "16px 0", borderRadius: 15 }}>
+              Toon antwoord
             </button>
           )}
         </div>
+      </Screen>
+    );
+  }
 
-        {/* Category Filters */}
-        <section style={{ display: "flex", gap: 8, overflowX: "auto", padding: "8px 0" }} className="no-scrollbar">
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat.value}
-              onClick={() => setCategory(cat.value)}
-              style={{
-                flexShrink: 0, padding: "10px 20px", borderRadius: 9999, border: "none", cursor: "pointer",
-                fontSize: 14, fontWeight: 700, fontFamily: font.headline,
-                background: category === cat.value ? c.primary : c.surfaceLow,
-                color: category === cat.value ? "#fff" : c.onSurfaceVariant,
-                boxShadow: category === cat.value ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
-              }}
-            >
-              {cat.label}
-            </button>
-          ))}
-        </section>
+  /* ═══ Browse mode ═══ */
+  return (
+    <Screen>
+      <div style={{ padding: `${screenTopPad} 20px 14px` }}>
+        <Kicker c={c}>Woordenschat</Kicker>
+        <Display c={c} style={{ fontSize: 32, margin: "8px 0 0" }}>
+          {cards.length} woorden,<br /><em>{dueCards.length} vandaag</em>
+        </Display>
+        <p style={{ fontSize: 13.5, lineHeight: 1.6, color: c.ink70, margin: "10px 0 0" }}>
+          Cards return on an SM-2 schedule. A word is learned once it survives three weeks away.
+        </p>
+      </div>
 
-        {/* Mastery Rings */}
-        <section style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+      <div style={{ padding: "0 20px 10px", display: "flex", flexDirection: "column", gap: 16 }}>
+        <button onClick={startReview} style={primaryButton(c)}>
+          {dueCards.length > 0 ? `Herhaal ${dueCards.length} kaart${dueCards.length === 1 ? "" : "en"}` : "Begin met nieuwe woorden"}
+        </button>
+
+        {/* Category filter */}
+        <div className="no-scrollbar" style={{ display: "flex", gap: 6, overflowX: "auto" }}>
+          {CATEGORIES.map((cat) => {
+            const on = category === cat.value;
+            return (
+              <button
+                key={cat.value}
+                onClick={() => setCategory(cat.value)}
+                style={{
+                  flexShrink: 0, padding: "9px 15px", borderRadius: 9999,
+                  border: `1px solid ${on ? c.co : c.line}`, cursor: "pointer",
+                  fontSize: 12.5, fontWeight: 600, fontFamily: font.headline,
+                  background: on ? c.coSoft : c.card,
+                  color: on ? c.coInk : c.ink70,
+                }}
+              >
+                {cat.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Mastery by category */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
           {catStats.map((ring) => (
-            <div key={ring.value} style={{
-              background: c.surfaceLow, padding: 16, borderRadius: 16,
-              display: "flex", alignItems: "center", gap: 12,
-            }}>
-              <div style={{ position: "relative", width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <svg width={40} height={40} style={{ transform: "rotate(-90deg)" }}>
-                  <circle cx={20} cy={20} r={18} fill="none" stroke={c.surfaceHighest} strokeWidth={3} />
-                  <circle cx={20} cy={20} r={18} fill="none" stroke={c.tertiary} strokeWidth={3}
-                    strokeDasharray={113} strokeDashoffset={ring.dashoffset}
-                    style={{ transition: "all 0.5s" }}
-                  />
-                </svg>
-                <span className="mso mso-fill" style={{ position: "absolute", fontSize: 14, color: c.tertiary }}>{ring.icon}</span>
+            <Card key={ring.value} c={c} style={{ padding: 14, borderRadius: 16 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+                <span className="mso" style={{ fontSize: 16, color: c.or }}>{ring.icon}</span>
+                <span style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: "0.11em", textTransform: "uppercase", color: c.ink45 }}>
+                  {ring.label}
+                </span>
               </div>
-              <div>
-                <p style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: c.onSurfaceVariant, margin: 0 }}>{ring.label}</p>
-                <p style={{ fontSize: 14, fontWeight: 700, color: c.onSurface, margin: 0 }}>{ring.pct}%</p>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 8 }}>
+                <span style={{ fontFamily: font.body, fontSize: 23, lineHeight: 1, color: c.ink }}>{ring.pct}%</span>
               </div>
-            </div>
+              <ProgressBar c={c} pct={ring.pct} height={4} fill={c.or} />
+            </Card>
           ))}
-        </section>
+        </div>
 
-        {/* Start learning button (when no due cards) */}
-        {dueCards.length === 0 && (
-          <button
-            onClick={startReview}
-            style={{
-              width: "100%", padding: 16, borderRadius: 16,
-              border: `2px dashed ${c.outlineVariant}`, background: "transparent",
-              color: c.onSurfaceVariant, fontSize: 14, fontWeight: 600,
-              cursor: "pointer", fontFamily: font.headline,
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-            }}
-          >
-            <span className="mso" style={{ fontSize: 18 }}>menu_book</span>
-            Begin met nieuwe woorden leren
-          </button>
-        )}
-
-        {/* Word List */}
+        {/* Word list */}
         <div>
-          <h2 style={{ fontSize: 10, fontWeight: 700, color: c.onSurfaceVariant, textTransform: "uppercase", letterSpacing: "0.15em", marginBottom: 12 }}>
-            {category === "all" ? "Alle woorden" : CATEGORIES.find((ct) => ct.value === category)?.label} ({filtered.length})
-          </h2>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {filtered.map((card) => {
+          <Kicker c={c} style={{ marginBottom: 10 }}>
+            {category === "all" ? "Alle woorden" : CATEGORIES.find((ct) => ct.value === category)?.label} · {filtered.length}
+          </Kicker>
+          <Card c={c} style={{ overflow: "hidden" }}>
+            {filtered.map((card, i) => {
               const uv = cardStates.get(card.id);
               const statusRaw = uv?.status ?? "new";
-              const statusColor = statusRaw === "mastered" ? c.success : statusRaw === "reviewing" ? c.secondary : statusRaw === "learning" ? c.primary : c.outline;
-              const statusLabel = statusRaw === "mastered" ? "geleerd" : statusRaw === "reviewing" ? "herhaling" : statusRaw === "learning" ? "leren" : "nieuw";
+              const tone =
+                statusRaw === "mastered" ? { fg: c.gr, bg: c.grSoft, label: "geleerd" }
+                : statusRaw === "reviewing" ? { fg: c.or, bg: c.orSoft, label: "herhaling" }
+                : statusRaw === "learning" ? { fg: c.co, bg: c.coSoft, label: "leren" }
+                : { fg: c.ink45, bg: c.sunk, label: "nieuw" };
               return (
-                <div key={card.id} onClick={() => { setReviewQueue([card.id]); setReviewIndex(0); setIsFlipped(false); setReviewDone(false); }} style={{
-                  display: "flex", alignItems: "center", gap: 16,
-                  background: c.surfaceLowest, borderRadius: 16, padding: "12px 16px",
-                  boxShadow: "0 1px 2px rgba(0,0,0,0.04)", cursor: "pointer",
-                }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontWeight: 700, fontSize: 14, margin: 0 }}>{card.dutch}</p>
-                    <p style={{ fontSize: 12, color: c.onSurfaceVariant, margin: 0 }}>{card.english}</p>
-                  </div>
-                  <span style={{
-                    fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 9999,
-                    background: `${statusColor}1a`, color: statusColor, textTransform: "uppercase",
-                  }}>
-                    {statusLabel}
+                <button
+                  key={card.id}
+                  onClick={() => { setReviewQueue([card.id]); setReviewIndex(0); setIsFlipped(false); setReviewDone(false); }}
+                  style={{
+                    width: "100%", textAlign: "left", border: "none", background: "transparent",
+                    cursor: "pointer", fontFamily: font.headline,
+                    padding: "13px 15px", display: "flex", alignItems: "center", gap: 12,
+                    borderBottom: i === filtered.length - 1 ? "none" : `1px solid ${c.line2}`,
+                  }}
+                >
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ display: "block", fontFamily: font.body, fontSize: 18, lineHeight: 1.2, color: c.ink }}>
+                      {card.dutch}
+                    </span>
+                    <span style={{ display: "block", fontSize: 12, color: c.ink70, marginTop: 2 }}>{card.english}</span>
                   </span>
-                  <span className="mso" style={{ fontSize: 16, color: c.outlineVariant }}>chevron_right</span>
-                </div>
+                  <Chip fg={tone.fg} bg={tone.bg} style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", padding: "4px 9px" }}>
+                    {tone.label}
+                  </Chip>
+                  <span className="mso" style={{ fontSize: 18, color: c.ink25 }}>chevron_right</span>
+                </button>
               );
             })}
-          </div>
+          </Card>
         </div>
-      </main>
-    </div>
+      </div>
+    </Screen>
   );
 }

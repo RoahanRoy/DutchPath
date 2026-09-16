@@ -4,7 +4,13 @@ import { useState } from "react";
 import Link from "next/link";
 import type { ListeningTask, ListeningTaskType } from "@/lib/supabase/types";
 import { getDaysUntilExam } from "@/lib/utils";
-import { useTheme, getColors } from "@/lib/use-theme";
+import { useTheme, getColors, font } from "@/lib/use-theme";
+import { Screen, GlassHeader, Kicker, Card, Chip, primaryButton, tones } from "@/components/ui/screen";
+
+/**
+ * Listening map — the same week-grouped list shape as the lesson and writing
+ * maps. Availability is computed positionally upstream; this only renders it.
+ */
 
 interface TaskWithStatus extends ListeningTask {
   status: "locked" | "available" | "in_progress" | "completed";
@@ -16,11 +22,6 @@ interface Props {
   listeningExamDate: string | null;
   level: string;
 }
-
-const font = {
-  headline: "'Plus Jakarta Sans', sans-serif",
-  body: "'Noto Serif', serif",
-};
 
 const WEEK_SUBTITLES: Record<number, string> = {
   1: "Aankondigingen & Korte Berichten",
@@ -45,354 +46,230 @@ const TYPE_ICONS: Record<ListeningTaskType, string> = {
   instructions: "list_alt",
 };
 
-function typeColor(type: ListeningTaskType, c: ReturnType<typeof getColors>) {
-  switch (type) {
-    case "announcement": return c.primary;
-    case "phone_message": return c.secondary;
-    case "dialogue": return c.tertiary;
-    case "radio_snippet": return c.primaryContainer;
-    case "instructions": return c.onSurfaceVariant;
-  }
-}
+const TYPE_TONE: Record<ListeningTaskType, "co" | "or" | "gr"> = {
+  announcement: "co",
+  phone_message: "or",
+  dialogue: "gr",
+  radio_snippet: "co",
+  instructions: "or",
+};
 
 export function ListeningMapClient({ tasks, listeningExamDate, level }: Props) {
   const { isDark } = useTheme();
   const c = getColors(isDark);
+  const T = tones(c);
   const [selectedTask, setSelectedTask] = useState<TaskWithStatus | null>(null);
 
-  const weeks = [1, 2, 3, 4];
-  const tasksByWeek = weeks.map((w) => ({
-    week: w,
-    tasks: tasks.filter((t) => t.week === w),
-  }));
+  const weeks = Array.from(new Set(tasks.map((t) => t.week))).sort((a, b) => a - b);
+  const tasksByWeek = weeks.map((w) => ({ week: w, tasks: tasks.filter((t) => t.week === w) }));
 
   const completedCount = tasks.filter((t) => t.status === "completed").length;
   const totalCount = tasks.length;
-  const pct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
   const daysUntilExam = getDaysUntilExam(listeningExamDate);
 
   return (
-    <div style={{ background: c.background, color: c.onSurface, fontFamily: font.headline, minHeight: "100vh" }}>
-      <main style={{ padding: "24px 24px 128px", maxWidth: 480, margin: "0 auto" }}>
+    <Screen>
+      <GlassHeader
+        c={c}
+        back="/learn"
+        title={`Luisteren · ${totalCount} opdrachten`}
+        trailing={
+          <span style={{ fontSize: 11.5, fontWeight: 600, color: c.ink45, flex: "none" }}>
+            {completedCount} done
+          </span>
+        }
+      />
 
-        <section style={{ marginBottom: 32 }}>
-          <h2 style={{ fontSize: 30, fontWeight: 800, color: c.primary, letterSpacing: "-0.025em", margin: 0 }}>
-            Luisteren
-          </h2>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 8, marginTop: 4 }}>
-            <p style={{ fontSize: 14, fontWeight: 700, color: c.onSurfaceVariant, textTransform: "uppercase", letterSpacing: "0.1em", margin: 0 }}>
-              {completedCount} van {totalCount} opdrachten
-            </p>
-            <p style={{ fontSize: 12, fontWeight: 700, color: c.primary, margin: 0 }}>{pct}%</p>
-          </div>
-          <div style={{ width: "100%", height: 12, background: c.surfaceHighest, borderRadius: 9999, overflow: "hidden" }}>
-            <div
-              className="fm-grow-x"
-              style={{ width: `${pct}%`, height: "100%", background: c.primary, borderRadius: 9999 }}
-            />
-          </div>
-        </section>
+      <div style={{ padding: "18px 20px 10px", display: "flex", flexDirection: "column", gap: 14 }}>
+        {daysUntilExam !== null && daysUntilExam > 0 && (
+          <Link
+            href="/profile"
+            className="tap-shrink"
+            style={{
+              textDecoration: "none", display: "flex", alignItems: "center", gap: 12,
+              background: c.coSoft, borderRadius: 18, padding: 16,
+            }}
+          >
+            <span style={{ fontFamily: font.body, fontSize: 30, lineHeight: 1, color: c.co, flex: "none" }}>
+              {daysUntilExam}
+            </span>
+            <span style={{ flex: 1, minWidth: 0 }}>
+              <Kicker c={c} color={c.coInk} style={{ letterSpacing: "0.16em" }}>Luisterexamen</Kicker>
+              <span style={{ display: "block", fontSize: 13, color: c.ink70, marginTop: 4 }}>
+                dagen te gaan · tik om de datum te wijzigen
+              </span>
+            </span>
+          </Link>
+        )}
 
-        <Link href="/listening/exams" style={{ textDecoration: "none" }}>
-          <div style={{
-            background: `linear-gradient(135deg, ${c.primary}, ${c.primaryContainer})`,
-            color: "#fff", padding: 18, borderRadius: 20,
-            display: "flex", alignItems: "center", justifyContent: "space-between",
-            marginBottom: 24, cursor: "pointer",
-            boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
-          }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-              <div style={{ width: 44, height: 44, borderRadius: 9999, background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <span className="mso mso-fill" style={{ fontSize: 22, color: "#fff" }}>quiz</span>
-              </div>
-              <div>
-                <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", opacity: 0.85 }}>Oefenexamens</div>
-                <div style={{ fontSize: 16, fontWeight: 800 }}>3 mock examens · {level}</div>
-              </div>
-            </div>
-            <span className="mso" style={{ fontSize: 22, color: "rgba(255,255,255,0.7)" }}>chevron_right</span>
-          </div>
+        <Link
+          href="/listening/exams"
+          className="tap-shrink"
+          style={{
+            textDecoration: "none", border: `1px solid ${c.line}`, background: c.card2,
+            borderRadius: 17, padding: 15, display: "flex", alignItems: "center", gap: 13,
+          }}
+        >
+          <span style={{ width: 38, height: 38, flex: "none", borderRadius: 12, background: c.co, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <span className="mso" style={{ fontSize: 19, color: "#fff" }}>quiz</span>
+          </span>
+          <span style={{ flex: 1, minWidth: 0 }}>
+            <span style={{ display: "block", fontSize: 14, fontWeight: 600, color: c.ink }}>Oefenexamens</span>
+            <span style={{ display: "block", fontSize: 11.5, color: c.ink70, marginTop: 2 }}>
+              Examenstijl luisteren · {level}
+            </span>
+          </span>
+          <span className="mso" style={{ fontSize: 20, color: c.ink25 }}>chevron_right</span>
         </Link>
 
-        {daysUntilExam !== null && daysUntilExam > 0 && (
-          <div style={{
-            background: `${c.primary}14`, padding: 16, borderRadius: 20,
-            display: "flex", alignItems: "center", justifyContent: "space-between",
-            marginBottom: 32,
-          }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <div style={{ width: 40, height: 40, borderRadius: 9999, background: c.primaryFixed, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <span className="mso" style={{ color: c.primary, fontSize: 20 }}>edit_calendar</span>
+        {tasksByWeek.map(({ week, tasks: weekTasks }) => {
+          if (weekTasks.length === 0) return null;
+          const weekDone = weekTasks.filter((t) => t.status === "completed").length;
+          return (
+            <div key={week} style={{ marginTop: 8 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+                <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.2em", textTransform: "uppercase", color: c.ink45 }}>
+                  Week {week} · {WEEK_SUBTITLES[week] ?? "Opdrachten"}
+                </span>
+                <span style={{ flex: 1, height: 1, background: c.line }} />
+                <span style={{ fontSize: 10.5, fontWeight: 600, color: c.ink45, flex: "none" }}>
+                  {weekDone} / {weekTasks.length}
+                </span>
               </div>
-              <div>
-                <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700, color: c.onSurfaceVariant }}>
-                  Luisterexamen
-                </div>
-                <div style={{ fontSize: 16, fontWeight: 800, color: c.primary }}>
-                  {daysUntilExam} dagen te gaan
-                </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
+                {weekTasks.map((task) => {
+                  const done = task.status === "completed";
+                  const current = task.status === "available" || task.status === "in_progress";
+                  const locked = task.status === "locked";
+                  const tone = T[TYPE_TONE[task.task_type]];
+
+                  const node = done
+                    ? { bg: c.co, line: c.co, fg: "#fff", icon: "check" }
+                    : current
+                      ? { bg: c.card, line: c.co, fg: c.co, icon: TYPE_ICONS[task.task_type] }
+                      : { bg: c.sunk, line: "transparent", fg: c.ink25, icon: "lock" };
+
+                  return (
+                    <button
+                      key={task.id}
+                      type="button"
+                      disabled={locked}
+                      onClick={() => !locked && setSelectedTask(task)}
+                      className={locked ? undefined : "tap-shrink"}
+                      style={{
+                        textAlign: "left", width: "100%",
+                        border: `1px solid ${current ? c.co : c.line2}`,
+                        cursor: locked ? "default" : "pointer",
+                        fontFamily: font.headline,
+                        background: current || done ? c.card : c.card2,
+                        borderRadius: 17, padding: 14,
+                        display: "flex", alignItems: "center", gap: 13,
+                        opacity: locked ? 0.55 : 1,
+                      }}
+                    >
+                      <span
+                        style={{
+                          width: 38, height: 38, flex: "none", borderRadius: 9999,
+                          background: node.bg, border: `2px solid ${node.line}`,
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                        }}
+                      >
+                        <span className="mso mso-fill" style={{ fontSize: 18, color: node.fg }}>{node.icon}</span>
+                      </span>
+
+                      <span style={{ flex: 1, minWidth: 0 }}>
+                        <span style={{ display: "block", fontSize: 10, fontWeight: 700, letterSpacing: "0.13em", textTransform: "uppercase", color: c.ink45 }}>
+                          Dag {task.day} · {TYPE_LABELS[task.task_type]}
+                        </span>
+                        <span style={{ display: "block", fontFamily: font.body, fontSize: 18, lineHeight: 1.2, color: c.ink, marginTop: 3 }}>
+                          {task.title}
+                        </span>
+                      </span>
+
+                      <Chip
+                        fg={done ? c.gr : tone.fg}
+                        bg={done ? c.grSoft : tone.bg}
+                        style={{ fontSize: 11, fontWeight: 700, padding: "4px 9px" }}
+                      >
+                        {done && task.best_score !== null ? `${task.best_score}%` : `+${task.xp_reward}`}
+                      </Chip>
+                    </button>
+                  );
+                })}
               </div>
             </div>
-            <Link href="/profile" aria-label="Bewerk examendatum">
-              <span className="mso" style={{ color: c.primary, fontSize: 20 }}>edit</span>
-            </Link>
-          </div>
-        )}
+          );
+        })}
+      </div>
 
-        <div style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center" }}>
-          {tasksByWeek.map(({ week, tasks: weekTasks }, weekIdx) => {
-            if (weekTasks.length === 0) return null;
-            const weekCompleted = weekTasks.filter((t) => t.status === "completed").length;
-            const weekTotal = weekTasks.length;
-            const allDone = weekCompleted === weekTotal && weekTotal > 0;
-            const hasAnyProgress = weekCompleted > 0;
-            const isLocked = weekTasks.every((t) => t.status === "locked");
-
-            return (
-              <div key={week} style={{ width: "100%", display: "flex", flexDirection: "column", alignItems: "center" }}>
-                <div style={{
-                  marginBottom: 32, marginTop: weekIdx > 0 ? 16 : 0,
-                  display: "flex", flexDirection: "column", alignItems: "center", zIndex: 10,
-                }}>
-                  <div style={{
-                    background: isLocked ? c.surfaceHigh : c.surfaceLow,
-                    padding: "12px 24px", borderRadius: 9999,
-                    display: "flex", flexDirection: "column", alignItems: "center",
-                    boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
-                    opacity: isLocked ? 0.5 : 1,
-                  }}>
-                    <span style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.2em", color: isLocked ? c.onSurfaceVariant : c.primary }}>
-                      Week {week}
-                    </span>
-                    <span style={{ fontSize: 14, fontWeight: 700, color: c.onSurfaceVariant }}>
-                      {WEEK_SUBTITLES[week] ?? `Week ${week}`}
-                    </span>
-                  </div>
-                </div>
-
-                <div style={{ position: "relative", display: "flex", flexDirection: "column", gap: 64, width: "100%", maxWidth: 320, paddingBottom: 48 }}>
-                  <div style={{
-                    position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)",
-                    width: 4, height: "100%", pointerEvents: "none", zIndex: 0,
-                  }}>
-                    {allDone ? (
-                      <div style={{ height: "100%", width: "100%", background: c.primary }} />
-                    ) : hasAnyProgress ? (
-                      <>
-                        <div style={{ height: `${(weekCompleted / weekTotal) * 100}%`, width: "100%", background: c.primary }} />
-                        <div style={{ height: `${100 - (weekCompleted / weekTotal) * 100}%`, width: "100%", borderLeft: `2px dashed ${c.outlineVariant}`, marginLeft: 1 }} />
-                      </>
-                    ) : (
-                      <div style={{ height: "100%", width: "100%", borderLeft: `2px dashed ${c.outlineVariant}`, marginLeft: 1 }} />
-                    )}
-                  </div>
-
-                  {weekTasks.map((task) => {
-                    const isCompleted = task.status === "completed";
-                    const isCurrent = task.status === "available" || task.status === "in_progress";
-                    const isLockedTask = task.status === "locked";
-                    const tColor = typeColor(task.task_type, c);
-
-                    return (
-                      <div
-                        key={task.id}
-                        className="fm-fade-up-lg"
-                        style={{ cursor: isLockedTask ? "default" : "pointer" }}
-                        onClick={() => !isLockedTask && setSelectedTask(task)}
-                      >
-                        <div style={{
-                          position: "relative", width: "100%", minHeight: 56,
-                          display: "flex", alignItems: "center",
-                        }}>
-                          <div style={{ width: "calc(50% - 40px)", textAlign: "right", paddingRight: 12, opacity: isLockedTask ? 0.4 : 1 }}>
-                            <span style={{ fontWeight: 700, color: isCompleted ? c.primary : c.onSurface, fontSize: 14 }}>
-                              {task.title}
-                            </span>
-                            <p style={{ fontSize: 10, color: c.onSurfaceVariant, margin: 0, marginTop: 2 }}>
-                              Dag {task.day} · {task.estimated_minutes} min
-                            </p>
-                            {isCompleted && task.best_score !== null && (
-                              <p style={{ fontSize: 10, color: c.primary, margin: 0, marginTop: 2, fontWeight: 700 }}>
-                                {task.best_score}%
-                              </p>
-                            )}
-                          </div>
-
-                          <div style={{
-                            position: "absolute", left: "50%", transform: "translateX(-50%)",
-                            width: 56, height: 56, borderRadius: 9999,
-                            display: "flex", alignItems: "center", justifyContent: "center",
-                            zIndex: 20,
-                            ...(isCompleted
-                              ? { background: c.primary, color: "#ffffff", boxShadow: "0 4px 6px -1px rgba(0,0,0,.1)" }
-                              : {}),
-                            ...(isCurrent
-                              ? { background: c.surfaceLowest, border: `4px solid ${c.primary}`, color: c.primary }
-                              : {}),
-                            ...(isLockedTask
-                              ? { background: c.surfaceHighest, color: c.onSurfaceVariant }
-                              : {}),
-                          }}>
-                            {isCompleted && (
-                              <span className="mso" style={{ fontSize: 24, display: "block", lineHeight: 1 }}>check</span>
-                            )}
-                            {isCurrent && (
-                              <span className="mso" style={{ fontSize: 22, display: "block", lineHeight: 1 }}>
-                                {TYPE_ICONS[task.task_type]}
-                              </span>
-                            )}
-                            {isLockedTask && (
-                              <span className="mso" style={{ fontSize: 24, display: "block", lineHeight: 1, opacity: 0.5 }}>lock</span>
-                            )}
-                          </div>
-
-                          <div style={{ width: "calc(50% - 40px)", marginLeft: "auto", paddingLeft: 12, opacity: isLockedTask ? 0.4 : 1 }}>
-                            <span style={{
-                              padding: "2px 8px", borderRadius: 9999, fontSize: 10, fontWeight: 700,
-                              background: `${tColor}1a`, color: tColor,
-                            }}>
-                              {TYPE_LABELS[task.task_type]}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </main>
-
+      {/* ── Detail sheet ── */}
       {selectedTask && (
-          <>
+        <>
+          <div
+            className="fm-fade-in"
+            style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.35)", zIndex: 55 }}
+            onClick={() => setSelectedTask(null)}
+          />
+          <div
+            className="dp-sheet"
+            style={{ position: "fixed", bottom: 0, left: 0, width: "100%", zIndex: 60, display: "flex", justifyContent: "center" }}
+          >
             <div
-              className="fm-fade-in"
-              style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.3)", zIndex: 55 }}
-              onClick={() => setSelectedTask(null)}
-            />
-            <div
-              className="fm-sheet-up"
               style={{
-                position: "fixed", bottom: 0, left: 0, width: "100%", zIndex: 60,
-                padding: "0 16px 16px",
+                width: "100%", maxWidth: 460, background: c.card,
+                border: `1px solid ${c.line}`, borderBottom: "none",
+                borderRadius: "24px 24px 0 0",
+                boxShadow: "0 -10px 40px rgba(16,17,20,.16)",
+                padding: "18px 20px calc(var(--app-safe-bottom, 0px) + 20px)",
               }}
             >
-              <div style={{
-                background: c.surfaceLowest, borderRadius: "24px 24px 0 0",
-                boxShadow: "0px -8px 40px rgba(0,0,0,0.1)", padding: 24,
-              }}>
-                <div style={{ width: 48, height: 6, background: c.surfaceHighest, borderRadius: 9999, margin: "0 auto 24px" }} />
+              <div style={{ width: 40, height: 4, borderRadius: 9999, background: c.ink25, margin: "0 auto 16px" }} />
 
-                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20 }}>
-                  <div style={{ display: "flex", gap: 16 }}>
-                    <div style={{
-                      width: 64, height: 64, borderRadius: 16,
-                      background: `${typeColor(selectedTask.task_type, c)}1a`,
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                    }}>
-                      <span className="mso" style={{ fontSize: 32, color: typeColor(selectedTask.task_type, c) }}>
-                        {TYPE_ICONS[selectedTask.task_type]}
-                      </span>
-                    </div>
-                    <div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                        <span style={{
-                          padding: "2px 8px", borderRadius: 4, fontSize: 10, fontWeight: 700, letterSpacing: "0.05em",
-                          background: `${typeColor(selectedTask.task_type, c)}1a`,
-                          color: typeColor(selectedTask.task_type, c),
-                        }}>
-                          {TYPE_LABELS[selectedTask.task_type].toUpperCase()}
-                        </span>
-                        <span style={{ fontSize: 12, fontWeight: 700, color: c.onSurfaceVariant }}>
-                          Dag {selectedTask.day}
-                        </span>
-                      </div>
-                      <h3 style={{ fontSize: 20, fontWeight: 800, color: c.onSurface, lineHeight: 1.2, margin: 0 }}>
-                        {selectedTask.title}
-                      </h3>
-                    </div>
-                  </div>
-                  <div style={{
-                    background: c.tertiaryFixed, color: "#2a1700", padding: "4px 12px", borderRadius: 9999,
-                    fontSize: 12, fontWeight: 700, display: "flex", alignItems: "center", gap: 4,
-                  }}>
-                    <span className="mso" style={{ fontSize: 14 }}>emoji_events</span>
-                    {selectedTask.xp_reward} XP
-                  </div>
-                </div>
-
-                <div style={{
-                  background: "#FFFBF5", borderRadius: 16, padding: 16, marginBottom: 20,
-                  borderLeft: `4px solid ${c.primaryContainer}`,
-                }}>
-                  <p style={{ fontFamily: font.body, fontSize: 14, lineHeight: 1.6, color: "#1C1B1A", margin: 0 }}>
-                    {selectedTask.scenario_nl}
-                  </p>
-                </div>
-
-                {selectedTask.status === "completed" && selectedTask.best_score !== null && (
-                  <div style={{
-                    display: "flex", alignItems: "center", gap: 12, marginBottom: 16,
-                    background: "rgba(0,168,107,0.08)", borderRadius: 16, padding: 12,
-                  }}>
-                    <span className="mso mso-fill" style={{ color: "#00A86B", fontSize: 20 }}>check_circle</span>
-                    <div>
-                      <span style={{ fontSize: 14, fontWeight: 700, color: "#00A86B" }}>Voltooid!</span>
-                      <div style={{ fontSize: 12, color: c.onSurfaceVariant, marginTop: 2 }}>
-                        Beste score: {selectedTask.best_score}%
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 24 }}>
-                  {[
-                    { label: "Duur", value: `~${selectedTask.estimated_minutes} min` },
-                    { label: "Vragen", value: `${selectedTask.questions?.length ?? 0}` },
-                    { label: "Herluister", value: `${selectedTask.allow_replays}×` },
-                  ].map((item, i) => (
-                    <div key={i} style={{
-                      background: c.surfaceLow, padding: 12, borderRadius: 16,
-                      display: "flex", flexDirection: "column", alignItems: "center",
-                    }}>
-                      <span style={{ fontSize: 10, textTransform: "uppercase", fontWeight: 700, color: c.onSurfaceVariant, marginBottom: 4 }}>
-                        {item.label}
-                      </span>
-                      <span style={{ fontSize: 13, fontWeight: 800, color: c.onSurface, textAlign: "center" }}>{item.value}</span>
-                    </div>
-                  ))}
-                </div>
-
-                {!selectedTask.audio_url && (
-                  <div style={{
-                    background: `${c.error}14`, color: c.error,
-                    padding: 12, borderRadius: 12, fontSize: 12, fontWeight: 600, marginBottom: 16, textAlign: "center",
-                  }}>
-                    Audio nog niet gegenereerd. Run scripts/generate-listening-audio.ts.
-                  </div>
-                )}
-
-                <Link
-                  href={`/listening/${selectedTask.id}`}
-                  style={{
-                    display: "block", width: "100%", padding: 16, textAlign: "center",
-                    background: selectedTask.audio_url
-                      ? `linear-gradient(to bottom, ${c.primary}, ${c.primaryContainer})`
-                      : c.surfaceHighest,
-                    color: selectedTask.audio_url ? "#ffffff" : c.onSurfaceVariant,
-                    pointerEvents: selectedTask.audio_url ? "auto" : "none",
-                    borderRadius: 9999, fontWeight: 800, fontSize: 18,
-                    boxShadow: "0 10px 15px -3px rgba(0,0,0,.1)", textDecoration: "none",
-                  }}
-                >
-                  {selectedTask.status === "completed" ? "Opnieuw luisteren" : "Start opdracht"}
-                </Link>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                <span style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: c.co }}>
+                  {TYPE_LABELS[selectedTask.task_type]}
+                </span>
+                <span style={{ fontSize: 11.5, fontWeight: 600, color: c.ink45 }}>
+                  · Week {selectedTask.week} · Dag {selectedTask.day}
+                </span>
               </div>
+
+              <div style={{ fontFamily: font.body, fontSize: 28, lineHeight: 1.12, color: c.ink, marginBottom: 14 }}>
+                {selectedTask.title}
+              </div>
+
+              <Card c={c} tone="sunken" style={{ borderLeft: `3px solid ${c.co}`, borderRadius: 16, padding: 16, marginBottom: 14 }}>
+                <Kicker c={c} color={c.coInk} style={{ marginBottom: 8 }}>Situatie</Kicker>
+                <div style={{ fontFamily: font.body, fontSize: 16, lineHeight: 1.55, color: c.ink }}>
+                  {selectedTask.scenario_nl}
+                </div>
+              </Card>
+
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <Chip fg={c.ink70} bg={c.sunk}>~{selectedTask.estimated_minutes} min</Chip>
+                <Chip fg={c.or} bg={c.orSoft}>+{selectedTask.xp_reward} XP</Chip>
+                <Chip fg={c.ink70} bg={c.sunk}>
+                  {selectedTask.questions.length} vraag{selectedTask.questions.length === 1 ? "" : "en"}
+                </Chip>
+                <Chip fg={c.ink70} bg={c.sunk}>
+                  {selectedTask.allow_replays} replay{selectedTask.allow_replays === 1 ? "" : "s"}
+                </Chip>
+                {selectedTask.best_score !== null && (
+                  <Chip fg={c.gr} bg={c.grSoft}>Beste score {selectedTask.best_score}%</Chip>
+                )}
+              </div>
+
+              <Link
+                href={`/listening/${selectedTask.id}`}
+                style={{ ...primaryButton(c), display: "block", textAlign: "center", textDecoration: "none", marginTop: 20 }}
+              >
+                {selectedTask.status === "completed" ? "Opnieuw luisteren" : "Start opdracht"}
+              </Link>
             </div>
-          </>
-        )}
-    </div>
+          </div>
+        </>
+      )}
+    </Screen>
   );
 }

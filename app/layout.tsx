@@ -33,8 +33,8 @@ export const viewport: Viewport = {
   // bar. <ThemeColorSync> repoints these when the in-app toggle disagrees with
   // the OS preference.
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f9f9f7" },
-    { media: "(prefers-color-scheme: dark)", color: "#121413" },
+    { media: "(prefers-color-scheme: light)", color: "#F4F4F2" },
+    { media: "(prefers-color-scheme: dark)", color: "#0C0D0F" },
   ],
   // Lets the layout run edge-to-edge under the notch and home indicator. Safe
   // areas are paid back as padding in globals.css and the mobile nav.

@@ -6,16 +6,30 @@ import {
   KNM_TOPICS,
   KNM_QUESTIONS,
   KNM_MOCK_EXAMS,
-  TOPIC_COLORS,
   type KnmTopic,
   type KnmQuestion,
   type KnmMockExam,
 } from "./knm-data";
 
 const font = {
-  headline: "'Plus Jakarta Sans', sans-serif",
-  body: "'Noto Serif', serif",
+  headline: "'Instrument Sans', system-ui, sans-serif",
+  body: "'Instrument Serif', Georgia, serif",
 };
+
+/**
+ * A topic's accent, resolved against the live palette.
+ *
+ * KNM_TOPICS names a tone rather than a hex, so the same topic reads as cobalt
+ * in both themes rather than staying at the light-mode value on a dark page.
+ */
+function topicTone(key: KnmTopic["color"], c: ReturnType<typeof getColors>) {
+  switch (key) {
+    case "primary": return { fg: c.co, bg: c.coSoft };
+    case "secondary": return { fg: c.or, bg: c.orSoft };
+    case "tertiary": return { fg: c.rd, bg: c.rdSoft };
+    case "success": return { fg: c.gr, bg: c.grSoft };
+  }
+}
 
 /* Real exam: 40 questions, 45 minutes. We mirror that. */
 const MOCK_EXAM_LENGTH = 40;
@@ -180,16 +194,16 @@ export function KnmClient() {
             >
               <div style={{
                 width: 72, height: 72, borderRadius: 9999, margin: "0 auto 12px",
-                background: `${TOPIC_COLORS[activeTopic.color]}18`,
+                background: topicTone(activeTopic.color, c).bg,
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}>
-                <span className="mso mso-fill" style={{ fontSize: 36, color: TOPIC_COLORS[activeTopic.color] }}>
+                <span className="mso" style={{ fontSize: 36, color: topicTone(activeTopic.color, c).fg }}>
                   {activeTopic.icon}
                 </span>
               </div>
               <h2 style={{ fontSize: 22, fontWeight: 800, margin: 0, letterSpacing: "-0.02em" }}>{activeTopic.titleNl}</h2>
               <p style={{ fontSize: 13, color: c.onSurfaceVariant, marginTop: 4 }}>Thema-oefening afgerond</p>
-              <p style={{ fontSize: 48, fontWeight: 800, color: TOPIC_COLORS[activeTopic.color], marginTop: 16 }}>
+              <p style={{ fontSize: 48, fontWeight: 800, color: topicTone(activeTopic.color, c).fg, marginTop: 16 }}>
                 {correctCount}/{questions.length}
               </p>
               <p style={{ fontSize: 14, color: c.onSurfaceVariant }}>{pct}% juist</p>
@@ -203,7 +217,7 @@ export function KnmClient() {
                 return (
                   <div key={qq.id} style={{
                     background: c.surfaceLowest, borderRadius: 16, padding: 18,
-                    border: `1.5px solid ${ok ? "rgba(34,197,94,0.3)" : `${c.error}30`}`,
+                    border: `1.5px solid ${ok ? c.gr : c.rd}`,
                   }}>
                     <p style={{ fontSize: 12, fontWeight: 700, color: c.onSurfaceVariant, marginBottom: 6 }}>
                       Vraag {i + 1} · {ok ? "Goed" : "Fout"}
@@ -239,7 +253,7 @@ export function KnmClient() {
             <span style={{
               display: "inline-block", fontSize: 10, fontWeight: 800, letterSpacing: "0.12em",
               textTransform: "uppercase", padding: "4px 10px", borderRadius: 9999,
-              background: `${TOPIC_COLORS[activeTopic.color]}18`, color: TOPIC_COLORS[activeTopic.color],
+              background: topicTone(activeTopic.color, c).bg, color: topicTone(activeTopic.color, c).fg,
             }}>
               Thema · {activeTopic.titleNl}
             </span>
@@ -249,7 +263,7 @@ export function KnmClient() {
             <div style={{ height: 6, width: "100%", background: c.surfaceHigh, borderRadius: 9999, overflow: "hidden", marginTop: 8 }}>
               <div style={{
                 height: "100%", width: `${((topicIdx + 1) / questions.length) * 100}%`,
-                background: TOPIC_COLORS[activeTopic.color], borderRadius: 9999, transition: "width .3s",
+                background: topicTone(activeTopic.color, c).fg, borderRadius: 9999, transition: "width .3s",
               }} />
             </div>
           </div>
@@ -306,7 +320,7 @@ export function KnmClient() {
         <div style={{
           position: "sticky", top: 0, zIndex: 40,
           background: c.glassBackground, backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)",
-          borderBottom: `1px solid ${c.outlineVariant}40`,
+          borderBottom: `1px solid ${c.line}`,
         }}>
           <div style={{
             maxWidth: 672, margin: "0 auto", padding: "12px 24px",
@@ -315,7 +329,7 @@ export function KnmClient() {
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <div style={{
                 width: 36, height: 36, borderRadius: 9999,
-                background: lowTime ? `${c.error}20` : `${c.primary}15`,
+                background: lowTime ? c.rdSoft : c.coSoft,
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}>
                 <span className="mso" style={{ color: lowTime ? c.error : c.primary, fontSize: 18 }}>timer</span>
@@ -357,7 +371,7 @@ export function KnmClient() {
                       aria-label={`Ga naar vraag ${i + 1}`}
                       style={{
                         aspectRatio: "1", borderRadius: 8, border: current ? `2px solid ${c.primary}` : "none",
-                        background: done ? `${c.primary}20` : c.surfaceHigh,
+                        background: done ? c.coSoft : c.sunk,
                         color: done ? c.primary : c.onSurfaceVariant,
                         fontWeight: 700, fontSize: 12, cursor: "pointer",
                       }}
@@ -433,7 +447,7 @@ export function KnmClient() {
     const byTopic: Record<string, { correct: number; total: number; title: string; color: string }> = {};
     exam.questions.forEach((qq) => {
       const t = KNM_TOPICS.find((x) => x.key === qq.topic)!;
-      byTopic[qq.topic] ??= { correct: 0, total: 0, title: t.titleNl, color: TOPIC_COLORS[t.color] };
+      byTopic[qq.topic] ??= { correct: 0, total: 0, title: t.titleNl, color: topicTone(t.color, c).fg };
       byTopic[qq.topic].total += 1;
       if (exam.answers[qq.id] === qq.correct_index) byTopic[qq.topic].correct += 1;
     });
@@ -445,13 +459,13 @@ export function KnmClient() {
             className="fm-scale-in-95"
             style={{
               background: passed
-                ? "linear-gradient(to bottom, rgba(22,163,74,0.12), rgba(22,163,74,0.04))"
-                : `linear-gradient(to bottom, ${c.errorContainer}, ${c.surfaceLow})`,
-              border: `1.5px solid ${passed ? "rgba(22,163,74,0.35)" : `${c.error}40`}`,
+                ? c.grSoft
+                : `${c.rdSoft}`,
+              border: `1.5px solid ${passed ? c.gr : c.rd}`,
               borderRadius: 28, padding: 32, textAlign: "center",
             }}
           >
-            <span className="mso mso-fill" style={{ fontSize: 56, color: passed ? "#16a34a" : c.error }}>
+            <span className="mso mso-fill" style={{ fontSize: 56, color: passed ? c.gr : c.error }}>
               {passed ? "verified" : "error"}
             </span>
             <h1 style={{ fontSize: 28, fontWeight: 800, letterSpacing: "-0.02em", marginTop: 8 }}>
@@ -494,7 +508,7 @@ export function KnmClient() {
               .map(({ qq, i }) => (
                 <div key={qq.id} style={{
                   background: c.surfaceLowest, borderRadius: 14, padding: 16,
-                  border: `1px solid ${c.error}25`,
+                  border: `1px solid ${c.rd}`,
                 }}>
                   <p style={{ fontSize: 11, fontWeight: 700, color: c.onSurfaceVariant, marginBottom: 6 }}>
                     Vraag {i + 1}
@@ -506,7 +520,7 @@ export function KnmClient() {
                       ? qq.options[exam.answers[qq.id]]
                       : <i style={{ color: c.onSurfaceVariant }}>niet beantwoord</i>}
                   </p>
-                  <p style={{ fontSize: 12, marginBottom: 6, color: "#16a34a" }}>
+                  <p style={{ fontSize: 12, marginBottom: 6, color: c.gr }}>
                     <b>Juist:</b> {qq.options[qq.correct_index]}
                   </p>
                   <p style={{ fontSize: 12, color: c.onSurfaceVariant, fontStyle: "italic" }}>{qq.explanation}</p>
@@ -536,18 +550,15 @@ export function KnmClient() {
       <div style={{ maxWidth: 672, margin: "0 auto", padding: "24px 24px 140px" }}>
         {/* Hero */}
         <div style={{ marginBottom: 20 }}>
-          <span style={{
-            display: "inline-block", fontSize: 10, fontWeight: 800, letterSpacing: "0.12em",
-            textTransform: "uppercase", padding: "4px 10px", borderRadius: 9999,
-            background: `${c.primary}15`, color: c.primary,
-          }}>
-            Inburgeringsexamen · KNM
-          </span>
-          <h1 style={{ fontSize: 28, fontWeight: 800, letterSpacing: "-0.025em", color: c.primary, margin: "10px 0 4px" }}>
-            Kennis van de Nederlandse Maatschappij
+          <div style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: c.ink45 }}>
+            KNM · Kennis Nederlandse Maatschappij
+          </div>
+          <h1 style={{ fontFamily: font.body, fontWeight: 400, fontSize: 32, lineHeight: 1.08, letterSpacing: "-0.01em", color: c.ink, margin: "8px 0 0" }}>
+            {KNM_TOPICS.length} thema&rsquo;s, {totalQuestions} vragen
           </h1>
-          <p style={{ fontSize: 14, color: c.onSurfaceVariant, fontWeight: 500 }}>
-            Oefen per thema of doe een volledig proefexamen van {MOCK_EXAM_LENGTH} vragen in 45 minuten.
+          <p style={{ fontSize: 13.5, lineHeight: 1.6, color: c.ink70, margin: "10px 0 0" }}>
+            The exam asks how this country works. Knowing it is also just useful. Oefen per
+            thema of doe een volledig proefexamen van {MOCK_EXAM_LENGTH} vragen in 45 minuten.
           </p>
         </div>
 
@@ -557,9 +568,9 @@ export function KnmClient() {
           onClick={() => startMockExam()}
           style={{
             width: "100%", textAlign: "left", border: "none", cursor: "pointer",
-            padding: 20, borderRadius: 24,
-            background: `linear-gradient(135deg, ${c.primary}, ${c.primaryContainer})`,
-            boxShadow: "0 10px 24px -6px rgba(0,41,117,0.45)",
+            padding: 20, borderRadius: 22,
+            background: c.co,
+            boxShadow: "0 12px 30px rgba(43,74,226,.22)",
             display: "flex", alignItems: "center", gap: 16, marginBottom: 12,
           }}
         >
@@ -593,7 +604,7 @@ export function KnmClient() {
         </div>
 
         {/* Fixed full-length mock exams */}
-        <h2 style={{ fontSize: 14, fontWeight: 800, letterSpacing: "0.05em", textTransform: "uppercase", color: c.onSurfaceVariant, marginBottom: 10 }}>
+        <h2 style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: c.ink45, marginBottom: 12 }}>
           Volledige proefexamens · A2
         </h2>
         <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 28 }}>
@@ -605,19 +616,18 @@ export function KnmClient() {
               aria-label={`Start ${m.title}`}
               style={{
                 width: "100%", textAlign: "left", cursor: "pointer",
-                background: c.surfaceLowest, borderRadius: 20, padding: 18,
-                border: `1px solid ${c.outlineVariant}40`,
-                boxShadow: "0px 4px 14px rgba(26,28,27,0.04)",
+                background: c.card, borderRadius: 18, padding: 16,
+                border: `1px solid ${c.line2}`,
                 display: "flex", flexDirection: "column", gap: 10,
               }}
             >
               <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
                 <div style={{
                   width: 42, height: 42, borderRadius: 13, flexShrink: 0,
-                  background: `${c.primary}12`,
+                  background: c.coSoft,
                   display: "flex", alignItems: "center", justifyContent: "center",
                 }}>
-                  <span className="mso mso-fill" style={{ color: c.primary, fontSize: 22 }}>assignment</span>
+                  <span className="mso mso-fill" style={{ color: c.co, fontSize: 22 }}>assignment</span>
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: c.primary }}>
@@ -651,12 +661,12 @@ export function KnmClient() {
         </div>
 
         {/* Topics grid */}
-        <h2 style={{ fontSize: 14, fontWeight: 800, letterSpacing: "0.05em", textTransform: "uppercase", color: c.onSurfaceVariant, marginBottom: 10 }}>
+        <h2 style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: c.ink45, marginBottom: 12 }}>
           Thema&apos;s
         </h2>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
           {KNM_TOPICS.map((t) => {
-            const color = TOPIC_COLORS[t.color];
+            const tone = topicTone(t.color, c);
             const total = topicStats[t.key]?.total ?? 0;
             return (
               <button
@@ -664,27 +674,27 @@ export function KnmClient() {
                 className="tap-shrink"
                 onClick={() => startTopic(t)}
                 style={{
-                  textAlign: "left", border: "none", cursor: "pointer",
-                  background: c.surfaceLowest, borderRadius: 18, padding: 16,
-                  boxShadow: "0px 4px 14px rgba(26,28,27,0.04)",
+                  textAlign: "left", cursor: "pointer",
+                  border: `1px solid ${c.line2}`,
+                  background: c.card, borderRadius: 17, padding: 14,
                   display: "flex", flexDirection: "column", gap: 10, minHeight: 140,
                 }}
                 aria-label={`Oefen thema ${t.titleNl}`}
               >
                 <div style={{
-                  width: 40, height: 40, borderRadius: 12,
-                  background: `${color}15`,
+                  width: 34, height: 34, borderRadius: 11,
+                  background: tone.bg,
                   display: "flex", alignItems: "center", justifyContent: "center",
                 }}>
-                  <span className="mso mso-fill" style={{ color, fontSize: 22 }}>{t.icon}</span>
+                  <span className="mso" style={{ color: tone.fg, fontSize: 18 }}>{t.icon}</span>
                 </div>
                 <div>
-                  <div style={{ fontSize: 14, fontWeight: 800, letterSpacing: "-0.01em" }}>{t.titleNl}</div>
-                  <div style={{ fontSize: 11, color: c.onSurfaceVariant, marginTop: 2, lineHeight: 1.35 }}>
+                  <div style={{ fontSize: 13.5, fontWeight: 600, color: c.ink, lineHeight: 1.25 }}>{t.titleNl}</div>
+                  <div style={{ fontSize: 11, color: c.ink45, marginTop: 3, lineHeight: 1.35 }}>
                     {t.description}
                   </div>
                 </div>
-                <div style={{ marginTop: "auto", display: "flex", alignItems: "center", gap: 4, fontSize: 10, fontWeight: 700, color, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                <div style={{ marginTop: "auto", display: "flex", alignItems: "center", gap: 4, fontSize: 10, fontWeight: 700, color: tone.fg, textTransform: "uppercase", letterSpacing: "0.08em" }}>
                   {total} vragen
                   <span className="mso" style={{ fontSize: 14 }}>arrow_forward</span>
                 </div>
@@ -695,13 +705,13 @@ export function KnmClient() {
 
         {/* About the exam */}
         <section style={{
-          marginTop: 32, background: c.surfaceLowest, borderRadius: 20, padding: 20,
-          border: `1px solid ${c.outlineVariant}30`,
+          marginTop: 28, background: c.card, borderRadius: 18, padding: 18,
+          border: `1px solid ${c.line2}`,
         }}>
-          <h3 style={{ fontSize: 14, fontWeight: 800, margin: 0, marginBottom: 8 }}>
+          <h3 style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: c.ink45, margin: 0, marginBottom: 10 }}>
             Over het KNM-examen
           </h3>
-          <p style={{ fontSize: 13, color: c.onSurfaceVariant, lineHeight: 1.55, margin: 0 }}>
+          <p style={{ fontFamily: font.body, fontSize: 15.5, color: c.ink70, lineHeight: 1.6, margin: 0 }}>
             Het officiële KNM-examen is onderdeel van het inburgeringsexamen. Je krijgt
             ongeveer 40 multiplechoicevragen over werk, wonen, zorg, onderwijs, geschiedenis,
             politiek en dagelijks leven. Voor elke vraag zijn er meestal drie antwoorden en
@@ -729,20 +739,19 @@ function QuestionCard({
         key={q.id}
         className="fm-fade-up"
         style={{
-          background: c.surfaceLowest, borderRadius: 22, padding: 22,
-          boxShadow: "0px 6px 18px rgba(26,28,27,0.05)",
+          background: c.card, border: `1px solid ${c.line2}`, borderRadius: 20, padding: 20,
         }}
       >
         {q.scenario && (
           <div style={{
-            background: `${c.primary}0a`, borderLeft: `3px solid ${c.primary}`,
-            borderRadius: 10, padding: "10px 14px", fontSize: 13,
-            fontFamily: font.body, lineHeight: 1.55, color: c.onSurface, marginBottom: 14,
+            background: c.card2, borderLeft: `3px solid ${c.co}`,
+            borderRadius: 12, padding: "12px 14px", fontSize: 16,
+            fontFamily: font.body, lineHeight: 1.55, color: c.ink, marginBottom: 16,
           }}>
             {q.scenario}
           </div>
         )}
-        <p style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.45, marginBottom: 14 }}>{q.prompt}</p>
+        <p style={{ fontFamily: font.body, fontSize: 22, fontWeight: 400, lineHeight: 1.3, color: c.ink, marginBottom: 16 }}>{q.prompt}</p>
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {q.options.map((opt, i) => {
             const isSelected = selected === i;
@@ -754,28 +763,25 @@ function QuestionCard({
                 onClick={() => onSelect(i)}
                 disabled={showAnswer}
                 style={{
-                  width: "100%", textAlign: "left", padding: "13px 14px",
-                  borderRadius: 12, border: "none", cursor: showAnswer ? "default" : "pointer",
-                  background: isCorrect ? "rgba(187,247,208,0.5)"
-                    : isWrong ? c.errorContainer
-                    : isSelected ? `${c.primary}10`
-                    : c.surfaceLow,
-                  color: isCorrect ? "#14532d" : isWrong ? c.error : isSelected ? c.primary : c.onSurface,
-                  display: "flex", alignItems: "center", gap: 12,
-                  fontFamily: font.headline, fontSize: 14, fontWeight: isSelected ? 700 : 500,
-                  transition: "all .15s",
+                  width: "100%", textAlign: "left", padding: 15,
+                  borderRadius: 15, cursor: showAnswer ? "default" : "pointer",
+                  border: `1.5px solid ${isCorrect ? c.gr : isWrong ? c.rd : isSelected ? c.co : c.line2}`,
+                  background: isCorrect ? c.grSoft : isWrong ? c.rdSoft : isSelected ? c.coSoft : c.card,
+                  display: "flex", alignItems: "center", gap: 13,
+                  fontFamily: font.headline,
+                  transition: "border-color .15s, background .15s",
                 }}
               >
                 <span style={{
-                  width: 26, height: 26, borderRadius: 9999, flexShrink: 0,
+                  width: 26, height: 26, borderRadius: 8, flexShrink: 0,
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  fontSize: 11, fontWeight: 800,
-                  background: isSelected ? c.primary : c.surfaceHigh,
-                  color: isSelected ? "#fff" : c.onSurfaceVariant,
+                  fontSize: 12, fontWeight: 700,
+                  background: isCorrect ? c.gr : isWrong ? c.rd : isSelected ? c.co : c.sunk,
+                  color: isCorrect || isWrong || isSelected ? "#fff" : c.ink70,
                 }}>
                   {String.fromCharCode(65 + i)}
                 </span>
-                <span style={{ flex: 1 }}>{opt}</span>
+                <span style={{ flex: 1, fontFamily: font.body, fontSize: 16.5, lineHeight: 1.4, color: c.ink }}>{opt}</span>
               </button>
             );
           })}
@@ -787,8 +793,8 @@ function QuestionCard({
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div style={{ textAlign: "center" }}>
-      <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: "-0.02em" }}>{value}</div>
-      <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", opacity: 0.6 }}>{label}</div>
+      <div style={{ fontFamily: font.body, fontSize: 26, lineHeight: 1 }}>{value}</div>
+      <div style={{ fontSize: 9.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.13em", opacity: 0.65, marginTop: 4 }}>{label}</div>
     </div>
   );
 }
@@ -796,12 +802,11 @@ function Stat({ label, value }: { label: string; value: string }) {
 function InfoCell({ c, icon, label }: { c: ReturnType<typeof getColors>; icon: string; label: string }) {
   return (
     <div style={{
-      background: c.surfaceLowest, borderRadius: 14, padding: 12,
+      background: c.card, border: `1px solid ${c.line2}`, borderRadius: 14, padding: 12,
       display: "flex", alignItems: "center", gap: 8,
-      boxShadow: "0px 4px 12px rgba(26,28,27,0.03)",
     }}>
-      <span className="mso" style={{ fontSize: 18, color: c.primary }}>{icon}</span>
-      <span style={{ fontSize: 12, fontWeight: 700 }}>{label}</span>
+      <span className="mso" style={{ fontSize: 18, color: c.co }}>{icon}</span>
+      <span style={{ fontSize: 12, fontWeight: 600, color: c.ink }}>{label}</span>
     </div>
   );
 }
@@ -809,31 +814,30 @@ function InfoCell({ c, icon, label }: { c: ReturnType<typeof getColors>; icon: s
 function backBtn(c: ReturnType<typeof getColors>): React.CSSProperties {
   return {
     display: "inline-flex", alignItems: "center", gap: 6,
-    padding: "6px 12px", borderRadius: 9999, border: "none",
-    background: c.surfaceHigh, color: c.onSurface,
-    fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: font.headline,
+    padding: "7px 13px", borderRadius: 9999,
+    border: `1px solid ${c.line}`, background: c.card, color: c.ink70,
+    fontSize: 12, fontWeight: 600, cursor: "pointer", fontFamily: font.headline,
   };
 }
 
 function primaryBtn(c: ReturnType<typeof getColors>, disabled: boolean): React.CSSProperties {
   return {
-    flex: 1, height: 50, borderRadius: 9999, border: "none",
+    flex: 1, padding: "16px 0", borderRadius: 15, border: "none",
     cursor: disabled ? "not-allowed" : "pointer",
-    background: disabled ? c.surfaceHigh : `linear-gradient(to bottom, ${c.primary}, ${c.primaryContainer})`,
-    color: disabled ? c.outline : "#fff",
-    fontWeight: 700, fontSize: 15, fontFamily: font.headline,
+    background: disabled ? c.sunk : c.co,
+    color: disabled ? c.ink45 : "#fff",
+    fontWeight: 600, fontSize: 15, fontFamily: font.headline,
     display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-    boxShadow: disabled ? "none" : "0 8px 16px -6px rgba(0,41,117,0.4)",
+    boxShadow: disabled ? "none" : "0 8px 24px rgba(43,74,226,.22)",
   };
 }
 
 function secondaryBtn(c: ReturnType<typeof getColors>, disabled: boolean): React.CSSProperties {
   return {
-    flex: 1, height: 50, borderRadius: 9999,
-    border: `1.5px solid ${c.outlineVariant}60`,
-    background: "transparent",
-    color: disabled ? c.outline : c.onSurface,
-    fontWeight: 700, fontSize: 15, fontFamily: font.headline,
+    flex: 1, padding: "16px 0", borderRadius: 15,
+    border: `1px solid ${c.line}`, background: c.card,
+    color: disabled ? c.ink25 : c.ink70,
+    fontWeight: 600, fontSize: 15, fontFamily: font.headline,
     display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
     cursor: disabled ? "not-allowed" : "pointer",
   };
@@ -841,21 +845,22 @@ function secondaryBtn(c: ReturnType<typeof getColors>, disabled: boolean): React
 
 function ctaBtn(c: ReturnType<typeof getColors>): React.CSSProperties {
   return {
-    width: "100%", height: 54, borderRadius: 9999, border: "none",
+    width: "100%", padding: "17px 0", borderRadius: 16, border: "none",
     marginTop: 20, cursor: "pointer",
-    background: `linear-gradient(to bottom, ${c.primary}, ${c.primaryContainer})`,
-    color: "#fff", fontWeight: 700, fontSize: 16, fontFamily: font.headline,
+    background: c.co, color: "#fff",
+    fontWeight: 600, fontSize: 16, fontFamily: font.headline,
     display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-    boxShadow: "0 10px 18px -6px rgba(0,41,117,0.4)",
+    boxShadow: "0 8px 24px rgba(43,74,226,.22)",
   };
 }
 
 function chipBtn(c: ReturnType<typeof getColors>, active: boolean): React.CSSProperties {
   return {
     display: "inline-flex", alignItems: "center", gap: 6,
-    padding: "6px 12px", borderRadius: 9999, border: "none",
-    background: active ? c.primary : c.surfaceHigh,
-    color: active ? "#fff" : c.onSurfaceVariant,
-    fontSize: 11, fontWeight: 700, cursor: "pointer", fontFamily: font.headline,
+    padding: "7px 13px", borderRadius: 9999,
+    border: `1px solid ${active ? c.co : c.line}`,
+    background: active ? c.coSoft : c.card,
+    color: active ? c.coInk : c.ink70,
+    fontSize: 11.5, fontWeight: 600, cursor: "pointer", fontFamily: font.headline,
   };
 }

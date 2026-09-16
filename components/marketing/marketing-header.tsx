@@ -2,8 +2,8 @@ import Link from "next/link";
 import { ThemeToggle } from "./theme-toggle";
 
 const font = {
-  headline: "'Plus Jakarta Sans', sans-serif",
-  body: "'Noto Serif', serif",
+  headline: "'Instrument Sans', system-ui, sans-serif",
+  body: "'Instrument Serif', Georgia, serif",
 };
 
 /**
@@ -27,10 +27,10 @@ export function MarketingHeader() {
         style={{
           display: "inline-flex", alignItems: "center", gap: 8,
           textDecoration: "none", color: "var(--primary)",
-          fontSize: 17, fontWeight: 800, letterSpacing: "-0.02em", marginRight: "auto",
+          fontFamily: font.body, fontSize: 23, fontWeight: 400, letterSpacing: "-0.01em", marginRight: "auto",
         }}
       >
-        <span aria-hidden="true" style={{ fontSize: 20 }}>🇳🇱</span>
+        
         DutchPath
       </Link>
 
@@ -45,8 +45,8 @@ export function MarketingHeader() {
       <ThemeToggle />
 
       <Link href="/login" className="tap-shrink" style={{
-        padding: "9px 18px", borderRadius: 9999, textDecoration: "none",
-        fontSize: 14, fontWeight: 800, flexShrink: 0,
+        padding: "10px 18px", borderRadius: 12, textDecoration: "none",
+        fontSize: 13.5, fontWeight: 600, flexShrink: 0,
         background: "var(--surface-container-low)", color: "var(--on-surface)",
       }}>
         Sign in

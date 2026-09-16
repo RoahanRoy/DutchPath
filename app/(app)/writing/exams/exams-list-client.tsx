@@ -22,7 +22,7 @@ export function ExamsListClient({ exams, level }: { exams: ExamWithStats[]; leve
           Terug naar Schrijven
         </Link>
 
-        <h1 style={{ fontSize: 28, fontWeight: 800, color: c.secondary, letterSpacing: "-0.025em", margin: 0 }}>
+        <h1 style={{ fontSize: 28, fontWeight: 700, color: c.secondary, letterSpacing: "-0.025em", margin: 0 }}>
           Oefenexamens
         </h1>
         <p style={{ fontSize: 14, color: c.onSurfaceVariant, marginTop: 4, marginBottom: 24 }}>
@@ -35,7 +35,7 @@ export function ExamsListClient({ exams, level }: { exams: ExamWithStats[]; leve
             return (
               <Link key={exam.id} href={`/writing/exams/${exam.id}`} style={{ textDecoration: "none" }}>
                 <div style={{
-                  background: c.surfaceLowest, padding: 20, borderRadius: 20,
+                  background: c.card, padding: 20, borderRadius: 20,
                   display: "flex", flexDirection: "column", gap: 12,
                   boxShadow: "0 4px 16px rgba(26,28,27,0.06)",
                   border: completed && exam.passed ? `2px solid ${c.secondary}` : `1px solid ${c.outlineVariant}`,
@@ -46,7 +46,7 @@ export function ExamsListClient({ exams, level }: { exams: ExamWithStats[]; leve
                       <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: c.secondary, marginBottom: 4 }}>
                         Mock {exam.position} · {exam.level}
                       </div>
-                      <h3 style={{ fontSize: 18, fontWeight: 800, color: c.onSurface, margin: 0, lineHeight: 1.2 }}>
+                      <h3 style={{ fontSize: 18, fontWeight: 700, color: c.onSurface, margin: 0, lineHeight: 1.2 }}>
                         {exam.title}
                       </h3>
                       {exam.description && (
@@ -81,13 +81,13 @@ export function ExamsListClient({ exams, level }: { exams: ExamWithStats[]; leve
                       paddingTop: 12, borderTop: `1px solid ${c.outlineVariant}`,
                     }}>
                       <span style={{ fontSize: 12, fontWeight: 700, color: c.onSurfaceVariant }}>
-                        Beste score: <span style={{ color: exam.passed ? c.secondary : c.error, fontWeight: 900 }}>{exam.bestScore}%</span>
+                        Beste score: <span style={{ color: exam.passed ? c.secondary : c.error, fontWeight: 700 }}>{exam.bestScore}%</span>
                         {" · "}{exam.attempts} pogingen
                       </span>
                       <span style={{
-                        padding: "4px 10px", borderRadius: 9999, fontSize: 10, fontWeight: 800,
+                        padding: "4px 10px", borderRadius: 9999, fontSize: 10, fontWeight: 700,
                         textTransform: "uppercase", letterSpacing: "0.05em",
-                        background: exam.passed ? `${c.secondary}1a` : `${c.error}1a`,
+                        background: exam.passed ? `${c.orSoft}` : `${c.rdSoft}`,
                         color: exam.passed ? c.secondary : c.error,
                       }}>
                         {exam.passed ? "Geslaagd" : "Probeer opnieuw"}

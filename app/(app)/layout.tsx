@@ -19,7 +19,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           profile from the browser on every load. */}
       <ProfileHydrator profile={profile} />
       <TopNav />
-      <main className="flex-1 pb-32 md:pb-0" id="main-content">
+      {/* The bottom padding clears the floating tab pill; `--app-tabbar` is 0
+          from `md` up, where the pill is hidden and the TopNav takes over. */}
+      <main
+        className="flex-1"
+        id="main-content"
+        style={{ paddingBottom: "var(--app-tabbar, 0px)" }}
+      >
         {children}
       </main>
       <MobileNav />

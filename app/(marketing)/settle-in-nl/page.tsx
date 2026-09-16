@@ -6,8 +6,8 @@ import { LeadForm } from "@/components/marketing/lead-form";
 import { SignedInRedirect } from "@/components/marketing/signed-in-redirect";
 
 const font = {
-  headline: "'Plus Jakarta Sans', sans-serif",
-  body: "'Noto Serif', serif",
+  headline: "'Instrument Sans', system-ui, sans-serif",
+  body: "'Instrument Serif', Georgia, serif",
 };
 
 /* ════════════════════════════════════════════════════════════════════════════
@@ -135,8 +135,8 @@ export default function SettleInNlPage() {
         <section className="fm-fade-up" style={{ padding: "48px 0 56px", maxWidth: 720 }}>
           <p style={eyebrow}>{COPY.hero.eyebrow}</p>
           <h1 style={{
-            fontSize: "clamp(34px, 6vw, 56px)", fontWeight: 800, lineHeight: 1.08,
-            letterSpacing: "-0.03em", color: "var(--primary)", margin: "12px 0 0",
+            fontFamily: font.body, fontSize: "clamp(34px, 6vw, 56px)", fontWeight: 400, lineHeight: 1.06,
+            letterSpacing: "-0.01em", color: "var(--ink)", margin: "12px 0 0",
           }}>
             {COPY.hero.title}
           </h1>
@@ -237,11 +237,11 @@ export default function SettleInNlPage() {
 
         {/* ── Final CTA + email capture ─────────────────────────────────── */}
         <section className="fm-fade-up" style={{
-          margin: "16px 0 8px", padding: "36px 28px", borderRadius: 28,
+          margin: "16px 0 8px", padding: "36px 28px", borderRadius: 20,
           background: "var(--surface-container-low)",
         }}>
           <h2 style={{
-            fontSize: "clamp(24px, 3.5vw, 34px)", fontWeight: 800, letterSpacing: "-0.02em",
+            fontFamily: font.body, fontSize: "clamp(24px, 3.5vw, 34px)", fontWeight: 400, letterSpacing: "-0.01em",
             color: "var(--primary)", margin: 0, maxWidth: 620,
           }}>
             {COPY.finalCta.title}
@@ -277,7 +277,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   return (
     <section className="fm-fade-up" style={{ padding: "32px 0" }}>
       <h2 style={{
-        fontSize: "clamp(22px, 3vw, 30px)", fontWeight: 800, letterSpacing: "-0.02em",
+        fontFamily: font.body, fontSize: "clamp(22px, 3vw, 30px)", fontWeight: 400, letterSpacing: "-0.01em",
         color: "var(--on-surface)", margin: "0 0 20px", maxWidth: 720,
       }}>
         {title}
@@ -290,7 +290,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 const eyebrow = {
   margin: 0,
   fontSize: 12,
-  fontWeight: 800,
+  fontWeight: 600,
   textTransform: "uppercase",
   letterSpacing: "0.12em",
   color: "var(--secondary)",
@@ -311,7 +311,7 @@ const card = {
 
 const cardTitle = {
   fontSize: 17,
-  fontWeight: 800,
+  fontWeight: 600,
   letterSpacing: "-0.01em",
   color: "var(--on-surface)",
   margin: "12px 0 0",
@@ -330,12 +330,12 @@ const ctaPrimary = {
   alignItems: "center",
   gap: 8,
   padding: "15px 26px",
-  borderRadius: 9999,
+  borderRadius: 16,
   textDecoration: "none",
   fontSize: 16,
-  fontWeight: 800,
+  fontWeight: 600,
   color: "#fff",
-  background: "linear-gradient(to bottom, var(--primary), var(--primary-container))",
+  background: "var(--co)",
 } as const;
 
 const ctaSecondary = {
@@ -343,10 +343,10 @@ const ctaSecondary = {
   alignItems: "center",
   gap: 8,
   padding: "15px 26px",
-  borderRadius: 9999,
+  borderRadius: 16,
   textDecoration: "none",
   fontSize: 16,
-  fontWeight: 800,
+  fontWeight: 600,
   background: "var(--surface-container-lowest)",
   color: "var(--on-surface)",
 } as const;

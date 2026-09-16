@@ -1,8 +1,10 @@
 import { createClient, getProfile } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { DashboardClient } from "./dashboard-client";
+import { getActiveRules } from "@/lib/settle/rules";
 import { getAmsterdamDate } from "@/lib/utils";
-import type { DailyActivity, Lesson, WritingTask, ListeningTask } from "@/lib/supabase/types";
+import type { DailyActivity, Lesson, WritingTask, ListeningTask, SettleTimelineItem } from "@/lib/supabase/types";
+import type { NextDeadline } from "./dashboard-client";
 
 export default async function DashboardPage() {
   // Profile first — its level scopes the "next task" queries below. getProfile()
@@ -33,6 +35,8 @@ export default async function DashboardPage() {
     { data: nextLessonRow },
     { data: nextWritingRow },
     { data: nextListeningRow },
+    settleRules,
+    { data: settleItemsRaw },
   ] = await Promise.all([
     supabase
       .from("daily_activity")
@@ -92,9 +96,45 @@ export default async function DashboardPage() {
       .order("task_id", { ascending: true })
       .limit(1)
       .maybeSingle(),
+    // Settle surfaces the soonest open deadline on the home feed. Rules are
+    // cached reference content; the user's own timeline rows go through the
+    // cookie-bound client so RLS applies.
+    getActiveRules(),
+    supabase
+      .from("settle_timeline_items")
+      .select("*")
+      .eq("user_id", user.id)
+      .in("status", ["due", "upcoming"])
+      .not("due_date", "is", null)
+      .order("due_date", { ascending: true })
+      .limit(1),
   ]);
 
   const activity: DailyActivity[] = activityRaw ?? [];
+
+  // The soonest open item, joined to the rule that produced it. An item whose
+  // rule is no longer in force has no title to show and is simply dropped.
+  const settleItem = ((settleItemsRaw ?? []) as SettleTimelineItem[])[0] ?? null;
+  const settleRule = settleItem ? settleRules.find((r) => r.key === settleItem.rule_key) ?? null : null;
+
+  let nextDeadline: NextDeadline | null = null;
+  if (settleItem?.due_date && settleRule) {
+    const due = settleItem.due_date;
+    const msPerDay = 86_400_000;
+    const daysAway = Math.round(
+      (Date.parse(`${due}T00:00:00Z`) - Date.parse(`${today}T00:00:00Z`)) / msPerDay
+    );
+    nextDeadline = {
+      key: settleRule.key,
+      title: settleRule.title_en,
+      summary: settleRule.summary_en,
+      dueLabel: `Due ${new Date(`${due}T00:00:00`).toLocaleDateString("en-GB", {
+        day: "numeric", month: "short", year: "numeric",
+      })}`,
+      daysAway,
+      severity: settleRule.severity,
+    };
+  }
 
   let nextWritingTask: WritingTask | null =
     (nextWritingRow as unknown as { writing_tasks: WritingTask | null } | null)?.writing_tasks ?? null;
@@ -147,6 +187,7 @@ export default async function DashboardPage() {
       completedWritingCount={completedWritingCount ?? 0}
       completedListeningCount={completedListeningCount ?? 0}
       todayXP={todayActivity?.xp_earned ?? 0}
+      nextDeadline={nextDeadline}
     />
   );
 }

@@ -10,8 +10,8 @@ import type { Database, Json } from "@/lib/supabase/types";
 type RulingCheckInsert = Database["public"]["Tables"]["settle_ruling_checks"]["Insert"];
 
 const font = {
-  headline: "'Plus Jakarta Sans', sans-serif",
-  body: "'Noto Serif', serif",
+  headline: "'Instrument Sans', system-ui, sans-serif",
+  body: "'Instrument Serif', Georgia, serif",
 };
 
 /**
@@ -66,8 +66,8 @@ export function RulingClient({
           className="tap-shrink"
           style={{
             flex: 1, minWidth: 140, padding: "14px 16px", borderRadius: 9999,
-            fontFamily: font.headline, fontSize: 14, fontWeight: 800, textDecoration: "none",
-            background: `${c.primary}12`, color: c.primary,
+            fontFamily: font.headline, fontSize: 14, fontWeight: 700, textDecoration: "none",
+            background: `${c.coSoft}`, color: c.primary,
             display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6,
           }}
         >

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import type { ListeningExam, ListeningExamSection, ListeningQuestion } from "@/lib/supabase/types";
 import { createClient } from "@/lib/supabase/client";
 import { useAppStore } from "@/lib/store";
-import { useTheme, getColors } from "@/lib/use-theme";
+import { useTheme, getColors, font } from "@/lib/use-theme";
 import { getAmsterdamDate } from "@/lib/utils";
 
 type Phase =
@@ -213,7 +213,7 @@ export function ExamRunner({ exam, sections, userId }: Props) {
 
     updateXP(xpAwarded);
     if (passed) {
-      addToast({ type: "achievement", title: "🏆 Examen geslaagd!", message: `${score}% — ${correctCount}/${total} goed`, xp: xpAwarded });
+      addToast({ type: "achievement", title: "Examen geslaagd", message: `${score}% — ${correctCount}/${total} goed`, xp: xpAwarded });
     }
 
     setReviewResult({ score, correctCount, total, passed, xpAwarded });
@@ -231,7 +231,7 @@ export function ExamRunner({ exam, sections, userId }: Props) {
             Terug naar examens
           </Link>
 
-          <h1 style={{ fontSize: 26, fontWeight: 800, color: c.primary, letterSpacing: "-0.025em", margin: 0 }}>
+          <h1 style={{ fontSize: 26, fontWeight: 700, color: c.primary, letterSpacing: "-0.025em", margin: 0 }}>
             {exam.title}
           </h1>
           {exam.description && (
@@ -239,7 +239,7 @@ export function ExamRunner({ exam, sections, userId }: Props) {
           )}
 
           <div style={{ background: c.surfaceLow, padding: 20, borderRadius: 16, marginTop: 24 }}>
-            <h3 style={{ fontSize: 14, fontWeight: 800, margin: 0, marginBottom: 12, color: c.onSurface }}>
+            <h3 style={{ fontSize: 14, fontWeight: 700, margin: 0, marginBottom: 12, color: c.onSurface }}>
               Examenregels
             </h3>
             <ul style={{ margin: 0, paddingLeft: 20, fontSize: 13, color: c.onSurface, lineHeight: 1.6 }}>
@@ -259,9 +259,9 @@ export function ExamRunner({ exam, sections, userId }: Props) {
             onClick={start}
             style={{
               marginTop: 24, width: "100%", padding: 16, borderRadius: 9999,
-              background: `linear-gradient(to bottom, ${c.primary}, ${c.primaryContainer})`,
+              background: `${c.co}`,
               color: "#fff", border: "none", cursor: "pointer",
-              fontSize: 15, fontWeight: 800, letterSpacing: "0.02em",
+              fontSize: 15, fontWeight: 700, letterSpacing: "0.02em",
               boxShadow: "0 10px 20px -5px rgba(0,0,0,0.15)",
             }}
           >
@@ -279,15 +279,15 @@ export function ExamRunner({ exam, sections, userId }: Props) {
         <main style={{ padding: "24px 24px 128px", maxWidth: 448, margin: "0 auto" }}>
           <div style={{
             background: reviewResult.passed
-              ? `linear-gradient(135deg, ${c.primary}, ${c.primaryContainer})`
-              : `linear-gradient(135deg, ${c.error}, ${c.errorContainer ?? c.error})`,
-            color: "#fff", padding: 28, borderRadius: 24, textAlign: "center",
+              ? `${c.co}`
+              : `${c.rd}`,
+            color: "#fff", padding: 28, borderRadius: 18, textAlign: "center",
             marginBottom: 24,
           }}>
             <span className="mso mso-fill" style={{ fontSize: 48, color: "#fff" }}>
               {reviewResult.passed ? "verified" : "replay"}
             </span>
-            <h1 style={{ fontSize: 36, fontWeight: 900, margin: "8px 0 0", letterSpacing: "-0.03em" }}>
+            <h1 style={{ fontFamily: font.body, fontSize: 34, fontWeight: 400, lineHeight: 1.1, margin: "8px 0 0", letterSpacing: "-0.01em" }}>
               {reviewResult.score}%
             </h1>
             <p style={{ fontSize: 13, fontWeight: 700, margin: 0, opacity: 0.9, textTransform: "uppercase", letterSpacing: "0.1em" }}>
@@ -296,26 +296,26 @@ export function ExamRunner({ exam, sections, userId }: Props) {
             <div style={{
               display: "inline-block", marginTop: 16,
               padding: "6px 14px", borderRadius: 9999,
-              background: "rgba(255,255,255,0.2)", fontSize: 12, fontWeight: 800,
+              background: "rgba(255,255,255,0.2)", fontSize: 12, fontWeight: 700,
               textTransform: "uppercase", letterSpacing: "0.1em",
             }}>
               {reviewResult.passed ? "Geslaagd" : "Niet geslaagd"}  · +{reviewResult.xpAwarded} XP
             </div>
           </div>
 
-          <h2 style={{ fontSize: 16, fontWeight: 800, marginBottom: 12 }}>Per fragment</h2>
+          <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 12 }}>Per fragment</h2>
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             {sections.map((s, idx) => {
               const sectionCorrect = s.questions.filter(
                 (q) => answers[`${s.id}:${q.id}`] === q.correct_option_id
               ).length;
               return (
-                <div key={s.id} style={{ background: c.surfaceLowest, padding: 16, borderRadius: 16 }}>
+                <div key={s.id} style={{ background: c.card, padding: 16, borderRadius: 16 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                    <h3 style={{ fontSize: 14, fontWeight: 800, margin: 0 }}>
+                    <h3 style={{ fontSize: 14, fontWeight: 700, margin: 0 }}>
                       {idx + 1}. {s.title}
                     </h3>
-                    <span style={{ fontSize: 12, fontWeight: 800, color: sectionCorrect === s.questions.length ? c.primary : c.onSurfaceVariant }}>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: sectionCorrect === s.questions.length ? c.primary : c.onSurfaceVariant }}>
                       {sectionCorrect}/{s.questions.length}
                     </span>
                   </div>
@@ -328,7 +328,7 @@ export function ExamRunner({ exam, sections, userId }: Props) {
                         <div key={q.id} style={{
                           display: "flex", gap: 8, fontSize: 12, color: c.onSurface,
                           padding: 8, borderRadius: 8,
-                          background: correct ? `${c.primary}10` : `${c.error}10`,
+                          background: correct ? `${c.coSoft}` : `${c.rdSoft}`,
                         }}>
                           <span className="mso mso-fill" style={{ fontSize: 16, color: correct ? c.primary : c.error }}>
                             {correct ? "check_circle" : "cancel"}
@@ -370,7 +370,7 @@ export function ExamRunner({ exam, sections, userId }: Props) {
               }}
               style={{
                 flex: 1, padding: 14, borderRadius: 9999, border: "none",
-                background: c.primary, color: "#fff", fontWeight: 800, cursor: "pointer",
+                background: c.primary, color: "#fff", fontWeight: 700, cursor: "pointer",
               }}
             >
               Opnieuw
@@ -406,7 +406,7 @@ export function ExamRunner({ exam, sections, userId }: Props) {
       <main style={{ padding: "24px 24px 128px", maxWidth: 448, margin: "0 auto" }}>
         {/* Header */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-          <span style={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color: c.primary }}>
+          <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: c.primary }}>
             Mock {exam.position} · Fragment {phase.idx + 1}/{sections.length}
           </span>
           <span style={{ fontSize: 11, fontWeight: 700, color: c.onSurfaceVariant }}>{progressPct}%</span>
@@ -415,7 +415,7 @@ export function ExamRunner({ exam, sections, userId }: Props) {
           <div style={{ height: "100%", width: `${progressPct}%`, background: c.primary, transition: "width 0.4s" }} />
         </div>
 
-        <h1 style={{ fontSize: 22, fontWeight: 800, color: c.onSurface, margin: 0, marginBottom: 4 }}>
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: c.onSurface, margin: 0, marginBottom: 4 }}>
           {currentSection.title}
         </h1>
         {currentSection.scenario_nl && (
@@ -438,7 +438,7 @@ export function ExamRunner({ exam, sections, userId }: Props) {
         {replayable && (
           <div style={{
             position: "sticky", top: 8, zIndex: 10,
-            background: c.surfaceLowest, padding: 16, borderRadius: 20, marginBottom: 20,
+            background: c.card, padding: 16, borderRadius: 20, marginBottom: 20,
             boxShadow: "0 6px 20px rgba(26,28,27,0.12)",
             border: `1px solid ${c.outlineVariant}`,
           }}>
@@ -477,7 +477,7 @@ export function ExamRunner({ exam, sections, userId }: Props) {
 
         {!replayable && phase.step === "listen" && (
           <div style={{
-            background: c.surfaceLowest, padding: 24, borderRadius: 20, marginBottom: 16,
+            background: c.card, padding: 24, borderRadius: 20, marginBottom: 16,
             boxShadow: "0 4px 16px rgba(26,28,27,0.06)",
           }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
@@ -519,7 +519,7 @@ export function ExamRunner({ exam, sections, userId }: Props) {
             {currentSection.questions.map((q: ListeningQuestion, qIdx) => {
               const selected = answers[`${currentSection.id}:${q.id}`];
               return (
-                <div key={q.id} style={{ background: c.surfaceLowest, padding: 16, borderRadius: 16 }}>
+                <div key={q.id} style={{ background: c.card, padding: 16, borderRadius: 16 }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: c.primary, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 6 }}>
                     Vraag {qIdx + 1}
                   </div>
@@ -536,7 +536,7 @@ export function ExamRunner({ exam, sections, userId }: Props) {
                           style={{
                             textAlign: "left", padding: "12px 14px", borderRadius: 12, cursor: "pointer",
                             border: `2px solid ${isSelected ? c.primary : c.outlineVariant}`,
-                            background: isSelected ? `${c.primary}10` : c.surfaceLow,
+                            background: isSelected ? `${c.coSoft}` : c.surfaceLow,
                             color: c.onSurface, fontSize: 14, fontWeight: 600,
                             display: "flex", alignItems: "center", gap: 10,
                           }}
@@ -567,10 +567,10 @@ export function ExamRunner({ exam, sections, userId }: Props) {
           style={{
             width: "100%", padding: 16, borderRadius: 9999, border: "none",
             background: canProceed
-              ? `linear-gradient(to bottom, ${c.primary}, ${c.primaryContainer})` : c.surfaceHigh,
+              ? `${c.co}` : c.surfaceHigh,
             color: canProceed ? "#fff" : c.onSurfaceVariant,
             cursor: canProceed ? "pointer" : "not-allowed",
-            fontWeight: 800, fontSize: 14, letterSpacing: "0.02em",
+            fontWeight: 700, fontSize: 14, letterSpacing: "0.02em",
             boxShadow: canProceed ? "0 10px 20px -5px rgba(0,0,0,0.15)" : "none",
           }}
         >

@@ -4,23 +4,19 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useAppStore } from "@/lib/store";
-import { useTheme, getColors } from "@/lib/use-theme";
-
-const font = {
-  headline: "'Plus Jakarta Sans', sans-serif",
-  body: "'Noto Serif', serif",
-};
+import { useTheme, getColors, font } from "@/lib/use-theme";
+import { Kicker, Display, ProgressBar, primaryButton, iconButton } from "@/components/ui/screen";
 
 const STEPS = [
-  { id: 1, title: "What's your name?", subtitle: "Pick a username for your profile", icon: "waving_hand" },
-  { id: 2, title: "When is your exam?", subtitle: "We'll count down the days for you", icon: "event" },
-  { id: 3, title: "Daily learning goal", subtitle: "How many minutes per day can you study?", icon: "flag" },
+  { id: 1, title: "What should we call you?", subtitle: "A username for your profile. You can change it later." },
+  { id: 2, title: "When is the exam?", subtitle: "Everything on your countdown is measured from this date." },
+  { id: 3, title: "How much time, per day?", subtitle: "The daily XP goal is set from this. Be honest, not ambitious." },
 ];
 
 const GOALS = [
-  { minutes: 10, label: "Casual", desc: "10 min/day", emoji: "🌱" },
-  { minutes: 20, label: "Regular", desc: "20 min/day", emoji: "⚡" },
-  { minutes: 30, label: "Intensive", desc: "30 min/day", emoji: "🔥" },
+  { minutes: 10, label: "Casual", desc: "A lesson most days" },
+  { minutes: 20, label: "Regular", desc: "The pace that passes" },
+  { minutes: 30, label: "Intensive", desc: "Exam in a hurry" },
 ];
 
 export default function OnboardingPage() {
@@ -93,66 +89,42 @@ export default function OnboardingPage() {
   return (
     <div style={{
       minHeight: "100vh", display: "flex", flexDirection: "column",
-      alignItems: "center", justifyContent: "center",
-      background: c.background, padding: "16px 24px",
-      fontFamily: font.headline, transition: "background 0.3s",
+      background: c.background, fontFamily: font.headline, transition: "background 0.3s",
+      padding: "calc(env(safe-area-inset-top, 0px) + 20px) 28px 28px",
     }}>
-      {/* Progress bar */}
-      <div style={{ width: "100%", maxWidth: 400, marginBottom: 32 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-          <span style={{ fontSize: 12, fontWeight: 700, color: c.onSurfaceVariant, textTransform: "uppercase", letterSpacing: "0.1em" }}>
-            Step {step} of {STEPS.length}
-          </span>
-          <span style={{ fontSize: 12, fontWeight: 700, color: c.primary }}>{Math.round(progress)}%</span>
-        </div>
-        <div style={{ height: 6, background: c.surfaceHighest, borderRadius: 9999, overflow: "hidden" }}>
-          <div
-            style={{ width: `${progress}%`, height: "100%", background: c.primary, borderRadius: 9999, transition: "width 0.4s ease" }}
-          />
-        </div>
-        {/* Step dots */}
-        <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 16 }}>
-          {STEPS.map((s) => (
-            <div key={s.id} style={{
-              width: step >= s.id ? 24 : 8, height: 8, borderRadius: 9999,
-              background: step >= s.id ? c.primary : c.surfaceHighest,
-              transition: "all 0.3s",
-            }} />
-          ))}
-        </div>
-      </div>
+      <div style={{ width: "100%", maxWidth: 420, margin: "0 auto", flex: 1, display: "flex", flexDirection: "column" }}>
 
-      {/* Card */}
-      <div style={{
-        width: "100%", maxWidth: 400, background: c.surfaceLowest,
-        borderRadius: 28, padding: 32, overflow: "hidden",
-        boxShadow: "0px 12px 48px rgba(26,28,27,0.08)",
-      }}>
-        <div key={step} className="fm-slide-in-right">
-            {/* Step header */}
-            <div style={{ marginBottom: 28 }}>
-              <div style={{
-                width: 56, height: 56, borderRadius: 16,
-                background: `${c.primary}15`, display: "flex",
-                alignItems: "center", justifyContent: "center", marginBottom: 20,
-              }}>
-                <span className="mso mso-fill" style={{ fontSize: 28, color: c.primary }}>
-                  {STEPS[step - 1].icon}
-                </span>
-              </div>
-              <h2 style={{ fontSize: 22, fontWeight: 800, color: c.onSurface, letterSpacing: "-0.025em", margin: 0 }}>
-                {STEPS[step - 1].title}
-              </h2>
-              <p style={{ color: c.onSurfaceVariant, fontSize: 14, fontWeight: 500, marginTop: 6 }}>
-                {STEPS[step - 1].subtitle}
-              </p>
-            </div>
+        {/* ── Back + progress rail ── */}
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 26 }}>
+          <button
+            type="button"
+            onClick={() => step > 1 && setStep(step - 1)}
+            disabled={step === 1}
+            aria-label="Back"
+            style={{ ...iconButton(c), opacity: step === 1 ? 0.35 : 1, cursor: step === 1 ? "default" : "pointer" }}
+          >
+            <span className="mso" style={{ fontSize: 19, color: c.ink70 }}>arrow_back</span>
+          </button>
+          <ProgressBar c={c} pct={progress} height={6} animate={false} />
+          <span style={{ fontSize: 11.5, fontWeight: 700, color: c.ink45, flex: "none" }}>
+            {step}/{STEPS.length}
+          </span>
+        </div>
+
+        <div key={step} className="fm-slide-in-right" style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+            <Kicker c={c} style={{ letterSpacing: "0.2em" }}>Setup</Kicker>
+            <Display c={c} style={{ fontSize: 33, margin: "9px 0 8px" }}>
+              {STEPS[step - 1].title}
+            </Display>
+            <p style={{ fontSize: 14, lineHeight: 1.6, color: c.ink70, margin: "0 0 24px" }}>
+              {STEPS[step - 1].subtitle}
+            </p>
 
             {/* Step 1: Username */}
             {step === 1 && (
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 <div style={{ position: "relative" }}>
-                  <span className="mso" style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", fontSize: 18, color: c.outline }}>person</span>
+                  <span className="mso" style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", fontSize: 18, color: c.ink25 }}>person</span>
                   <input
                     type="text" value={username}
                     onChange={(e) => setUsername(e.target.value)}
@@ -161,14 +133,14 @@ export default function OnboardingPage() {
                     onKeyDown={(e) => e.key === "Enter" && handleNext()}
                     aria-label="Choose a username"
                     style={{
-                      width: "100%", padding: "14px 14px 14px 44px", borderRadius: 14,
-                      border: `1.5px solid ${c.outlineVariant}`, background: c.surfaceLow,
-                      fontSize: 14, fontFamily: font.headline, color: c.onSurface,
+                      width: "100%", boxSizing: "border-box", padding: "15px 16px 15px 44px", borderRadius: 14,
+                      border: `1.5px solid ${c.line}`, background: c.card,
+                      fontSize: 15, fontFamily: font.headline, color: c.ink,
                       outline: "none",
                     }}
                   />
                 </div>
-                <p style={{ fontSize: 12, color: c.outline, fontWeight: 500 }}>
+                <p style={{ fontSize: 12, color: c.ink45 }}>
                   3–20 characters. Letters, numbers, underscores only.
                 </p>
               </div>
@@ -178,16 +150,16 @@ export default function OnboardingPage() {
             {step === 2 && (
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 <div style={{ position: "relative" }}>
-                  <span className="mso" style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", fontSize: 18, color: c.outline }}>calendar_today</span>
+                  <span className="mso" style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", fontSize: 18, color: c.ink25 }}>calendar_today</span>
                   <input
                     type="date" value={examDate}
                     onChange={(e) => setExamDate(e.target.value)}
                     min={new Date().toISOString().split("T")[0]}
                     aria-label="Set your exam date"
                     style={{
-                      width: "100%", padding: "14px 14px 14px 44px", borderRadius: 14,
-                      border: `1.5px solid ${c.outlineVariant}`, background: c.surfaceLow,
-                      fontSize: 14, fontFamily: font.headline, color: c.onSurface,
+                      width: "100%", boxSizing: "border-box", padding: "15px 16px 15px 44px", borderRadius: 14,
+                      border: `1.5px solid ${c.line}`, background: c.card,
+                      fontSize: 15, fontFamily: font.headline, color: c.ink,
                       outline: "none",
                     }}
                   />
@@ -197,8 +169,8 @@ export default function OnboardingPage() {
                   onClick={() => { setExamDate(""); setStep(3); }}
                   style={{
                     background: "transparent", border: "none", cursor: "pointer",
-                    fontSize: 13, fontWeight: 600, color: c.onSurfaceVariant,
-                    textDecoration: "underline", fontFamily: font.headline,
+                    fontSize: 13, fontWeight: 600, color: c.co,
+                    fontFamily: font.headline,
                     padding: 0, textAlign: "left",
                   }}
                 >
@@ -210,7 +182,7 @@ export default function OnboardingPage() {
             {/* Step 3: Daily goal */}
             {step === 3 && (
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                {GOALS.map(({ minutes, label, desc, emoji }) => {
+                {GOALS.map(({ minutes, label, desc }) => {
                   const selected = goalMinutes === minutes;
                   return (
                     <button
@@ -219,27 +191,24 @@ export default function OnboardingPage() {
                       onClick={() => setGoalMinutes(minutes)}
                       aria-pressed={selected}
                       style={{
-                        width: "100%", display: "flex", alignItems: "center", gap: 16,
-                        padding: 18, borderRadius: 16, border: "none", cursor: "pointer",
-                        fontFamily: font.headline, transition: "all 0.2s",
-                        background: selected ? `${c.primary}12` : c.surfaceLow,
-                        boxShadow: selected ? `0 0 0 2px ${c.primary}` : "none",
-                        transform: selected ? "scale(1.02)" : "scale(1)",
+                        width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: 14,
+                        padding: 17, borderRadius: 17, cursor: "pointer",
+                        fontFamily: font.headline, transition: "border-color 0.2s, background 0.2s",
+                        border: `1.5px solid ${selected ? c.co : c.line}`,
+                        background: selected ? c.coSoft : c.card,
                       }}
                     >
-                      <span style={{ fontSize: 28 }} aria-hidden="true">{emoji}</span>
-                      <div style={{ textAlign: "left" }}>
-                        <p style={{ fontWeight: 700, fontSize: 14, color: c.onSurface, margin: 0 }}>{label}</p>
-                        <p style={{ fontSize: 12, color: c.onSurfaceVariant, margin: 0, marginTop: 2 }}>{desc}</p>
-                      </div>
-                      {selected && (
-                        <div style={{
-                          marginLeft: "auto", width: 24, height: 24, borderRadius: 9999,
-                          background: c.primary, display: "flex", alignItems: "center", justifyContent: "center",
-                        }}>
-                          <span className="mso" style={{ fontSize: 16, color: "#fff" }}>check</span>
-                        </div>
-                      )}
+                      <span style={{ fontFamily: font.body, fontSize: 26, color: selected ? c.coInk : c.ink45, width: 46, flex: "none" }}>
+                        {minutes}
+                        <span style={{ fontSize: 12, fontFamily: font.headline, fontWeight: 600 }}> min</span>
+                      </span>
+                      <span style={{ flex: 1 }}>
+                        <span style={{ display: "block", fontSize: 14.5, fontWeight: 600, color: c.ink }}>{label}</span>
+                        <span style={{ display: "block", fontSize: 12.5, color: c.ink70, marginTop: 2 }}>{desc}</span>
+                      </span>
+                      <span className="mso mso-fill" style={{ fontSize: 20, color: selected ? c.co : c.ink25 }}>
+                        check_circle
+                      </span>
                     </button>
                   );
                 })}
@@ -252,8 +221,8 @@ export default function OnboardingPage() {
                 role="alert"
                 style={{
                   display: "flex", alignItems: "center", gap: 8,
-                  padding: "12px 16px", borderRadius: 12, marginTop: 16,
-                  background: `${c.error}15`, color: c.error,
+                  padding: "12px 14px", borderRadius: 14, marginTop: 16,
+                  background: c.rdSoft, color: c.rd,
                   fontSize: 13, fontWeight: 600,
                 }}
               >
@@ -263,44 +232,26 @@ export default function OnboardingPage() {
             )}
         </div>
 
-        {/* Action buttons */}
-        <div style={{ display: "flex", gap: 12, marginTop: 28 }}>
-          {step > 1 && (
-            <button
-              onClick={() => setStep(step - 1)}
-              style={{
-                width: 52, height: 52, borderRadius: 9999,
-                border: `1.5px solid ${c.outlineVariant}`, background: "transparent",
-                cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                flexShrink: 0,
-              }}
-            >
-              <span className="mso" style={{ fontSize: 20, color: c.onSurfaceVariant }}>arrow_back</span>
-            </button>
+        <div style={{ flex: 1, minHeight: 20 }} />
+
+        <button
+          onClick={handleNext}
+          disabled={loading}
+          style={{
+            ...primaryButton(c),
+            opacity: loading ? 0.6 : 1,
+            display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+          }}
+        >
+          {loading ? (
+            <span className="mso" style={{ fontSize: 18, animation: "spin 1s linear infinite" }}>progress_activity</span>
+          ) : (
+            <>
+              {step === 3 ? "Start learning" : "Continue"}
+              <span className="mso" style={{ fontSize: 18 }}>arrow_forward</span>
+            </>
           )}
-          <button
-            onClick={handleNext}
-            disabled={loading}
-            style={{
-              flex: 1, padding: 16, borderRadius: 9999, border: "none",
-              cursor: "pointer", fontSize: 15, fontWeight: 700,
-              fontFamily: font.headline, color: "#fff",
-              background: `linear-gradient(to bottom, ${c.primary}, ${c.primaryContainer})`,
-              boxShadow: `0 10px 20px -5px ${c.primary}40`,
-              opacity: loading ? 0.6 : 1, transition: "all 0.2s",
-              display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-            }}
-          >
-            {loading ? (
-              <span className="mso" style={{ fontSize: 18, animation: "spin 1s linear infinite" }}>progress_activity</span>
-            ) : (
-              <>
-                {step === 3 ? "Start learning!" : "Continue"}
-                <span className="mso" style={{ fontSize: 18 }}>arrow_forward</span>
-              </>
-            )}
-          </button>
-        </div>
+        </button>
       </div>
 
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>

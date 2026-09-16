@@ -16,8 +16,8 @@ interface Props {
 type WeekFilter = "all" | 1 | 2 | 3 | 4;
 
 const font = {
-  headline: "'Plus Jakarta Sans', sans-serif",
-  body: "'Noto Serif', serif",
+  headline: "'Instrument Sans', system-ui, sans-serif",
+  body: "'Instrument Serif', Georgia, serif",
 };
 
 const typeIcons: Record<string, string> = { reading: "auto_stories", grammar: "description", vocabulary: "translate", listening: "headphones" };
@@ -105,7 +105,7 @@ export function ReadingClient({ lessons }: Props) {
         {/* Top bar */}
         <nav style={{
           position: "fixed", top: 0, width: "100%", zIndex: 50,
-          background: "rgba(249,249,247,0.85)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)",
+          background: c.glassBackground, backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)",
           padding: "0 16px", height: 64, display: "flex", alignItems: "center", gap: 12,
         }}>
           <button onClick={handleBack} aria-label="Back to reading list" style={{
@@ -142,7 +142,7 @@ export function ReadingClient({ lessons }: Props) {
               aria-label="Toggle exam timer mode"
               style={{
                 padding: "6px 12px", borderRadius: 9999, border: "none", cursor: "pointer",
-                background: timerMode ? `${c.primary}15` : c.surfaceHigh,
+                background: timerMode ? `${c.coSoft}` : c.surfaceHigh,
                 color: timerMode ? c.primary : c.onSurfaceVariant,
                 display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 600,
               }}
@@ -157,7 +157,7 @@ export function ReadingClient({ lessons }: Props) {
           {timerMode && (
             <div style={{
               display: "flex", alignItems: "center", gap: 12, padding: 16, borderRadius: 16,
-              background: `${c.primary}0a`, marginBottom: 24,
+              background: c.coSoft, marginBottom: 24,
             }}>
               <span className="mso" style={{ color: c.primary, fontSize: 20 }}>schedule</span>
               <span aria-live="polite" aria-label={`Time remaining: ${formatTime(timeLeft)}`} style={{
@@ -185,18 +185,18 @@ export function ReadingClient({ lessons }: Props) {
           {/* Reading progress chip */}
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
             <span className="mso" style={{ fontSize: 16, color: c.secondary }}>auto_stories</span>
-            <span style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.15em", fontWeight: 800, color: c.onSurfaceVariant }}>
+            <span style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.15em", fontWeight: 700, color: c.onSurfaceVariant }}>
               {selectedLesson.estimated_minutes ?? "?"} min lezen
             </span>
             <span style={{ width: 4, height: 4, borderRadius: 9999, background: c.outlineVariant }} />
-            <span style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.15em", fontWeight: 800, color: c.onSurfaceVariant }}>
+            <span style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.15em", fontWeight: 700, color: c.onSurfaceVariant }}>
               {questions.length === 1 ? "1 vraag" : `${questions.length} vragen`}
             </span>
           </div>
 
           {/* Passage Card */}
           <section style={{
-            background: "#FFFBF5", padding: 28, borderRadius: 24, marginBottom: 32,
+            background: c.card2, padding: 28, borderRadius: 18, marginBottom: 32,
             boxShadow: "0px 8px 24px rgba(26,28,27,0.04)",
             borderLeft: `4px solid ${c.primaryContainer}`,
           }}>
@@ -240,7 +240,7 @@ export function ReadingClient({ lessons }: Props) {
 
           {/* Questions */}
           {questions.length > 0 && (
-            <h2 style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.025em", marginBottom: 16, color: c.primary }}>
+            <h2 style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.025em", marginBottom: 16, color: c.primary }}>
               Begrip
             </h2>
           )}
@@ -255,14 +255,14 @@ export function ReadingClient({ lessons }: Props) {
 
             return (
               <div key={qi} style={{
-                background: c.surfaceLowest, borderRadius: 20, padding: 24, marginBottom: 16,
+                background: c.card, borderRadius: 20, padding: 24, marginBottom: 16,
                 boxShadow: "0px 4px 16px rgba(26,28,27,0.04)",
                 border: showResults && answered
-                  ? isCorrect ? "1.5px solid rgba(34,197,94,0.4)" : `1.5px solid ${c.error}30`
+                  ? isCorrect ? `1.5px solid ${c.gr}` : `1.5px solid ${c.rd}`
                   : "1.5px solid transparent",
               }}>
                 <p style={{ fontSize: 13, fontWeight: 700, marginBottom: 16, color: c.onSurface, lineHeight: 1.5 }}>
-                  <span style={{ color: c.onSurfaceVariant, fontWeight: 800, marginRight: 8 }}>{qi + 1}.</span>
+                  <span style={{ color: c.onSurfaceVariant, fontWeight: 700, marginRight: 8 }}>{qi + 1}.</span>
                   {q.prompt}
                 </p>
                 <div style={{ display: isTrueFalse ? "flex" : "flex", flexDirection: isTrueFalse ? "row" : "column", gap: 10 }}>
@@ -283,7 +283,7 @@ export function ReadingClient({ lessons }: Props) {
                           display: "flex", alignItems: "center", justifyContent: isTrueFalse ? "center" : "space-between", gap: 12,
                           background: isCorrectOpt ? "rgba(187,247,208,0.5)"
                             : isWrong ? c.errorContainer
-                            : isSelected ? `${c.primary}0d`
+                            : isSelected ? `${c.coSoft}`
                             : c.surfaceLow,
                           transition: "all 0.2s",
                           fontFamily: font.headline,
@@ -291,7 +291,7 @@ export function ReadingClient({ lessons }: Props) {
                       >
                         <span style={{
                           fontSize: 14, fontWeight: isSelected ? 600 : 400,
-                          color: isCorrectOpt ? "#14532d" : isWrong ? c.error : isSelected ? c.primary : c.onSurface,
+                          color: isCorrectOpt ? c.grInk : isWrong ? c.error : isSelected ? c.primary : c.onSurface,
                         }}>
                           {opt}
                         </span>
@@ -304,7 +304,7 @@ export function ReadingClient({ lessons }: Props) {
                           </div>
                         )}
                         {showResults && isCorrectOpt && (
-                          <span className="mso mso-fill" style={{ fontSize: 20, color: "#22c55e", flexShrink: 0 }}>check_circle</span>
+                          <span className="mso mso-fill" style={{ fontSize: 20, color: c.gr, flexShrink: 0 }}>check_circle</span>
                         )}
                         {showResults && isWrong && (
                           <span className="mso mso-fill" style={{ fontSize: 20, color: c.error, flexShrink: 0 }}>cancel</span>
@@ -332,7 +332,7 @@ export function ReadingClient({ lessons }: Props) {
                 borderRadius: 20, padding: 24, textAlign: "center", marginBottom: 24,
               }}
             >
-              <p style={{ fontSize: 32, fontWeight: 800, color: totalCorrect === questions.length ? "#14532d" : c.primary }}>
+              <p style={{ fontSize: 32, fontWeight: 700, color: totalCorrect === questions.length ? c.grInk : c.primary }}>
                 {totalCorrect}/{questions.length}
               </p>
               <p style={{ fontSize: 14, fontWeight: 600, color: c.onSurfaceVariant, marginTop: 4 }}>
@@ -343,7 +343,7 @@ export function ReadingClient({ lessons }: Props) {
                 background: c.tertiaryFixed, padding: "6px 16px", borderRadius: 9999,
               }}>
                 <span className="mso mso-fill" style={{ fontSize: 16, color: c.onTertiaryContainer }}>emoji_events</span>
-                <span style={{ fontWeight: 800, fontSize: 14, color: c.tertiary }}>+{selectedLesson.xp_reward ?? 0} XP</span>
+                <span style={{ fontWeight: 700, fontSize: 14, color: c.tertiary }}>+{selectedLesson.xp_reward ?? 0} XP</span>
               </div>
             </div>
           )}
@@ -353,7 +353,7 @@ export function ReadingClient({ lessons }: Props) {
         {questions.length > 0 && (
           <div style={{
             position: "fixed", bottom: 0, left: 0, width: "100%", zIndex: 60,
-            background: "rgba(249,249,247,0.9)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)",
+            background: c.glassBackground, backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)",
             padding: "16px 24px 32px", display: "flex", justifyContent: "center",
           }}>
             {!showResults ? (
@@ -364,7 +364,7 @@ export function ReadingClient({ lessons }: Props) {
                   width: "100%", maxWidth: 672, height: 56, borderRadius: 9999, border: "none", cursor: "pointer",
                   background: Object.keys(selectedAnswers).length < questions.length
                     ? c.surfaceHigh
-                    : `linear-gradient(to bottom, ${c.primary}, ${c.primaryContainer})`,
+                    : `${c.co}`,
                   color: Object.keys(selectedAnswers).length < questions.length ? c.outline : "#ffffff",
                   fontWeight: 700, fontSize: 18, fontFamily: font.headline,
                   boxShadow: Object.keys(selectedAnswers).length >= questions.length ? "0 10px 15px -3px rgba(0,0,0,.1)" : "none",
@@ -377,7 +377,7 @@ export function ReadingClient({ lessons }: Props) {
             ) : (
               <button onClick={handleBack} style={{
                 width: "100%", maxWidth: 672, height: 56, borderRadius: 9999, border: "none", cursor: "pointer",
-                background: `linear-gradient(to bottom, ${c.primary}, ${c.primaryContainer})`,
+                background: `${c.co}`,
                 color: "#ffffff", fontWeight: 700, fontSize: 18, fontFamily: font.headline,
                 boxShadow: "0 10px 15px -3px rgba(0,0,0,.1)",
                 display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
@@ -405,9 +405,6 @@ export function ReadingClient({ lessons }: Props) {
             </div>
           )}
 
-        {/* Background decorations */}
-        <div style={{ position: "fixed", top: -96, right: -96, width: 256, height: 256, background: `${c.primary}0d`, borderRadius: 9999, filter: "blur(96px)", zIndex: -1 }} />
-        <div style={{ position: "fixed", bottom: 128, left: -48, width: 192, height: 192, background: `${c.secondary}0d`, borderRadius: 9999, filter: "blur(96px)", zIndex: -1 }} />
       </div>
     );
   }
@@ -418,7 +415,7 @@ export function ReadingClient({ lessons }: Props) {
       <div style={{ maxWidth: 672, margin: "0 auto", padding: "24px 24px 140px" }}>
         {/* Hero */}
         <div style={{ marginBottom: 28 }}>
-          <h1 style={{ fontSize: 28, fontWeight: 800, letterSpacing: "-0.025em", color: c.primary }}>
+          <h1 style={{ fontSize: 28, fontWeight: 700, letterSpacing: "-0.025em", color: c.primary }}>
             Leesoefening
           </h1>
           <p style={{ fontSize: 14, color: c.onSurfaceVariant, marginTop: 4, fontWeight: 500 }}>
@@ -440,7 +437,7 @@ export function ReadingClient({ lessons }: Props) {
             aria-label="Search reading texts"
             style={{
               width: "100%", padding: "14px 16px 14px 48px", borderRadius: 16,
-              border: `1.5px solid ${c.outlineVariant}40`, background: c.surfaceLowest,
+              border: `1.5px solid ${c.line}`, background: c.card,
               fontSize: 14, color: c.onSurface, outline: "none", fontFamily: font.headline,
               boxSizing: "border-box",
             }}
@@ -457,7 +454,7 @@ export function ReadingClient({ lessons }: Props) {
               style={{
                 padding: "8px 18px", borderRadius: 9999, border: "none", cursor: "pointer",
                 whiteSpace: "nowrap", fontWeight: 700, fontSize: 13,
-                background: weekFilter === w ? c.primary : c.surfaceLowest,
+                background: weekFilter === w ? c.primary : c.card,
                 color: weekFilter === w ? "#ffffff" : c.onSurfaceVariant,
                 boxShadow: weekFilter === w ? "0 4px 12px rgba(0,41,117,0.15)" : "none",
                 transition: "all 0.2s", fontFamily: font.headline, flexShrink: 0,
@@ -480,8 +477,8 @@ export function ReadingClient({ lessons }: Props) {
                 aria-label={`Open: ${lesson.title}`}
                 style={{
                   animationDelay: `${i * 0.04}s`,
-                  width: "100%", textAlign: "left", background: c.surfaceLowest,
-                  borderRadius: 20, padding: 20, border: "none", cursor: "pointer",
+                  width: "100%", textAlign: "left", background: c.card,
+                  borderRadius: 18, padding: 18, border: "none", cursor: "pointer",
                   boxShadow: "0px 4px 16px rgba(26,28,27,0.04)",
                   transition: "all 0.2s", fontFamily: font.headline,
                   display: "flex", gap: 16, alignItems: "flex-start",
@@ -502,7 +499,7 @@ export function ReadingClient({ lessons }: Props) {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
                     <span style={{
-                      fontSize: 9, fontWeight: 800, padding: "2px 8px", borderRadius: 9999,
+                      fontSize: 9, fontWeight: 700, padding: "2px 8px", borderRadius: 9999,
                       background: `${typeColors[lType] ?? c.primary}15`, color: typeColors[lType] ?? c.primary,
                       textTransform: "uppercase", letterSpacing: "0.1em",
                     }}>

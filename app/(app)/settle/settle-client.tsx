@@ -4,16 +4,12 @@ import { useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { SettleDisclaimer } from "@/components/settle-disclaimer";
-import { useTheme, getColors } from "@/lib/use-theme";
+import { useTheme, getColors, font } from "@/lib/use-theme";
+import { Screen, Kicker, Display, Card, Chip, ProgressBar, screenTopPad } from "@/components/ui/screen";
 import { getAmsterdamDate } from "@/lib/utils";
 import type { Database, SettleRule, SettleSeverity, SettleTimelineItem } from "@/lib/supabase/types";
 
 type TimelineUpdate = Database["public"]["Tables"]["settle_timeline_items"]["Update"];
-
-const font = {
-  headline: "'Plus Jakarta Sans', sans-serif",
-  body: "'Noto Serif', serif",
-};
 
 /** One stored timeline row joined to the rule it was generated from. */
 export type SettleEntry = {
@@ -60,9 +56,9 @@ const SEVERITY_LABEL: Record<SettleSeverity, string> = {
 
 function severityColors(severity: SettleSeverity, c: ReturnType<typeof getColors>) {
   switch (severity) {
-    case "blocking": return { fg: c.error, bg: `${c.error}15` };
-    case "costly": return { fg: c.secondary, bg: `${c.secondary}15` };
-    case "routine": return { fg: c.onSurfaceVariant, bg: c.surfaceHigh };
+    case "blocking": return { fg: c.rd, bg: c.rdSoft };
+    case "costly": return { fg: c.or, bg: c.orSoft };
+    case "routine": return { fg: c.ink70, bg: c.sunk };
   }
 }
 
@@ -114,6 +110,9 @@ export function SettleClient({ entries }: { entries: SettleEntry[] }) {
   const [overrides, setOverrides] = useState<Record<number, Partial<SettleTimelineItem>>>({});
   const [pending, setPending] = useState<Record<number, boolean>>({});
   const [error, setError] = useState("");
+  const [filter, setFilter] = useState<"open" | "done">("open");
+  // Rows collapse to their title; the summary, dates and actions are one tap in.
+  const [expanded, setExpanded] = useState<Record<number, boolean>>({});
 
   const rows: SettleEntry[] = entries.map((e) => ({
     rule: e.rule,
@@ -165,36 +164,37 @@ export function SettleClient({ entries }: { entries: SettleEntry[] }) {
   const grouped = GROUP_ORDER.map((g) => ({
     group: g,
     rows: rows.filter((r) => groupOf(r.item, today) === g),
-  })).filter((s) => s.rows.length > 0);
+  }))
+    // The filter is a view over the same grouping, not a second source of
+    // truth: "Open" simply drops the done group and vice versa.
+    .filter((s) => s.rows.length > 0 && (filter === "open" ? s.group !== "done" : s.group === "done"));
+
+  const openCount = total - doneCount;
 
   return (
-    <div style={{ background: c.background, color: c.onSurface, fontFamily: font.headline, minHeight: "100vh" }}>
-      <main style={{ padding: "24px 24px 128px", maxWidth: 480, margin: "0 auto" }}>
+    <Screen>
+      <div style={{ padding: `${screenTopPad} 20px 16px` }} className="fm-fade-up">
+        <Kicker c={c}>Settle · arrival stack</Kicker>
+        <Display c={c} style={{ fontSize: 32, margin: "8px 0 14px" }}>
+          Everything the<br />Netherlands <em>asks of you</em>
+        </Display>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <ProgressBar c={c} pct={pct} height={8} />
+          <span style={{ fontSize: 12, fontWeight: 600, color: c.ink70, flex: "none" }}>
+            {doneCount} of {total}
+          </span>
+        </div>
+      </div>
 
-        {/* ── Header + progress ── */}
-        <section className="fm-fade-up" style={{ marginBottom: 28 }}>
-          <h1 style={{ fontSize: 30, fontWeight: 800, color: c.primary, letterSpacing: "-0.025em", margin: 0 }}>
-            Settle
-          </h1>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: 6, marginBottom: 8 }}>
-            <p style={{ fontSize: 14, fontWeight: 700, color: c.onSurfaceVariant, textTransform: "uppercase", letterSpacing: "0.1em", margin: 0 }}>
-              {doneCount} of {total} done
-            </p>
-            <p style={{ fontSize: 12, fontWeight: 700, color: c.primary, margin: 0 }}>{pct}%</p>
-          </div>
-          <div style={{ width: "100%", height: 12, background: c.surfaceHighest, borderRadius: 9999, overflow: "hidden" }}>
-            <div className="fm-grow-x" style={{ width: `${pct}%`, height: "100%", background: c.primary, borderRadius: 9999 }} />
-          </div>
-        </section>
-
+      <div style={{ padding: "0 20px 10px", display: "flex", flexDirection: "column", gap: 16 }}>
         {error && (
           <div
             className="fm-fade-down"
             role="alert"
             style={{
               display: "flex", alignItems: "flex-start", gap: 8,
-              padding: "12px 16px", borderRadius: 12, marginBottom: 20,
-              background: `${c.error}15`, color: c.error,
+              padding: "12px 14px", borderRadius: 14,
+              background: c.rdSoft, color: c.rd,
               fontSize: 13, fontWeight: 600, lineHeight: 1.5,
             }}
           >
@@ -203,223 +203,279 @@ export function SettleClient({ entries }: { entries: SettleEntry[] }) {
           </div>
         )}
 
-        {/* ── Tools ──
-             A card rather than a row inside a group: the checker is not a
-             deadline, and it stays reachable for users the 30% ruling rule never
-             fires for (self-employed) or who have already marked it done. */}
-        <Link
-          href="/settle/30-ruling"
-          className="fm-fade-up tap-shrink"
-          style={{
-            display: "flex", alignItems: "center", gap: 14, marginBottom: 28,
-            background: c.surfaceLowest, borderRadius: 20, padding: 18,
-            boxShadow: "0px 4px 16px rgba(26,28,27,0.04)", textDecoration: "none",
-          }}
-        >
-          <div style={{
-            flexShrink: 0, width: 44, height: 44, borderRadius: 14, background: `${c.primary}12`,
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            <span className="mso" aria-hidden="true" style={{ fontSize: 22, color: c.primary }}>calculate</span>
+        {/* ── Open / Done ── */}
+        {total > 0 && (
+          <div style={{ display: "flex", gap: 6, background: c.sunk, padding: 4, borderRadius: 9999 }}>
+            {([
+              ["open", `Open · ${openCount}`],
+              ["done", `Done · ${doneCount}`],
+            ] as const).map(([value, label]) => {
+              const on = filter === value;
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setFilter(value)}
+                  style={{
+                    flex: 1, border: "none", cursor: "pointer", fontFamily: font.headline,
+                    fontSize: 12.5, fontWeight: 600, padding: "9px 0", borderRadius: 9999,
+                    background: on ? c.card : "transparent",
+                    color: on ? c.ink : c.ink45,
+                    boxShadow: on ? "0 1px 3px rgba(16,17,20,.08)" : "none",
+                    transition: "background 0.2s, color 0.2s",
+                  }}
+                >
+                  {label}
+                </button>
+              );
+            })}
           </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 15, fontWeight: 800, color: c.onSurface, lineHeight: 1.3 }}>
-              30% ruling check
-            </div>
-            <div style={{ fontSize: 12, fontWeight: 500, color: c.onSurfaceVariant, marginTop: 3, lineHeight: 1.5 }}>
-              A few questions against the Belastingdienst conditions. Guidance only — nothing is filed.
-            </div>
-          </div>
-          <span className="mso" aria-hidden="true" style={{ fontSize: 20, color: c.outline, flexShrink: 0 }}>
-            chevron_right
-          </span>
-        </Link>
+        )}
 
         {/* ── Empty: a profile exists but nothing was generated ── */}
         {total === 0 && (
-          <div className="fm-rise" style={{
-            background: c.surfaceLowest, borderRadius: 24, padding: 28, textAlign: "center",
-            boxShadow: "0px 12px 32px rgba(26,28,27,0.06)", marginBottom: 24,
-          }}>
-            <span className="mso" aria-hidden="true" style={{ fontSize: 40, color: c.outline }}>inbox</span>
-            <h2 style={{ fontSize: 18, fontWeight: 800, color: c.onSurface, margin: "12px 0 0" }}>
+          <Card c={c} className="fm-rise" style={{ padding: 22, textAlign: "center" }}>
+            <span className="mso" aria-hidden="true" style={{ fontSize: 34, color: c.ink25 }}>inbox</span>
+            <Display c={c} as="h2" style={{ fontSize: 22, margin: "12px 0 0" }}>
               Nothing on your timeline yet
-            </h2>
-            <p style={{ fontSize: 13, fontWeight: 500, color: c.onSurfaceVariant, lineHeight: 1.6, margin: "8px 0 0" }}>
-              No rule currently in force applies to the details you gave. Reload the
-              page after new guidance is added and anything relevant will appear here.
+            </Display>
+            <p style={{ fontSize: 13, lineHeight: 1.6, color: c.ink70, margin: "8px 0 0" }}>
+              No rule currently in force applies to the details you gave. Reload the page
+              after new guidance is added and anything relevant will appear here.
             </p>
-          </div>
+          </Card>
         )}
 
         {/* ── All done ── */}
         {allDone && (
-          <div className="fm-rise" style={{
-            background: `${c.success}12`, borderRadius: 24, padding: 28, textAlign: "center", marginBottom: 24,
-          }}>
-            <span className="mso mso-fill" aria-hidden="true" style={{ fontSize: 40, color: c.success }}>task_alt</span>
-            <h2 style={{ fontSize: 18, fontWeight: 800, color: c.onSurface, margin: "12px 0 0" }}>
+          <div className="fm-rise" style={{ background: c.grSoft, borderRadius: 22, padding: 22, textAlign: "center" }}>
+            <span className="mso mso-fill" aria-hidden="true" style={{ fontSize: 34, color: c.gr }}>task_alt</span>
+            <Display c={c} as="h2" style={{ fontSize: 22, margin: "12px 0 0" }}>
               Your arrival stack is clear
-            </h2>
-            <p style={{ fontSize: 13, fontWeight: 500, color: c.onSurfaceVariant, lineHeight: 1.6, margin: "8px 0 0" }}>
-              All {total} steps are marked done. Keep an eye on this page — new
-              deadlines appear as your situation and the rules change.
+            </Display>
+            <p style={{ fontSize: 13, lineHeight: 1.6, color: c.ink70, margin: "8px 0 0" }}>
+              All {total} steps are marked done. New deadlines appear here as your
+              situation and the rules change.
             </p>
           </div>
         )}
 
         {/* ── Groups ── */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
-          {grouped.map(({ group, rows: groupRows }) => {
-            const meta = GROUP_META[group];
-            const isDoneGroup = group === "done";
-            const accent = group === "overdue" ? c.error : group === "soon" ? c.primary : c.onSurfaceVariant;
+        {grouped.map(({ group, rows: groupRows }) => {
+          const meta = GROUP_META[group];
+          const isDoneGroup = group === "done";
+          const accent = group === "overdue" ? c.rd : group === "soon" ? c.co : c.ink45;
 
-            return (
-              <section key={group}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                  <span className="mso" aria-hidden="true" style={{ fontSize: 18, color: accent }}>{meta.icon}</span>
-                  <h2 style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.15em", color: accent, margin: 0 }}>
-                    {meta.title}
-                  </h2>
-                  <span style={{ fontSize: 12, fontWeight: 700, color: c.onSurfaceVariant }}>· {groupRows.length}</span>
-                </div>
-                <p style={{ fontSize: 12, fontWeight: 500, color: c.onSurfaceVariant, margin: "0 0 14px" }}>
-                  {meta.blurb}
-                </p>
+          return (
+            <section key={group}>
+              <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 12 }}>
+                <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.18em", textTransform: "uppercase", color: accent }}>
+                  {meta.title}
+                </span>
+                <span style={{ flex: 1, height: 1, background: c.line }} />
+                <span style={{ fontSize: 10.5, fontWeight: 600, color: c.ink45, flex: "none" }}>
+                  {groupRows.length}
+                </span>
+              </div>
 
-                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  {groupRows.map(({ item, rule }) => {
-                    const sev = severityColors(rule.severity, c);
-                    const isPending = !!pending[item.id];
-                    const tool = TOOL_BY_RULE_KEY[rule.key];
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {groupRows.map(({ item, rule }) => {
+                  const sev = severityColors(rule.severity, c);
+                  const isPending = !!pending[item.id];
+                  const tool = TOOL_BY_RULE_KEY[rule.key];
+                  const isOpen = !!expanded[item.id];
+                  const overdue = group === "overdue";
 
-                    return (
-                      <article
-                        key={item.id}
-                        className="fm-fade-up"
+                  return (
+                    <div
+                      key={item.id}
+                      className="fm-fade-up"
+                      style={{
+                        border: `1px solid ${overdue ? c.rd : c.line2}`,
+                        background: c.card,
+                        borderRadius: 16,
+                        overflow: "hidden",
+                      }}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setExpanded((e) => ({ ...e, [item.id]: !e[item.id] }))}
+                        aria-expanded={isOpen}
                         style={{
-                          background: c.surfaceLowest, borderRadius: 20, padding: 18,
-                          boxShadow: "0px 4px 16px rgba(26,28,27,0.04)",
-                          opacity: isDoneGroup ? 0.65 : 1,
-                          transition: "opacity 0.2s",
+                          textAlign: "left", width: "100%", border: "none", cursor: "pointer",
+                          fontFamily: font.headline, background: "transparent",
+                          padding: "15px 16px", display: "flex", alignItems: "center", gap: 11,
                         }}
                       >
-                        <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 8 }}>
-                          <h3 style={{
-                            flex: 1, fontSize: 15, fontWeight: 800, color: c.onSurface,
-                            lineHeight: 1.35, margin: 0,
+                        <span
+                          style={{
+                            width: 7, height: 7, flex: "none", borderRadius: 9999,
+                            background: isDoneGroup ? c.gr : overdue ? c.rd : group === "soon" ? c.or : c.ink25,
+                          }}
+                        />
+                        <span
+                          style={{
+                            flex: 1, fontSize: 14.5, fontWeight: 600, color: c.ink, lineHeight: 1.35,
                             textDecoration: isDoneGroup ? "line-through" : "none",
-                          }}>
-                            {rule.title_en}
-                          </h3>
-                          <span style={{
-                            flexShrink: 0, padding: "3px 10px", borderRadius: 9999,
-                            fontSize: 10, fontWeight: 800, letterSpacing: "0.05em",
-                            background: sev.bg, color: sev.fg,
-                          }}>
-                            {SEVERITY_LABEL[rule.severity]}
-                          </span>
-                        </div>
+                            opacity: isDoneGroup ? 0.65 : 1,
+                          }}
+                        >
+                          {rule.title_en}
+                        </span>
+                        <span
+                          className="mso"
+                          aria-hidden="true"
+                          style={{
+                            fontSize: 19, color: c.ink25, flex: "none",
+                            transform: isOpen ? "rotate(180deg)" : "none",
+                            transition: "transform 0.2s",
+                          }}
+                        >
+                          expand_more
+                        </span>
+                      </button>
 
-                        <p style={{
-                          fontFamily: font.body, fontSize: 13, fontWeight: 400, lineHeight: 1.6,
-                          color: c.onSurfaceVariant, margin: "0 0 14px",
-                        }}>
-                          {rule.summary_en}
-                        </p>
+                      {isOpen && (
+                        <div style={{ padding: "0 16px 15px" }}>
+                          <div style={{ fontFamily: font.body, fontSize: 15, lineHeight: 1.55, color: c.ink70 }}>
+                            {rule.summary_en}
+                          </div>
 
-                        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 14 }}>
-                          <span className="mso" aria-hidden="true" style={{ fontSize: 15, color: c.outline }}>event</span>
-                          <span style={{ fontSize: 12, fontWeight: 700, color: c.onSurfaceVariant }}>
-                            {item.due_date ? formatDue(item.due_date) : "No date yet"}
-                          </span>
-                          {!isDoneGroup && (
-                            <span style={{
-                              fontSize: 12, fontWeight: 700,
-                              color: group === "overdue" ? c.error : c.onSurfaceVariant,
-                            }}>
-                              · {relativeDue(item.due_date, today)}
+                          <div style={{ display: "flex", alignItems: "center", gap: 7, marginTop: 12, flexWrap: "wrap" }}>
+                            <Chip
+                              fg={sev.fg}
+                              bg={sev.bg}
+                              style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", padding: "4px 9px" }}
+                            >
+                              {SEVERITY_LABEL[rule.severity]}
+                            </Chip>
+                            <span style={{ fontSize: 11.5, fontWeight: 600, color: c.ink70 }}>
+                              {item.due_date ? formatDue(item.due_date) : "No date yet"}
                             </span>
-                          )}
+                            {!isDoneGroup && (
+                              <span style={{ fontSize: 11.5, fontWeight: 600, color: overdue ? c.rd : c.ink45 }}>
+                                {relativeDue(item.due_date, today)}
+                              </span>
+                            )}
+                          </div>
+
+                          <div style={{ display: "flex", gap: 8, marginTop: 13, flexWrap: "wrap" }}>
+                            {rule.official_url && (
+                              <a
+                                href={rule.official_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="tap-shrink"
+                                style={{
+                                  flex: 1, minWidth: 120, textAlign: "center",
+                                  border: `1px solid ${c.line}`, background: c.card2, color: c.co,
+                                  fontFamily: font.headline, fontSize: 13, fontWeight: 600,
+                                  padding: "11px 0", borderRadius: 12, textDecoration: "none",
+                                  display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 5,
+                                }}
+                              >
+                                Official info
+                                <span className="mso" aria-hidden="true" style={{ fontSize: 15 }}>open_in_new</span>
+                              </a>
+                            )}
+
+                            {tool && !isDoneGroup && (
+                              <Link
+                                href={tool.href}
+                                className="tap-shrink"
+                                style={{
+                                  flex: 1, minWidth: 120, textAlign: "center",
+                                  border: `1px solid ${c.line}`, background: c.card2, color: c.co,
+                                  fontFamily: font.headline, fontSize: 13, fontWeight: 600,
+                                  padding: "11px 0", borderRadius: 12, textDecoration: "none",
+                                  display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 5,
+                                }}
+                              >
+                                <span className="mso" aria-hidden="true" style={{ fontSize: 15 }}>{tool.icon}</span>
+                                {tool.label}
+                              </Link>
+                            )}
+
+                            {isDoneGroup ? (
+                              <span
+                                style={{
+                                  flex: 1, minWidth: 120,
+                                  display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 5,
+                                  fontSize: 13, fontWeight: 600, color: c.gr,
+                                  padding: "11px 0",
+                                }}
+                              >
+                                <span className="mso mso-fill" aria-hidden="true" style={{ fontSize: 16 }}>check_circle</span>
+                                {item.status === "skipped" ? "Skipped" : "Done"}
+                              </span>
+                            ) : (
+                              <button
+                                type="button"
+                                className="tap-shrink"
+                                onClick={() => markDone(item)}
+                                disabled={isPending}
+                                style={{
+                                  flex: 1, minWidth: 120,
+                                  border: "none", cursor: isPending ? "default" : "pointer",
+                                  fontFamily: font.headline, fontSize: 13, fontWeight: 600,
+                                  background: c.co, color: "#fff",
+                                  padding: "11px 0", borderRadius: 12,
+                                  opacity: isPending ? 0.5 : 1, transition: "opacity 0.2s",
+                                  display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 5,
+                                }}
+                              >
+                                <span className="mso" aria-hidden="true" style={{ fontSize: 16 }}>check</span>
+                                Mark done
+                              </button>
+                            )}
+                          </div>
                         </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          );
+        })}
 
-                        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                          {rule.official_url && (
-                            <a
-                              href={rule.official_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="tap-shrink"
-                              style={{
-                                display: "inline-flex", alignItems: "center", gap: 4,
-                                padding: "9px 14px", borderRadius: 9999,
-                                background: c.surfaceLow, color: c.primary,
-                                fontSize: 12, fontWeight: 700, textDecoration: "none",
-                              }}
-                            >
-                              Official info
-                              <span className="mso" aria-hidden="true" style={{ fontSize: 14 }}>open_in_new</span>
-                            </a>
-                          )}
+        {/* ── Tools ──
+             A card rather than a row inside a group: the checker is not a
+             deadline, and it stays reachable for users the 30% ruling rule
+             never fires for (self-employed) or who already marked it done. */}
+        <Link
+          href="/settle/30-ruling"
+          className="fm-fade-up tap-shrink"
+          style={{
+            display: "flex", alignItems: "center", gap: 13,
+            border: `1px solid ${c.line}`, background: c.card2, borderRadius: 18, padding: 16,
+            textDecoration: "none",
+          }}
+        >
+          <span
+            style={{
+              flexShrink: 0, width: 40, height: 40, borderRadius: 13, background: c.coSoft,
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}
+          >
+            <span className="mso" aria-hidden="true" style={{ fontSize: 20, color: c.co }}>calculate</span>
+          </span>
+          <span style={{ flex: 1, minWidth: 0 }}>
+            <span style={{ display: "block", fontSize: 14.5, fontWeight: 600, color: c.ink }}>
+              30% ruling check
+            </span>
+            <span style={{ display: "block", fontSize: 12, lineHeight: 1.5, color: c.ink70, marginTop: 3 }}>
+              A few questions against the Belastingdienst conditions. Guidance only —
+              nothing is filed.
+            </span>
+          </span>
+          <span className="mso" aria-hidden="true" style={{ fontSize: 20, color: c.ink25, flexShrink: 0 }}>
+            chevron_right
+          </span>
+        </Link>
 
-                          {tool && !isDoneGroup && (
-                            <Link
-                              href={tool.href}
-                              className="tap-shrink"
-                              style={{
-                                display: "inline-flex", alignItems: "center", gap: 4,
-                                padding: "9px 14px", borderRadius: 9999,
-                                background: c.surfaceLow, color: c.primary,
-                                fontSize: 12, fontWeight: 700, textDecoration: "none",
-                              }}
-                            >
-                              <span className="mso" aria-hidden="true" style={{ fontSize: 14 }}>{tool.icon}</span>
-                              {tool.label}
-                            </Link>
-                          )}
-
-                          {isDoneGroup ? (
-                            <span style={{
-                              display: "inline-flex", alignItems: "center", gap: 4,
-                              fontSize: 12, fontWeight: 700, color: c.success,
-                            }}>
-                              <span className="mso mso-fill" aria-hidden="true" style={{ fontSize: 15 }}>check_circle</span>
-                              {item.status === "skipped" ? "Skipped" : "Done"}
-                            </span>
-                          ) : (
-                            <button
-                              type="button"
-                              className="tap-shrink"
-                              onClick={() => markDone(item)}
-                              disabled={isPending}
-                              style={{
-                                marginLeft: "auto", padding: "9px 16px", borderRadius: 9999,
-                                border: "none", cursor: isPending ? "default" : "pointer",
-                                fontFamily: font.headline, fontSize: 12, fontWeight: 800,
-                                background: `${c.primary}12`, color: c.primary,
-                                opacity: isPending ? 0.5 : 1, transition: "opacity 0.2s",
-                                display: "inline-flex", alignItems: "center", gap: 5,
-                              }}
-                            >
-                              <span className="mso" aria-hidden="true" style={{ fontSize: 15 }}>check</span>
-                              Mark done
-                            </button>
-                          )}
-                        </div>
-                      </article>
-                    );
-                  })}
-                </div>
-              </section>
-            );
-          })}
-        </div>
-
-        <div style={{ marginTop: 32 }}>
-          <SettleDisclaimer />
-        </div>
-      </main>
-    </div>
+        <SettleDisclaimer />
+      </div>
+    </Screen>
   );
 }

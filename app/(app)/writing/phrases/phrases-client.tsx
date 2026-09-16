@@ -10,8 +10,8 @@ interface Props {
 }
 
 const font = {
-  headline: "'Plus Jakarta Sans', sans-serif",
-  body: "'Noto Serif', serif",
+  headline: "'Instrument Sans', system-ui, sans-serif",
+  body: "'Instrument Serif', Georgia, serif",
 };
 
 const CATEGORY_LABELS: Record<WritingPhraseCategory, string> = {
@@ -82,7 +82,7 @@ export function PhrasesClient({ phrases }: Props) {
           <Link href="/writing" style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: 9999, background: "transparent", border: "none", cursor: "pointer" }}>
             <span className="mso" style={{ color: c.onSurface, fontSize: 22 }}>arrow_back</span>
           </Link>
-          <h1 style={{ fontSize: 26, fontWeight: 800, color: c.primary, letterSpacing: "-0.025em", margin: 0 }}>
+          <h1 style={{ fontSize: 26, fontWeight: 700, color: c.primary, letterSpacing: "-0.025em", margin: 0 }}>
             Zinnenbibliotheek
           </h1>
         </div>
@@ -146,10 +146,10 @@ export function PhrasesClient({ phrases }: Props) {
           return (
             <section key={cat} style={{ marginBottom: 32 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
-                <div style={{ width: 32, height: 32, borderRadius: 9999, background: `${c.secondary}1a`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <div style={{ width: 32, height: 32, borderRadius: 9999, background: `${c.orSoft}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <span className="mso" style={{ fontSize: 16, color: c.secondary }}>{CATEGORY_ICONS[cat]}</span>
                 </div>
-                <h2 style={{ fontSize: 14, fontWeight: 800, color: c.onSurface, margin: 0 }}>
+                <h2 style={{ fontSize: 14, fontWeight: 700, color: c.onSurface, margin: 0 }}>
                   {CATEGORY_LABELS[cat]}
                 </h2>
                 <span style={{ fontSize: 11, fontWeight: 700, color: c.onSurfaceVariant }}>
@@ -162,7 +162,7 @@ export function PhrasesClient({ phrases }: Props) {
                   <div
                     key={p.id}
                     style={{
-                      background: c.surfaceLowest, borderRadius: 16, padding: 16,
+                      background: c.card, borderRadius: 16, padding: 16,
                       boxShadow: "0px 2px 8px rgba(26,28,27,0.04)",
                       display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12,
                     }}
@@ -182,7 +182,7 @@ export function PhrasesClient({ phrases }: Props) {
                       <div style={{ marginTop: 8 }}>
                         <span style={{
                           padding: "2px 8px", borderRadius: 9999, fontSize: 10, fontWeight: 700,
-                          background: p.formality === "formal" ? `${c.primary}1a` : p.formality === "informal" ? `${c.secondary}1a` : `${c.tertiary}1a`,
+                          background: p.formality === "formal" ? `${c.coSoft}` : p.formality === "informal" ? `${c.orSoft}` : `${c.tertiary}1a`,
                           color: p.formality === "formal" ? c.primary : p.formality === "informal" ? c.secondary : c.tertiary,
                         }}>
                           {p.formality === "formal" ? "Formeel" : p.formality === "informal" ? "Informeel" : "Beide"}
@@ -194,7 +194,7 @@ export function PhrasesClient({ phrases }: Props) {
                       style={{
                         flexShrink: 0, width: 36, height: 36, borderRadius: 9999,
                         display: "flex", alignItems: "center", justifyContent: "center",
-                        background: copied === p.id ? "#16a34a" : c.surfaceLow,
+                        background: copied === p.id ? c.gr : c.surfaceLow,
                         border: "none", cursor: "pointer",
                       }}
                       title="Kopieer"

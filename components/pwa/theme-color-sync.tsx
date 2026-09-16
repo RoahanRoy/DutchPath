@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 
 /** Must track --background in globals.css. */
-const THEME_COLOR = { light: "#f9f9f7", dark: "#121413" };
+const THEME_COLOR = { light: "#F4F4F2", dark: "#0C0D0F" };
 
 /**
  * Keeps <meta name="theme-color"> in step with the theme actually applied.

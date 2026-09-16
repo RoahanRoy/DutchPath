@@ -1,6 +1,6 @@
 "use client";
 
-import { useTheme, getColors } from "@/lib/use-theme";
+import { useTheme, getColors, font } from "@/lib/use-theme";
 
 export default function AppLoading() {
   const { isDark } = useTheme();
@@ -10,8 +10,8 @@ export default function AppLoading() {
       style={{
         height: h,
         width: w,
-        borderRadius: 12,
-        background: c.surfaceHigh,
+        borderRadius: 14,
+        background: c.sunk,
         opacity: 0.6,
       }}
     />
@@ -20,13 +20,13 @@ export default function AppLoading() {
   return (
     <div
       style={{
-        maxWidth: 720,
+        maxWidth: 460,
         margin: "0 auto",
-        padding: "32px 16px",
+        padding: "calc(var(--app-safe-top, 0px) + 28px) 20px",
         display: "flex",
         flexDirection: "column",
         gap: 16,
-        fontFamily: "'Plus Jakarta Sans', sans-serif",
+        fontFamily: font.headline,
       }}
     >
       <style>{`

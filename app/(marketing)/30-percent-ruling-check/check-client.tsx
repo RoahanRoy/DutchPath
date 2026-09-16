@@ -6,8 +6,8 @@ import { useTheme, getColors } from "@/lib/use-theme";
 import { stashRun } from "@/lib/settle/ruling-stash";
 
 const font = {
-  headline: "'Plus Jakarta Sans', sans-serif",
-  body: "'Noto Serif', serif",
+  headline: "'Instrument Sans', system-ui, sans-serif",
+  body: "'Instrument Serif', Georgia, serif",
 };
 
 /** Where the user is sent to sign in, and where they come back to. */
@@ -44,10 +44,10 @@ export function CheckClient() {
             router.push(`/signup?next=${encodeURIComponent(SAVE_PATH)}`);
           }}
           style={{
-            flex: 1, minWidth: 140, padding: "14px 16px", borderRadius: 9999,
+            flex: 1, minWidth: 140, padding: "14px 16px", borderRadius: 16,
             border: "none", cursor: "pointer",
-            fontFamily: font.headline, fontSize: 14, fontWeight: 800,
-            background: `${c.primary}12`, color: c.primary,
+            fontFamily: font.headline, fontSize: 14, fontWeight: 600,
+            background: c.coSoft, color: c.coInk,
             display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6,
           }}
         >

@@ -22,8 +22,8 @@ export default function manifest(): MetadataRoute.Manifest {
     orientation: "portrait",
     // Splash background. Matches --background (light) so launching the app does
     // not flash a colour the UI never uses.
-    background_color: "#f9f9f7",
-    theme_color: "#f9f9f7",
+    background_color: "#F4F4F2",
+    theme_color: "#F4F4F2",
     lang: "en",
     dir: "ltr",
     categories: ["education"],

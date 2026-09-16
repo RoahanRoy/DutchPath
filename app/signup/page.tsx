@@ -4,13 +4,9 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { useTheme, getColors } from "@/lib/use-theme";
+import { useTheme, getColors, font } from "@/lib/use-theme";
+import { Kicker, Display, primaryButton } from "@/components/ui/screen";
 import { readNextParam } from "@/lib/next-redirect";
-
-const font = {
-  headline: "'Plus Jakarta Sans', sans-serif",
-  body: "'Noto Serif', serif",
-};
 
 export default function SignupPage() {
   const router = useRouter();
@@ -61,32 +57,27 @@ export default function SignupPage() {
   if (success) {
     return (
       <div style={{
-        minHeight: "100vh", display: "flex", flexDirection: "column",
-        alignItems: "center", justifyContent: "center",
-        background: c.background, padding: "16px 24px",
-        fontFamily: font.headline, transition: "background 0.3s",
+        minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center",
+        background: c.background, fontFamily: font.headline, transition: "background 0.3s",
+        padding: "calc(env(safe-area-inset-top, 0px) + 32px) 28px 32px",
       }}>
-        <div
-          className="fm-scale-in"
-          style={{
-            textAlign: "center", maxWidth: 400, padding: 40,
-            background: c.surfaceLowest, borderRadius: 28,
-            boxShadow: "0px 12px 48px rgba(26,28,27,0.08)",
-          }}
-        >
+        <div className="dp-rise" style={{ width: "100%", maxWidth: 420, margin: "0 auto" }}>
           <div style={{
-            width: 80, height: 80, borderRadius: 9999, margin: "0 auto 24px",
-            background: `${c.primary}15`, display: "flex", alignItems: "center", justifyContent: "center",
+            width: 48, height: 48, borderRadius: 15, background: c.gr,
+            display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 22,
           }}>
-            <span className="mso mso-fill" style={{ fontSize: 40, color: c.primary }}>check_circle</span>
+            <span className="mso mso-fill" style={{ fontSize: 24, color: "#fff" }}>mark_email_read</span>
           </div>
-          <h2 style={{ fontSize: 24, fontWeight: 800, color: c.onSurface, marginBottom: 12 }}>Check your email!</h2>
-          <p style={{ color: c.onSurfaceVariant, fontSize: 14, lineHeight: 1.6 }}>
-            We sent a confirmation link to <strong style={{ color: c.onSurface }}>{email}</strong>. Click it to activate your account.
+          <Kicker c={c} style={{ letterSpacing: "0.2em" }}>Bijna klaar</Kicker>
+          <Display c={c} style={{ fontSize: 36, margin: "10px 0 8px" }}>Check your inbox</Display>
+          <p style={{ fontSize: 14, lineHeight: 1.6, color: c.ink70, margin: 0 }}>
+            We sent a confirmation link to{" "}
+            <strong style={{ color: c.ink, fontWeight: 600 }}>{email}</strong>. Click it to
+            activate your account.
           </p>
           <Link href="/login" style={{
             display: "inline-flex", alignItems: "center", gap: 6,
-            marginTop: 28, color: c.primary, fontWeight: 700,
+            marginTop: 26, color: c.co, fontWeight: 600,
             fontSize: 14, textDecoration: "none",
           }}>
             <span className="mso" style={{ fontSize: 18 }}>arrow_back</span>
@@ -99,38 +90,29 @@ export default function SignupPage() {
 
   return (
     <div style={{
-      minHeight: "100vh", display: "flex", flexDirection: "column",
-      alignItems: "center", justifyContent: "center",
-      background: c.background, padding: "16px 24px",
-      fontFamily: font.headline, transition: "background 0.3s",
+      minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center",
+      background: c.background, fontFamily: font.headline, transition: "background 0.3s",
+      padding: "calc(env(safe-area-inset-top, 0px) + 32px) 28px 32px",
     }}>
-      {/* Logo */}
-      <div
-        className="fm-fade-down"
-        style={{ marginBottom: 40, textAlign: "center" }}
-      >
-        <div style={{ fontSize: 56, marginBottom: 8 }} aria-hidden="true">🇳🇱</div>
-        <h1 style={{ fontSize: 32, fontWeight: 800, color: c.primary, letterSpacing: "-0.025em", margin: 0 }}>
-          DutchPath
-        </h1>
-        <p style={{ color: c.onSurfaceVariant, marginTop: 6, fontSize: 14, fontWeight: 500 }}>
-          Start your Inburgering journey today
-        </p>
-      </div>
+      <div className="dp-rise" style={{ width: "100%", maxWidth: 420, margin: "0 auto" }}>
+        <div
+          style={{
+            width: 48, height: 48, borderRadius: 15, background: c.co,
+            display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 22,
+            boxShadow: "0 10px 30px rgba(43,74,226,.28)",
+          }}
+        >
+          <span className="mso mso-fill" style={{ fontSize: 24, color: "#fff" }}>route</span>
+        </div>
 
-      {/* Card */}
-      <div
-        className="fm-fade-up-lg"
-        style={{
-          animationDelay: "0.1s",
-          width: "100%", maxWidth: 400, background: c.surfaceLowest,
-          borderRadius: 28, padding: 32,
-          boxShadow: "0px 12px 48px rgba(26,28,27,0.08)",
-        }}
-      >
-        <h2 style={{ fontSize: 22, fontWeight: 800, color: c.onSurface, marginBottom: 28, letterSpacing: "-0.025em" }}>
-          Create your account
-        </h2>
+        <Kicker c={c} style={{ letterSpacing: "0.2em" }}>DutchPath</Kicker>
+        <Display c={c} style={{ fontSize: 36, margin: "10px 0 8px" }}>
+          Everything the Netherlands asks of you. <em style={{ color: c.co }}>In order.</em>
+        </Display>
+        <p style={{ fontSize: 14, lineHeight: 1.6, color: c.ink70, margin: "0 0 26px" }}>
+          Register, insure, bank, learn, pass. Progress, deadlines and documents follow you
+          across devices.
+        </p>
 
         {/* Google OAuth */}
         <button
@@ -138,10 +120,10 @@ export default function SignupPage() {
           disabled={googleLoading}
           style={{
             width: "100%", display: "flex", alignItems: "center", justifyContent: "center",
-            gap: 12, padding: "14px 16px", borderRadius: 16,
-            border: `1.5px solid ${c.outlineVariant}`, background: "transparent",
-            cursor: "pointer", fontSize: 14, fontWeight: 600,
-            fontFamily: font.headline, color: c.onSurface,
+            gap: 10, padding: "15px 16px", borderRadius: 14,
+            border: `1px solid ${c.line}`, background: c.card,
+            cursor: "pointer", fontSize: 14.5, fontWeight: 600,
+            fontFamily: font.headline, color: c.ink,
             opacity: googleLoading ? 0.6 : 1, transition: "all 0.2s",
           }}
           aria-label="Sign up with Google"
@@ -161,28 +143,28 @@ export default function SignupPage() {
 
         {/* Divider */}
         <div style={{ display: "flex", alignItems: "center", gap: 16, margin: "24px 0" }}>
-          <div style={{ flex: 1, height: 1, background: c.outlineVariant }} />
-          <span style={{ fontSize: 12, fontWeight: 600, color: c.outline, textTransform: "uppercase", letterSpacing: "0.1em" }}>or</span>
-          <div style={{ flex: 1, height: 1, background: c.outlineVariant }} />
+          <div style={{ flex: 1, height: 1, background: c.line }} />
+          <span style={{ fontSize: 10.5, fontWeight: 700, color: c.ink45, textTransform: "uppercase", letterSpacing: "0.16em" }}>or email</span>
+          <div style={{ flex: 1, height: 1, background: c.line }} />
         </div>
 
         {/* Email/password form */}
         <form onSubmit={handleSignup} style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           <div>
-            <label htmlFor="email" style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 8, color: c.onSurfaceVariant, textTransform: "uppercase", letterSpacing: "0.1em" }}>
+            <label htmlFor="email" style={{ display: "block", fontSize: 11, fontWeight: 700, marginBottom: 8, color: c.ink45, textTransform: "uppercase", letterSpacing: "0.1em" }}>
               Email address
             </label>
             <div style={{ position: "relative" }}>
-              <span className="mso" style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", fontSize: 18, color: c.outline }}>mail</span>
+              <span className="mso" style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", fontSize: 18, color: c.ink25 }}>mail</span>
               <input
                 id="email" type="email" value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required autoComplete="email"
                 placeholder="you@example.com"
                 style={{
-                  width: "100%", padding: "14px 14px 14px 44px", borderRadius: 14,
-                  border: `1.5px solid ${c.outlineVariant}`, background: c.surfaceLow,
-                  fontSize: 14, fontFamily: font.headline, color: c.onSurface,
+                  width: "100%", boxSizing: "border-box", padding: "15px 16px 15px 44px", borderRadius: 14,
+                  border: `1.5px solid ${c.line}`, background: c.card,
+                  fontSize: 15, fontFamily: font.headline, color: c.ink,
                   outline: "none", transition: "border-color 0.2s",
                 }}
               />
@@ -190,20 +172,20 @@ export default function SignupPage() {
           </div>
 
           <div>
-            <label htmlFor="password" style={{ display: "block", fontSize: 12, fontWeight: 700, marginBottom: 8, color: c.onSurfaceVariant, textTransform: "uppercase", letterSpacing: "0.1em" }}>
+            <label htmlFor="password" style={{ display: "block", fontSize: 11, fontWeight: 700, marginBottom: 8, color: c.ink45, textTransform: "uppercase", letterSpacing: "0.1em" }}>
               Password
             </label>
             <div style={{ position: "relative" }}>
-              <span className="mso" style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", fontSize: 18, color: c.outline }}>lock</span>
+              <span className="mso" style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", fontSize: 18, color: c.ink25 }}>lock</span>
               <input
                 id="password" type={showPassword ? "text" : "password"} value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required autoComplete="new-password"
                 placeholder="min. 8 characters"
                 style={{
-                  width: "100%", padding: "14px 48px 14px 44px", borderRadius: 14,
-                  border: `1.5px solid ${c.outlineVariant}`, background: c.surfaceLow,
-                  fontSize: 14, fontFamily: font.headline, color: c.onSurface,
+                  width: "100%", boxSizing: "border-box", padding: "15px 48px 15px 44px", borderRadius: 14,
+                  border: `1.5px solid ${c.line}`, background: c.card,
+                  fontSize: 15, fontFamily: font.headline, color: c.ink,
                   outline: "none", transition: "border-color 0.2s",
                 }}
               />
@@ -216,7 +198,7 @@ export default function SignupPage() {
                 }}
                 aria-label={showPassword ? "Hide password" : "Show password"}
               >
-                <span className="mso" style={{ fontSize: 18, color: c.outline }}>
+                <span className="mso" style={{ fontSize: 18, color: c.ink25 }}>
                   {showPassword ? "visibility_off" : "visibility"}
                 </span>
               </button>
@@ -226,15 +208,15 @@ export default function SignupPage() {
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8 }}>
                 <div style={{
                   flex: 1, height: 4, borderRadius: 9999, overflow: "hidden",
-                  background: c.surfaceHighest,
+                  background: c.sunk,
                 }}>
                   <div style={{
                     height: "100%", borderRadius: 9999, transition: "width 0.3s, background 0.3s",
                     width: passwordStrong ? "100%" : `${Math.min(password.length / 8 * 100, 80)}%`,
-                    background: passwordStrong ? "#16a34a" : c.error,
+                    background: passwordStrong ? c.gr : c.rd,
                   }} />
                 </div>
-                <span style={{ fontSize: 11, fontWeight: 700, color: passwordStrong ? "#16a34a" : c.error }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: passwordStrong ? c.gr : c.rd }}>
                   {passwordStrong ? "Strong" : "Too short"}
                 </span>
               </div>
@@ -247,8 +229,8 @@ export default function SignupPage() {
               role="alert"
               style={{
                 display: "flex", alignItems: "center", gap: 8,
-                padding: "12px 16px", borderRadius: 12,
-                background: `${c.error}15`, color: c.error,
+                padding: "12px 14px", borderRadius: 14,
+                background: c.rdSoft, color: c.rd,
                 fontSize: 13, fontWeight: 600,
               }}
             >
@@ -260,12 +242,8 @@ export default function SignupPage() {
           <button
             type="submit" disabled={loading}
             style={{
-              width: "100%", padding: 16, borderRadius: 9999, border: "none",
-              cursor: "pointer", fontSize: 15, fontWeight: 700,
-              fontFamily: font.headline, color: "#fff",
-              background: `linear-gradient(to bottom, ${c.primary}, ${c.primaryContainer})`,
-              boxShadow: `0 10px 20px -5px ${c.primary}40`,
-              opacity: loading ? 0.6 : 1, transition: "all 0.2s",
+              ...primaryButton(c),
+              opacity: loading ? 0.6 : 1,
               display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
             }}
           >
@@ -274,9 +252,13 @@ export default function SignupPage() {
           </button>
         </form>
 
-        <p style={{ textAlign: "center", fontSize: 14, color: c.onSurfaceVariant, marginTop: 24, fontWeight: 500 }}>
+        <p style={{ fontSize: 11.5, lineHeight: 1.6, color: c.ink45, margin: "16px 0 0", textAlign: "center" }}>
+          By continuing you agree to the terms. We are not the IND, the gemeente, or your
+          accountant.
+        </p>
+        <p style={{ textAlign: "center", fontSize: 13, color: c.ink45, marginTop: 18 }}>
           Already have an account?{" "}
-          <Link href="/login" style={{ color: c.primary, fontWeight: 700, textDecoration: "none" }}>
+          <Link href="/login" style={{ color: c.co, fontWeight: 600, textDecoration: "none" }}>
             Sign in
           </Link>
         </p>

@@ -12,8 +12,8 @@ import type { Database, Json } from "@/lib/supabase/types";
 type RulingCheckInsert = Database["public"]["Tables"]["settle_ruling_checks"]["Insert"];
 
 const font = {
-  headline: "'Plus Jakarta Sans', sans-serif",
-  body: "'Noto Serif', serif",
+  headline: "'Instrument Sans', system-ui, sans-serif",
+  body: "'Instrument Serif', Georgia, serif",
 };
 
 const CHECK_PATH = "/30-percent-ruling-check";
@@ -107,7 +107,7 @@ export function SaveClient() {
   } as const;
 
   const card = {
-    maxWidth: 420, width: "100%", padding: 28, borderRadius: 24, textAlign: "center",
+    maxWidth: 420, width: "100%", padding: 28, borderRadius: 18, textAlign: "center",
     background: c.surfaceLowest, boxShadow: "0px 4px 16px rgba(26,28,27,0.04)",
   } as const;
 
@@ -116,7 +116,7 @@ export function SaveClient() {
       <div style={shell}>
         <div className="fm-fade-up" style={card}>
           <span className="mso" aria-hidden="true" style={{ fontSize: 32, color: c.primary }}>cloud_upload</span>
-          <h1 style={{ fontSize: 20, fontWeight: 800, color: c.onSurface, margin: "10px 0 0" }}>
+          <h1 style={{ fontSize: 20, fontWeight: 600, color: c.onSurface, margin: "10px 0 0" }}>
             Saving your result…
           </h1>
           <p style={{ fontSize: 13, fontWeight: 500, color: c.onSurfaceVariant, lineHeight: 1.6, margin: "8px 0 0" }}>
@@ -135,7 +135,7 @@ export function SaveClient() {
         <span className="mso" aria-hidden="true" style={{ fontSize: 32, color: failed ? c.error : c.secondary }}>
           {failed ? "cloud_off" : "search_off"}
         </span>
-        <h1 style={{ fontSize: 20, fontWeight: 800, color: c.onSurface, margin: "10px 0 0" }}>
+        <h1 style={{ fontSize: 20, fontWeight: 600, color: c.onSurface, margin: "10px 0 0" }}>
           {failed ? "That did not save" : "We could not find your answers"}
         </h1>
         <p style={{
@@ -148,16 +148,16 @@ export function SaveClient() {
         </p>
         <div style={{ display: "flex", gap: 10, marginTop: 20, flexWrap: "wrap" }}>
           <Link href={CHECK_PATH} className="tap-shrink" style={{
-            flex: 1, minWidth: 140, padding: "13px 16px", borderRadius: 9999,
-            textDecoration: "none", fontSize: 14, fontWeight: 800,
-            background: `${c.primary}12`, color: c.primary,
+            flex: 1, minWidth: 140, padding: "13px 16px", borderRadius: 16,
+            textDecoration: "none", fontSize: 14, fontWeight: 600,
+            background: c.coSoft, color: c.coInk,
             display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6,
           }}>
             Run the check again
           </Link>
           <Link href="/settle" className="tap-shrink" style={{
-            flex: 1, minWidth: 140, padding: "13px 16px", borderRadius: 9999,
-            textDecoration: "none", fontSize: 14, fontWeight: 800,
+            flex: 1, minWidth: 140, padding: "13px 16px", borderRadius: 16,
+            textDecoration: "none", fontSize: 14, fontWeight: 600,
             background: c.surfaceLow, color: c.onSurface,
             display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6,
           }}>

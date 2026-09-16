@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useAppStore } from "@/lib/store";
 import { createClient } from "@/lib/supabase/client";
-import { useTheme, getColors } from "@/lib/use-theme";
+import { useTheme, getColors, font } from "@/lib/use-theme";
 
 type CompletionFlag =
   | "writing_exam_completed"
@@ -23,6 +23,7 @@ const NAV_LINKS: {
   hideAtB1?: boolean;
 }[] = [
   { href: "/dashboard", label: "Overzicht" },
+  { href: "/learn", label: "Leren" },
   { href: "/lessons", label: "Lessen", hideWhen: "exam_completed" },
   { href: "/writing", label: "Schrijven", hideWhen: "writing_exam_completed" },
   { href: "/listening", label: "Luisteren", hideWhen: "listening_exam_completed" },
@@ -97,10 +98,11 @@ export function TopNav() {
 
   return (
     <header
+      className="hidden md:block"
       style={{
         position: "sticky", top: 0, zIndex: 50,
         background: c.glassBackground, backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)",
-        fontFamily: "'Plus Jakarta Sans', sans-serif",
+        fontFamily: font.headline,
         borderBottom: c.glassBorder !== "transparent" ? `1px solid ${c.glassBorder}` : "none",
         boxShadow: isDark ? "0px 4px 30px 0px rgba(0,0,0,0.1)" : "none",
         transition: "background 0.3s",
@@ -112,7 +114,7 @@ export function TopNav() {
         display: "flex", alignItems: "center", justifyContent: "space-between",
       }}>
         <Link href="/dashboard" style={{ textDecoration: "none" }}>
-          <span style={{ fontSize: 18, fontWeight: 800, color: c.primary, letterSpacing: "-0.025em" }}>DutchPath</span>
+          <span style={{ fontFamily: font.body, fontSize: 24, fontWeight: 400, color: c.ink, letterSpacing: "-0.01em" }}>DutchPath</span>
         </Link>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           {profile && (
@@ -188,8 +190,10 @@ export function TopNav() {
         aria-label="Main navigation"
         className="no-scrollbar"
         style={{
-          display: "flex", alignItems: "center", gap: 4,
-          padding: "0 16px 8px",
+          // Height is pinned because `--app-top` in globals.css hard-codes this
+          // header's total height (56 + 36) so screen headers clear it.
+          display: "flex", alignItems: "center", gap: 4, height: 36,
+          padding: "0 16px",
           overflowX: "auto", whiteSpace: "nowrap",
         }}
       >
@@ -212,8 +216,8 @@ export function TopNav() {
                 padding: "6px 14px", borderRadius: 9999, fontSize: 13, fontWeight: 600,
                 textDecoration: "none", transition: "all 0.2s", flexShrink: 0,
                 ...(active
-                  ? { background: `${c.primary}15`, color: c.primary }
-                  : { color: c.onSurfaceVariant }),
+                  ? { background: c.coSoft, color: c.co }
+                  : { color: c.ink45 }),
               }}
               aria-current={active ? "page" : undefined}
             >
