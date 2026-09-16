@@ -36,8 +36,14 @@ SCAN_DIRS = ["app", "components", "lib"]
 
 # Match quoted lowercase tokens (icon names live in maps/arrays/literals) and
 # literal icon names used as the text child of an `mso` span.
-QUOTED = re.compile(r'"([a-z][a-z_]*)"')
-MSO_CHILD = re.compile(r'className="[^"]*mso[^"]*"[^>]*>([a-z_]+)<')
+#
+# Digits are part of the character class on purpose: names like `sticky_note_2`
+# and `filter_1` are real icons, and an earlier `[a-z][a-z_]*` silently dropped
+# every one of them, so they shipped as literal text. Single quotes and
+# backticks are accepted for the same reason — a name the scan misses is a name
+# that renders as a word.
+QUOTED = re.compile(r"""["'`]([a-z][a-z0-9_]*)["'`]""")
+MSO_CHILD = re.compile(r'mso[^>]*>\s*([a-z][a-z0-9_]*)\s*<')
 
 
 def collect_tokens() -> set[str]:
@@ -96,8 +102,10 @@ def main() -> int:
             if glyph + ".fill" in glyph_order:
                 keep_glyphs.add(glyph + ".fill")
 
-    # Keep ASCII letters + underscore so the ligature *inputs* survive.
-    for ch in string.ascii_letters + "_":
+    # Keep ASCII letters, digits and underscore so the ligature *inputs* survive.
+    # Digits matter: `sticky_note_2` is spelled with a `2`, so dropping that
+    # glyph leaves the ligature unable to fire and the name renders as a word.
+    for ch in string.ascii_letters + string.digits + "_":
         cp = ord(ch)
         cmap = font.getBestCmap()
         if cp in cmap:
