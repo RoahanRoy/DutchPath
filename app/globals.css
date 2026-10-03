@@ -154,7 +154,7 @@
   --app-safe-bottom: env(safe-area-inset-bottom, 0px);
   /* Height of the floating tab pill plus its gutter — what a screen must clear
      at the bottom so its last element is not sitting under the bar. */
-  --app-tabbar: calc(74px + var(--app-safe-bottom));
+  --app-tabbar: calc(84px + var(--app-safe-bottom));
 }
 
 @media (min-width: 768px) {
@@ -163,6 +163,25 @@
     --app-safe-top: 0px;
     --app-tabbar: 0px;
   }
+}
+
+/* The floating tab pill. Its display lives here rather than inline so the two
+   rules below can override it: hidden from `md` up, where the TopNav takes
+   over, and hidden while a focused session (a lesson, a review, a task) is on
+   screen. A session screen opts in by putting `data-immersive` on its root; it
+   then owns the whole viewport and must carry its own back/close control. */
+.dp-tabbar { display: flex; }
+
+@media (min-width: 768px) {
+  .dp-tabbar { display: none; }
+}
+
+:root:has([data-immersive]) {
+  --app-tabbar: 0px;
+}
+
+:root:has([data-immersive]) .dp-tabbar {
+  display: none;
 }
 
 * {

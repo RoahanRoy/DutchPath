@@ -175,7 +175,7 @@ export function LessonPlayer({ lesson, progress, userId, nextLessonId }: Props) 
     const stars = getStarRating(score);
 
     return (
-      <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", justifyContent: "center", background: c.background, fontFamily: font.headline, padding: "24px 24px calc(var(--app-tabbar, 0px) + 24px)" }}>
+      <div data-immersive style={{ minHeight: "100dvh", display: "flex", flexDirection: "column", justifyContent: "center", background: c.background, fontFamily: font.headline, padding: "24px 24px calc(var(--app-safe-bottom, 0px) + 24px)" }}>
         <div className="fm-rise" style={{ width: "100%", maxWidth: 420, margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: 20 }}>
             <Kicker c={c} style={{ letterSpacing: "0.2em" }}>Les voltooid</Kicker>
@@ -225,7 +225,7 @@ export function LessonPlayer({ lesson, progress, userId, nextLessonId }: Props) 
   /* ═══ Intro phase ═══ */
   if (phase === "intro") {
     return (
-      <Screen style={{ minHeight: "100vh", background: c.background }}>
+      <Screen immersive style={{ minHeight: "100dvh", background: c.background }}>
         <GlassHeader
           c={c}
           onBack={() => router.back()}
@@ -234,7 +234,7 @@ export function LessonPlayer({ lesson, progress, userId, nextLessonId }: Props) 
           trailing={<Chip fg={c.or} bg={c.orSoft} style={{ fontWeight: 700 }}>+{lesson.xp_reward} XP</Chip>}
         />
 
-        <div style={{ padding: "20px 20px calc(var(--app-tabbar, 0px) + 24px)", flex: 1, display: "flex", flexDirection: "column" }}>
+        <div style={{ padding: "20px 20px calc(var(--app-safe-bottom, 0px) + 24px)", flex: 1, display: "flex", flexDirection: "column" }}>
           <Kicker c={c} style={{ marginBottom: 14 }}>
             {content.passage?.source_label} · {lesson.estimated_minutes} min
           </Kicker>
@@ -275,7 +275,7 @@ export function LessonPlayer({ lesson, progress, userId, nextLessonId }: Props) 
   const explanation = "explanation" in question ? (question as any).explanation : null;
 
   return (
-    <Screen style={{ minHeight: "100vh", background: c.background }}>
+    <Screen immersive style={{ minHeight: "100dvh", background: c.background }}>
       {/* ── Header: close, segments, hearts ── */}
       <GlassHeader
         c={c}
@@ -363,7 +363,7 @@ export function LessonPlayer({ lesson, progress, userId, nextLessonId }: Props) 
           zIndex: 30,
           background: fb ? fb.bg : undefined,
           borderTop: `1px solid ${c.line2}`,
-          padding: "16px 20px calc(var(--app-tabbar, 0px) + 20px)",
+          padding: "16px 20px calc(var(--app-safe-bottom, 0px) + 20px)",
         }}
       >
         {fb ? (

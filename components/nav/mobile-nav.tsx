@@ -63,10 +63,9 @@ export function MobileNav() {
         zIndex: 50,
         pointerEvents: "none",
         padding: "0 18px calc(var(--app-safe-bottom, 0px) + 10px)",
-        display: "flex",
         justifyContent: "center",
       }}
-      className="md:hidden"
+      className="dp-tabbar"
       aria-label="Main navigation"
     >
       <div

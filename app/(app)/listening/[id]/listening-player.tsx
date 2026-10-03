@@ -286,10 +286,10 @@ export function ListeningPlayer({ task, progress, draft, userId, nextTaskId }: P
     const tone = passed ? { fg: c.gr, bg: c.grSoft } : { fg: c.rd, bg: c.rdSoft };
 
     return (
-      <Screen>
+      <Screen immersive>
         <GlassHeader c={c} back="/listening" title={task.title} closeIcon />
 
-        <div style={{ padding: "18px 20px calc(var(--app-tabbar, 0px) + 20px)", display: "flex", flexDirection: "column", gap: 14 }}>
+        <div style={{ padding: "18px 20px calc(var(--app-safe-bottom, 0px) + 20px)", display: "flex", flexDirection: "column", gap: 14 }}>
           <div className="fm-rise" style={{ background: tone.bg, borderRadius: 22, padding: 22 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 11, marginBottom: 14 }}>
               <span style={{ width: 40, height: 40, borderRadius: 9999, background: tone.fg, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -397,7 +397,7 @@ export function ListeningPlayer({ task, progress, draft, userId, nextTaskId }: P
   const progressPct = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
-    <Screen>
+    <Screen immersive>
       <GlassHeader
         c={c}
         back="/listening"
@@ -410,7 +410,7 @@ export function ListeningPlayer({ task, progress, draft, userId, nextTaskId }: P
         }
       />
 
-      <div style={{ padding: "20px 20px calc(var(--app-tabbar, 0px) + 20px)" }}>
+      <div style={{ padding: "20px 20px calc(var(--app-safe-bottom, 0px) + 20px)" }}>
         {/* ── Audio card ── */}
         <Card c={c} style={{ borderRadius: 22, padding: "22px 20px", marginBottom: 20 }}>
           <audio ref={audioRef} src={task.audio_url ?? undefined} preload="metadata" />

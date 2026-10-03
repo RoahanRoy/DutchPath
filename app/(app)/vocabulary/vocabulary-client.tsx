@@ -161,7 +161,7 @@ export function VocabularyClient({ cards, userId }: Props) {
   /* ═══ Review complete ═══ */
   if (reviewQueue !== null && reviewDone) {
     return (
-      <Screen style={{ minHeight: "100vh", justifyContent: "center", padding: "24px 24px calc(var(--app-tabbar, 0px) + 24px)" }}>
+      <Screen immersive style={{ minHeight: "100dvh", justifyContent: "center", padding: "24px 24px calc(var(--app-safe-bottom, 0px) + 24px)" }}>
         <div className="fm-rise" style={{ textAlign: "center" }}>
           <Kicker c={c} style={{ letterSpacing: "0.2em" }}>Herhaling voltooid</Kicker>
           <Display c={c} style={{ fontSize: 34, margin: "10px 0 0" }}>
@@ -190,7 +190,7 @@ export function VocabularyClient({ cards, userId }: Props) {
       : { bg: c.co, line: c.co, fg: "#fff", kicker: "rgba(255,255,255,.6)" };
 
     return (
-      <Screen style={{ minHeight: "100vh", background: c.background }}>
+      <Screen immersive style={{ minHeight: "100dvh", background: c.background }}>
         <GlassHeader
           c={c}
           onBack={() => setReviewQueue(null)}
@@ -202,7 +202,7 @@ export function VocabularyClient({ cards, userId }: Props) {
           }
         />
 
-        <div style={{ padding: "20px 20px calc(var(--app-tabbar, 0px) + 20px)", flex: 1, display: "flex", flexDirection: "column" }}>
+        <div style={{ padding: "20px 20px calc(var(--app-safe-bottom, 0px) + 20px)", flex: 1, display: "flex", flexDirection: "column" }}>
           {/* One segment per card in the queue. */}
           <div style={{ display: "flex", gap: 4, height: 5, marginBottom: 22 }}>
             {reviewQueue.map((id, i) => (

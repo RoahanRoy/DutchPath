@@ -336,7 +336,7 @@ export function WritingEditor({ task, progress, draft, phrases, userId, nextTask
     const total = selfScore.task_completion + selfScore.structure + selfScore.vocabulary + selfScore.grammar;
     const pct = Math.round((total / 12) * 100);
     return (
-      <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: c.background, fontFamily: font.headline, padding: 24 }}>
+      <div data-immersive style={{ minHeight: "100dvh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: c.background, fontFamily: font.headline, padding: 24 }}>
         <div
           className="fm-rise"
           style={{ width: "100%", maxWidth: 380, background: c.card, borderRadius: 18, padding: 24, textAlign: "center", boxShadow: "0px 12px 32px rgba(26,28,27,0.06)" }}
@@ -387,7 +387,7 @@ export function WritingEditor({ task, progress, draft, phrases, userId, nextTask
     const totalElements = elements.length;
 
     return (
-      <div style={{ minHeight: "100vh", background: c.background, fontFamily: font.headline }}>
+      <div data-immersive style={{ minHeight: "100dvh", background: c.background, fontFamily: font.headline }}>
         {/* Top bar */}
         <nav style={{
           position: "sticky", top: 0, zIndex: 50, height: 64,
@@ -525,7 +525,7 @@ export function WritingEditor({ task, progress, draft, phrases, userId, nextTask
     : (!wordMin || wordCount >= wordMin);
 
   return (
-    <Screen style={{ minHeight: "100vh", background: c.background }}>
+    <Screen immersive style={{ minHeight: "100dvh", background: c.background }}>
       <GlassHeader
         c={c}
         onBack={() => router.back()}

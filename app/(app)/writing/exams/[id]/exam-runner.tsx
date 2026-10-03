@@ -248,7 +248,7 @@ export function ExamRunner({ exam, sections, userId }: Props) {
   /* ── INTRO ─────────────────────────────────────────────────────────── */
   if (phase.kind === "intro") {
     return (
-      <div style={{ background: c.background, color: c.onSurface, minHeight: "100vh", fontFamily: font.headline }}>
+      <div data-immersive style={{ background: c.background, color: c.onSurface, minHeight: "100dvh", fontFamily: font.headline }}>
         <main style={{ padding: "24px 24px 128px", maxWidth: 480, margin: "0 auto" }}>
           <Link href="/writing/exams" style={{ display: "inline-flex", alignItems: "center", gap: 6, textDecoration: "none", color: c.onSurfaceVariant, fontSize: 13, fontWeight: 700, marginBottom: 16 }}>
             <span className="mso" style={{ fontSize: 18 }}>chevron_left</span>
@@ -299,7 +299,7 @@ export function ExamRunner({ exam, sections, userId }: Props) {
     const allRated = sections.every((s) => (scores[s.id]?.total ?? 0) > 0);
 
     return (
-      <div style={{ minHeight: "100vh", background: c.background, color: c.onSurface, fontFamily: font.headline }}>
+      <div data-immersive style={{ minHeight: "100dvh", background: c.background, color: c.onSurface, fontFamily: font.headline }}>
         <nav style={{
           position: "sticky", top: 0, zIndex: 50, height: 64,
           display: "flex", alignItems: "center", gap: 16, padding: "0 16px",
@@ -409,7 +409,7 @@ export function ExamRunner({ exam, sections, userId }: Props) {
   /* ── REVIEW ────────────────────────────────────────────────────────── */
   if (phase.kind === "review" && reviewResult) {
     return (
-      <div style={{ background: c.background, color: c.onSurface, minHeight: "100vh", fontFamily: font.headline }}>
+      <div data-immersive style={{ background: c.background, color: c.onSurface, minHeight: "100dvh", fontFamily: font.headline }}>
         <main style={{ padding: "24px 24px 128px", maxWidth: 480, margin: "0 auto" }}>
           <div style={{
             background: reviewResult.passed
@@ -519,7 +519,7 @@ export function ExamRunner({ exam, sections, userId }: Props) {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: c.background, color: c.onSurface, fontFamily: font.headline }}>
+    <div data-immersive style={{ minHeight: "100dvh", background: c.background, color: c.onSurface, fontFamily: font.headline }}>
       <nav style={{
         position: "sticky", top: 0, zIndex: 50, height: 64,
         display: "flex", alignItems: "center", gap: 16, padding: "0 16px",

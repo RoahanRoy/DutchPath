@@ -101,7 +101,7 @@ export function ReadingClient({ lessons }: Props) {
     const totalCorrect = questions.filter((q: any, i: number) => selectedAnswers[i] === getCorrectIdx(q)).length;
 
     return (
-      <div style={{ background: c.background, color: c.onSurface, fontFamily: font.headline, minHeight: "100vh" }}>
+      <div data-immersive style={{ background: c.background, color: c.onSurface, fontFamily: font.headline, minHeight: "100dvh" }}>
         {/* Top bar */}
         <nav style={{
           position: "fixed", top: 0, width: "100%", zIndex: 50,

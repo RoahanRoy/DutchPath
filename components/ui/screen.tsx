@@ -24,13 +24,17 @@ export function Screen({
   children,
   style,
   width = 460,
+  immersive = false,
 }: {
   children: ReactNode;
   style?: CSSProperties;
   width?: number;
+  /** a focused session: hides the tab pill (see `.dp-tabbar` in globals.css) */
+  immersive?: boolean;
 }) {
   return (
     <div
+      data-immersive={immersive || undefined}
       style={{
         fontFamily: font.headline,
         maxWidth: width,
