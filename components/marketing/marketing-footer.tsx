@@ -47,6 +47,7 @@ export function MarketingFooter() {
         <nav style={{ display: "flex", flexDirection: "column", gap: 8, flex: "0 0 auto" }}>
           <span style={heading}>Tools</span>
           <Link href="/30-percent-ruling-check" style={link}>30% ruling check</Link>
+          <Link href="/30-percent-ruling-calculator" style={link}>30% ruling calculator</Link>
           <Link href="/guides" style={link}>Guides</Link>
         </nav>
 

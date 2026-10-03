@@ -1,9 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { RulingFlow } from "@/components/settle/ruling-flow";
 import { useTheme, getColors } from "@/lib/use-theme";
 import { stashRun } from "@/lib/settle/ruling-stash";
+import { netPayHrefFromCheck } from "@/lib/settle/net-pay";
 
 const font = {
   headline: "'Instrument Sans', system-ui, sans-serif",
@@ -36,24 +38,39 @@ export function CheckClient() {
       prefill={{}}
       backLink={{ href: "/settle-in-nl", label: "Settle in NL" }}
       resultCta={(_result, answers) => (
-        <button
-          type="button"
-          className="tap-shrink"
-          onClick={() => {
-            stashRun(answers);
-            router.push(`/signup?next=${encodeURIComponent(SAVE_PATH)}`);
-          }}
-          style={{
-            flex: 1, minWidth: 140, padding: "14px 16px", borderRadius: 16,
-            border: "none", cursor: "pointer",
-            fontFamily: font.headline, fontSize: 14, fontWeight: 600,
-            background: c.coSoft, color: c.coInk,
-            display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6,
-          }}
-        >
-          Save this result
-          <span className="mso" aria-hidden="true" style={{ fontSize: 17 }}>bookmark_add</span>
-        </button>
+        <>
+          <Link
+            href={netPayHrefFromCheck("/30-percent-ruling-calculator", answers)}
+            className="tap-shrink"
+            style={{
+              flex: 1, minWidth: 140, padding: "14px 16px", borderRadius: 16,
+              fontFamily: font.headline, fontSize: 14, fontWeight: 600, textDecoration: "none",
+              background: c.coSoft, color: c.coInk,
+              display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6,
+            }}
+          >
+            Estimate my net pay
+            <span className="mso" aria-hidden="true" style={{ fontSize: 17 }}>calculate</span>
+          </Link>
+          <button
+            type="button"
+            className="tap-shrink"
+            onClick={() => {
+              stashRun(answers);
+              router.push(`/signup?next=${encodeURIComponent(SAVE_PATH)}`);
+            }}
+            style={{
+              flex: 1, minWidth: 140, padding: "14px 16px", borderRadius: 16,
+              border: "none", cursor: "pointer",
+              fontFamily: font.headline, fontSize: 14, fontWeight: 600,
+              background: c.coSoft, color: c.coInk,
+              display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6,
+            }}
+          >
+            Save this result
+            <span className="mso" aria-hidden="true" style={{ fontSize: 17 }}>bookmark_add</span>
+          </button>
+        </>
       )}
     />
   );

@@ -39,6 +39,7 @@ export function MarketingHeader() {
         style={{ alignItems: "center", gap: 20 }}
       >
         <Link href="/30-percent-ruling-check" style={navLink}>30% ruling check</Link>
+        <Link href="/30-percent-ruling-calculator" style={navLink}>Net pay</Link>
         <Link href="/guides" style={navLink}>Guides</Link>
       </nav>
 

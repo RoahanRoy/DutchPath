@@ -11,13 +11,19 @@ const font = {
  * Rendered on every Settle surface. DutchPath organises publicly documented
  * Dutch admin deadlines; it is not a licensed adviser, and the rules it stores
  * change with each budget year. Say so plainly and point at the source.
+ *
+ * `body` replaces the default paragraph where a tool needs to say something more
+ * specific — a calculator's assumptions, or where its data comes from. It never
+ * removes the disclaimer itself.
  */
 export function SettleDisclaimer({
   officialUrl = "https://www.government.nl/themes/migration-and-travel/immigration-to-the-netherlands",
   officialLabel = "government.nl",
+  body,
 }: {
   officialUrl?: string;
   officialLabel?: string;
+  body?: string;
 }) {
   const { isDark } = useTheme();
   const c = getColors(isDark);
@@ -62,10 +68,8 @@ export function SettleDisclaimer({
             color: c.onSurfaceVariant,
           }}
         >
-          This is not legal, tax or immigration advice. Deadlines and eligibility
-          rules change, and your own situation may differ from the general case.
-          Always confirm against the official source before you act, and speak to
-          a qualified adviser for anything that affects your status or your taxes.
+          {body ??
+            "This is not legal, tax or immigration advice. Deadlines and eligibility rules change, and your own situation may differ from the general case. Always confirm against the official source before you act, and speak to a qualified adviser for anything that affects your status or your taxes."}
         </p>
         <a
           href={officialUrl}

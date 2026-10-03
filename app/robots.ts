@@ -21,6 +21,7 @@ export default function robots(): MetadataRoute.Robots {
         allow: [
           "/settle-in-nl",
           "/30-percent-ruling-check",
+          "/30-percent-ruling-calculator",
           "/guides",
         ],
         disallow: [

@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/client";
 import { RulingFlow } from "@/components/settle/ruling-flow";
 import { useTheme, getColors } from "@/lib/use-theme";
 import { storedComputed, type RulingAnswers } from "@/lib/settle/ruling-30";
+import { netPayHrefFromCheck } from "@/lib/settle/net-pay";
 import type { Database, Json } from "@/lib/supabase/types";
 
 type RulingCheckInsert = Database["public"]["Tables"]["settle_ruling_checks"]["Insert"];
@@ -60,20 +61,35 @@ export function RulingClient({
           return { error: `Your result is below, but it could not be saved: ${error.message}` };
         }
       }}
-      resultCta={() => (
-        <Link
-          href="/settle"
-          className="tap-shrink"
-          style={{
-            flex: 1, minWidth: 140, padding: "14px 16px", borderRadius: 9999,
-            fontFamily: font.headline, fontSize: 14, fontWeight: 700, textDecoration: "none",
-            background: `${c.coSoft}`, color: c.primary,
-            display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6,
-          }}
-        >
-          Back to Settle
-          <span className="mso" aria-hidden="true" style={{ fontSize: 17 }}>arrow_forward</span>
-        </Link>
+      resultCta={(_result, answers) => (
+        <>
+          <Link
+            href={netPayHrefFromCheck("/settle/net-pay", answers)}
+            className="tap-shrink"
+            style={{
+              flex: 1, minWidth: 140, padding: "14px 16px", borderRadius: 9999,
+              fontFamily: font.headline, fontSize: 14, fontWeight: 700, textDecoration: "none",
+              background: `${c.coSoft}`, color: c.primary,
+              display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6,
+            }}
+          >
+            Estimate my net pay
+            <span className="mso" aria-hidden="true" style={{ fontSize: 17 }}>calculate</span>
+          </Link>
+          <Link
+            href="/settle"
+            className="tap-shrink"
+            style={{
+              flex: 1, minWidth: 140, padding: "14px 16px", borderRadius: 9999,
+              fontFamily: font.headline, fontSize: 14, fontWeight: 700, textDecoration: "none",
+              background: `${c.coSoft}`, color: c.primary,
+              display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6,
+            }}
+          >
+            Back to Settle
+            <span className="mso" aria-hidden="true" style={{ fontSize: 17 }}>arrow_forward</span>
+          </Link>
+        </>
       )}
     />
   );

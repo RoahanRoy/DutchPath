@@ -48,6 +48,26 @@ const TOOL_BY_RULE_KEY: Record<string, { href: string; label: string; icon: stri
   },
 };
 
+/**
+ * Standalone tools, shown as cards under the timeline. Unlike TOOL_BY_RULE_KEY
+ * these are not tied to a rule firing. Adding one is an entry here plus its
+ * route under app/(app)/settle/.
+ */
+const TOOLS: { href: string; icon: string; title: string; blurb: string }[] = [
+  {
+    href: "/settle/30-ruling",
+    icon: "fact_check",
+    title: "30% ruling check",
+    blurb: "A few questions against the Belastingdienst conditions. Guidance only — nothing is filed.",
+  },
+  {
+    href: "/settle/net-pay",
+    icon: "calculate",
+    title: "Net pay calculator",
+    blurb: "Your take-home pay with and without the 30% ruling, from this year's tax tables.",
+  },
+];
+
 const SEVERITY_LABEL: Record<SettleSeverity, string> = {
   blocking: "Blocking",
   costly: "Costs money",
@@ -440,39 +460,43 @@ export function SettleClient({ entries }: { entries: SettleEntry[] }) {
         })}
 
         {/* ── Tools ──
-             A card rather than a row inside a group: the checker is not a
-             deadline, and it stays reachable for users the 30% ruling rule
-             never fires for (self-employed) or who already marked it done. */}
-        <Link
-          href="/settle/30-ruling"
-          className="fm-fade-up tap-shrink"
-          style={{
-            display: "flex", alignItems: "center", gap: 13,
-            border: `1px solid ${c.line}`, background: c.card2, borderRadius: 18, padding: 16,
-            textDecoration: "none",
-          }}
-        >
-          <span
-            style={{
-              flexShrink: 0, width: 40, height: 40, borderRadius: 13, background: c.coSoft,
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}
-          >
-            <span className="mso" aria-hidden="true" style={{ fontSize: 20, color: c.co }}>calculate</span>
-          </span>
-          <span style={{ flex: 1, minWidth: 0 }}>
-            <span style={{ display: "block", fontSize: 14.5, fontWeight: 600, color: c.ink }}>
-              30% ruling check
-            </span>
-            <span style={{ display: "block", fontSize: 12, lineHeight: 1.5, color: c.ink70, marginTop: 3 }}>
-              A few questions against the Belastingdienst conditions. Guidance only —
-              nothing is filed.
-            </span>
-          </span>
-          <span className="mso" aria-hidden="true" style={{ fontSize: 20, color: c.ink25, flexShrink: 0 }}>
-            chevron_right
-          </span>
-        </Link>
+             Cards rather than rows inside a group: a tool is not a deadline,
+             and each stays reachable for users its rule never fires for (the
+             self-employed, for the 30% ruling) or who already marked it done. */}
+        <section aria-label="Tools" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {TOOLS.map((tool) => (
+            <Link
+              key={tool.href}
+              href={tool.href}
+              className="fm-fade-up tap-shrink"
+              style={{
+                display: "flex", alignItems: "center", gap: 13,
+                border: `1px solid ${c.line}`, background: c.card2, borderRadius: 18, padding: 16,
+                textDecoration: "none",
+              }}
+            >
+              <span
+                style={{
+                  flexShrink: 0, width: 40, height: 40, borderRadius: 13, background: c.coSoft,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                }}
+              >
+                <span className="mso" aria-hidden="true" style={{ fontSize: 20, color: c.co }}>{tool.icon}</span>
+              </span>
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ display: "block", fontSize: 14.5, fontWeight: 600, color: c.ink }}>
+                  {tool.title}
+                </span>
+                <span style={{ display: "block", fontSize: 12, lineHeight: 1.5, color: c.ink70, marginTop: 3 }}>
+                  {tool.blurb}
+                </span>
+              </span>
+              <span className="mso" aria-hidden="true" style={{ fontSize: 20, color: c.ink25, flexShrink: 0 }}>
+                chevron_right
+              </span>
+            </Link>
+          ))}
+        </section>
 
         <SettleDisclaimer />
       </div>
