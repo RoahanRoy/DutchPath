@@ -5,12 +5,22 @@ import { useState, useEffect, useCallback } from "react";
 /**
  * Theme hook — manages dark/light mode via the `dark` class on <html>.
  * Persists preference in localStorage.
+ *
+ * Storage access is wrapped: localStorage throws outright when the browser
+ * blocks site data, and unguarded that took down every page using this hook.
+ * Without storage the theme still follows the OS; only the saved override is
+ * lost.
  */
 export function useTheme() {
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
-    const stored = localStorage.getItem("theme");
+    let stored: string | null = null;
+    try {
+      stored = localStorage.getItem("theme");
+    } catch {
+      // Fall through to the OS preference.
+    }
     const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
     const dark = stored === "dark" || (!stored && prefersDark);
     setIsDark(dark);
@@ -21,7 +31,11 @@ export function useTheme() {
     setIsDark((prev) => {
       const next = !prev;
       document.documentElement.classList.toggle("dark", next);
-      localStorage.setItem("theme", next ? "dark" : "light");
+      try {
+        localStorage.setItem("theme", next ? "dark" : "light");
+      } catch {
+        // The toggle still applies for this page view.
+      }
       return next;
     });
   }, []);
