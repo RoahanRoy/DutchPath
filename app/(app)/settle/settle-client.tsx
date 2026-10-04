@@ -77,6 +77,12 @@ const TOOLS: { href: string; icon: string; title: string; blurb: string }[] = [
     title: "Net pay calculator",
     blurb: "Your take-home pay with and without the 30% ruling, from this year's tax tables.",
   },
+  {
+    href: "/settle/send-money",
+    icon: "currency_exchange",
+    title: "Send money to India",
+    blurb: "Rank your quotes by what arrives, with the markup hidden in each rate spelled out.",
+  },
 ];
 
 const SEVERITY_LABEL: Record<SettleSeverity, string> = {

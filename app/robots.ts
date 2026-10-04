@@ -23,6 +23,7 @@ export default function robots(): MetadataRoute.Robots {
           "/30-percent-ruling-check",
           "/30-percent-ruling-calculator",
           "/expat-checklist-netherlands",
+          "/send-money-india",
           "/guides",
         ],
         disallow: [

@@ -125,8 +125,29 @@ admin (arrival stack, 30% ruling, healthcare, residency).
   carries trigger conditions, deadline offsets, and
   `effective_from` / `effective_to`.
 - Rules are immutable reference content: read them through the
-  `unstable_cache` pattern in `lib/supabase/reference.ts`.
-  User-scoped settle tables are NEVER read that way.
+  `unstable_cache` readers in `lib/settle/rules.ts`
+  (`getActiveRules`, `getActiveRuleSteps` — same service-role pattern
+  as `lib/supabase/reference.ts`). User-scoped settle tables are NEVER
+  read that way.
+- Tables: reference `settle_rules` (with `depends_on`, the checklist
+  ordering) and `settle_rule_steps`; user-scoped `settle_profile`,
+  `settle_timeline_items` (with `completed_steps`),
+  `settle_ruling_checks`, `settle_documents`.
+- Tools ship twice: a public page in `app/(marketing)/` and an in-app
+  page in `app/(app)/settle/`, sharing one `components/settle/`
+  component that imports no Supabase client. In-app tools are listed
+  in `TOOLS` in `settle-client.tsx`; a new public page also needs
+  `app/robots.ts` (allow), `app/sitemap.ts` and the marketing
+  header/footer.
+- Budget-year figures live in versioned tables with a `*_VERIFIED_ON`
+  date and an annual-review TODO: `RULING_YEARS` (`ruling-30.ts`),
+  `TAX_YEARS` (`net-pay.ts`), `LRS_RULES` (`transfer-data.ts`). An
+  unpublished year is absent or null, never copied forward.
+- The only third-party fetch is the ECB EUR/INR rate via Frankfurter
+  in `lib/settle/transfers.ts`: server-only, fetch-cached for an hour
+  (tag `fx-rates`), 3s timeout, `null` on any failure. No provider
+  quote feeds — Wise's terms forbid commercial use of its API data
+  without written permission, so the comparer ranks user-typed quotes.
 - No LLM calls anywhere in eligibility or deadline logic.
   Deterministic functions only.
 - Nothing here is legal, tax or immigration advice. Every surface

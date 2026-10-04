@@ -49,6 +49,7 @@ export function MarketingFooter() {
           <Link href="/30-percent-ruling-check" style={link}>30% ruling check</Link>
           <Link href="/30-percent-ruling-calculator" style={link}>30% ruling calculator</Link>
           <Link href="/expat-checklist-netherlands" style={link}>Expat checklist</Link>
+          <Link href="/send-money-india" style={link}>Send money to India</Link>
           <Link href="/guides" style={link}>Guides</Link>
         </nav>
 

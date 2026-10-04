@@ -41,6 +41,7 @@ export function MarketingHeader() {
         <Link href="/30-percent-ruling-check" style={navLink}>30% ruling check</Link>
         <Link href="/30-percent-ruling-calculator" style={navLink}>Net pay</Link>
         <Link href="/expat-checklist-netherlands" style={navLink}>Checklist</Link>
+        <Link href="/send-money-india" style={navLink}>Send money</Link>
         <Link href="/guides" style={navLink}>Guides</Link>
       </nav>
 
