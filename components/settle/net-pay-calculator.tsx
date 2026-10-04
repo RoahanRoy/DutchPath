@@ -107,11 +107,14 @@ function ScenarioCard({
   kicker,
   s,
   accent,
+  inMay,
 }: {
   c: Palette;
   kicker: string;
   s: Scenario;
   accent: boolean;
+  /** Holiday pay comes with May's salary, so a usual month excludes it. */
+  inMay: boolean;
 }) {
   return (
     <Card
@@ -127,12 +130,17 @@ function ScenarioCard({
         color: accent ? c.coInk : c.ink, letterSpacing: "-0.01em",
         fontVariantNumeric: "tabular-nums",
       }}>
-        {eur.format(s.netMonthly)}
+        {eur.format(inMay ? s.netMonthlyExHoliday : s.netMonthly)}
       </div>
       <div style={{ fontSize: 12, fontWeight: 600, color: accent ? c.coInk : c.ink45, marginTop: 4 }}>
         net per month
       </div>
-      <div style={{ fontSize: 12.5, fontWeight: 500, color: accent ? c.coInk : c.ink70, marginTop: 10 }}>
+      {inMay && (
+        <div style={{ fontSize: 12.5, fontWeight: 500, color: accent ? c.coInk : c.ink70, marginTop: 10 }}>
+          + {eur.format(s.holidayNet)} in May
+        </div>
+      )}
+      <div style={{ fontSize: 12.5, fontWeight: 500, color: accent ? c.coInk : c.ink70, marginTop: inMay ? 2 : 10 }}>
         {eur.format(s.netAnnual)} a year
       </div>
     </Card>
@@ -167,6 +175,7 @@ export function NetPayCalculator({
   const [amountText, setAmountText] = useState(String(initial.amount));
   const [period, setPeriod] = useState<"year" | "month">(initial.period);
   const [includesHoliday, setIncludesHoliday] = useState(initial.includesHolidayAllowance);
+  const [holidayInMay, setHolidayInMay] = useState(initial.holidayInMay);
   const [under30Master, setUnder30Master] = useState(initial.under30Master);
   const [year, setYear] = useState(DEFAULT_TAX_YEAR);
   const [prefillNote, setPrefillNote] = useState(initial.prefillNote);
@@ -189,6 +198,9 @@ export function NetPayCalculator({
     setIncludesHoliday(nextIncludes);
   };
 
+  // What lands in a usual month: without May's lump sum when holiday pay comes then.
+  const monthly = (s: Scenario) => (holidayInMay ? s.netMonthlyExHoliday : s.netMonthly);
+
   const meta = result ? STATUS_META[result.ruling.status] : null;
   const tone = meta ? t[meta.tone] : null;
 
@@ -201,7 +213,10 @@ export function NetPayCalculator({
     { label: "Labour tax credit", pick: (s) => `− ${eur.format(s.labourCredit)}` },
     { label: "Tax you pay", pick: (s) => eur.format(s.tax), strong: true },
     { label: "Net per year", pick: (s) => eur.format(s.netAnnual), strong: true },
-    { label: "Typical monthly payslip*", pick: (s) => eur.format(s.netMonthlyExHoliday) },
+    { label: "Monthly payslip*", pick: (s) => eur.format(monthly(s)) },
+    ...(holidayInMay
+      ? [{ label: "May payslip, with holiday pay*", pick: (s: Scenario) => eur.format(s.netMonthlyExHoliday + s.holidayNet) }]
+      : []),
     { label: "Effective tax rate", pick: (s) => `${s.effectiveRate.toLocaleString("en-GB")}%` },
   ];
 
@@ -292,6 +307,13 @@ export function NetPayCalculator({
             />
             <ToggleRow
               c={c}
+              checked={holidayInMay}
+              onChange={setHolidayInMay}
+              title="Holiday allowance paid in May"
+              hint="Most employers pay it in one go with May's salary. Turn this off if yours adds it to every month."
+            />
+            <ToggleRow
+              c={c}
               checked={under30Master}
               onChange={setUnder30Master}
               title="Under 30 with a master's degree"
@@ -328,8 +350,8 @@ export function NetPayCalculator({
               aria-label="Net pay"
               style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10, marginBottom: 10 }}
             >
-              <ScenarioCard c={c} kicker="Without ruling" s={result.withoutRuling} accent={false} />
-              <ScenarioCard c={c} kicker="With 30% ruling" s={result.withRuling} accent />
+              <ScenarioCard c={c} kicker="Without ruling" s={result.withoutRuling} accent={false} inMay={holidayInMay} />
+              <ScenarioCard c={c} kicker="With 30% ruling" s={result.withRuling} accent inMay={holidayInMay} />
             </section>
 
             {result.deltaAnnual > 0 && (
@@ -340,7 +362,7 @@ export function NetPayCalculator({
               }}>
                 <span style={{ fontSize: 13, fontWeight: 600 }}>The ruling is worth</span>
                 <span style={{ fontSize: 15, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
-                  + {eur.format(result.deltaMonthly)} a month · {eur.format(result.deltaAnnual)} a year
+                  + {eur.format(monthly(result.withRuling) - monthly(result.withoutRuling))} a month · {eur.format(result.deltaAnnual)} a year
                 </span>
               </div>
             )}
@@ -397,9 +419,11 @@ export function NetPayCalculator({
                 </tbody>
               </table>
               <p style={{ margin: "10px 0 0", fontSize: 11.5, fontWeight: 500, color: c.ink45, lineHeight: 1.5 }}>
-                * If holiday pay is paid out in one go in May. Monthly withholding runs off
-                payroll tables, so single payslips can differ; the year settles at the figures
-                above when you file.
+                * {holidayInMay
+                  ? "With holiday pay paid in one go in May. Payroll withholds tax on it at a special rate, so May's payslip can come out lower than this."
+                  : "With holiday pay spread over twelve months."}{" "}
+                Monthly withholding runs off payroll tables, so single payslips can differ; the
+                year settles at the figures above when you file.
               </p>
             </Card>
           </>

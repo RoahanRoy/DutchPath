@@ -157,6 +157,11 @@ export type Scenario = {
   netMonthly: number;
   /** A typical monthly payslip when holiday pay is paid out separately in May. */
   netMonthlyExHoliday: number;
+  /**
+   * The holiday allowance's share of the net, paid on top of May's salary when
+   * it is paid in one go. Twelve netMonthlyExHoliday plus this is netAnnual.
+   */
+  holidayNet: number;
   /** Tax as a share of gross, in percent. */
   effectiveRate: number;
 };
@@ -228,6 +233,7 @@ function scenario(t: TaxYear, gross: number, allowance: number): Scenario {
   const labourCredit = evalSchedule(t.labourCredit, taxable);
   const tax = Math.max(0, taxBeforeCredits - generalCredit - labourCredit);
   const netAnnual = gross - tax;
+  const netMonthlyExHoliday = Math.round(netAnnual / (1 + HOLIDAY_ALLOWANCE_PCT / 100) / 12);
 
   return {
     gross: Math.round(gross),
@@ -239,7 +245,9 @@ function scenario(t: TaxYear, gross: number, allowance: number): Scenario {
     tax: Math.round(tax),
     netAnnual: Math.round(netAnnual),
     netMonthly: Math.round(netAnnual / 12),
-    netMonthlyExHoliday: Math.round(netAnnual / (1 + HOLIDAY_ALLOWANCE_PCT / 100) / 12),
+    netMonthlyExHoliday,
+    // From the rounded figures, so the months and May add up to the year.
+    holidayNet: Math.round(netAnnual) - 12 * netMonthlyExHoliday,
     effectiveRate: gross > 0 ? Math.round((tax / gross) * 1000) / 10 : 0,
   };
 }
@@ -382,6 +390,8 @@ export type NetPayInitial = {
   amount: number;
   period: "year" | "month";
   includesHolidayAllowance: boolean;
+  /** Paid in one go with May's salary (the usual way), rather than monthly. */
+  holidayInMay: boolean;
   under30Master: boolean;
   /** Set when the amount was derived rather than typed, so the UI can say how. */
   prefillNote: string | null;
@@ -392,6 +402,7 @@ export const DEFAULT_NET_PAY_INITIAL: NetPayInitial = {
   amount: 60_000,
   period: "year",
   includesHolidayAllowance: true,
+  holidayInMay: true,
   under30Master: false,
   prefillNote: null,
 };
@@ -410,6 +421,7 @@ function readAmount(raw: string | null | undefined): number | null {
  *
  *   salary  gross amount as quoted          per  "month" for a monthly figure
  *   hol     "0" if it excludes holiday pay   u30  "1" for under 30 + master's
+ *   may     "0" if holiday pay is spread monthly instead of paid in May
  *   taxable the 30% ruling check's salary — converted with grossFromTaxable()
  *
  * Anything missing or malformed falls back to DEFAULT_NET_PAY_INITIAL, field by
@@ -417,6 +429,7 @@ function readAmount(raw: string | null | undefined): number | null {
  */
 export function netPayInitialFrom(get: (key: string) => string | null | undefined): NetPayInitial {
   const under30Master = get("u30") === "1";
+  const holidayInMay = get("may") !== "0";
   const salary = readAmount(get("salary"));
 
   if (salary !== null) {
@@ -428,6 +441,7 @@ export function netPayInitialFrom(get: (key: string) => string | null | undefine
       // Unstated, an annual figure is assumed to include holiday pay and a
       // monthly one to exclude it — how Dutch offers are usually written.
       includesHolidayAllowance: hol === "1" ? true : hol === "0" ? false : period === "year",
+      holidayInMay,
       under30Master,
       prefillNote: null,
     };
@@ -441,6 +455,7 @@ export function netPayInitialFrom(get: (key: string) => string | null | undefine
         amount: gross,
         period: "year",
         includesHolidayAllowance: true,
+        holidayInMay,
         under30Master,
         prefillNote:
           gross === taxable
@@ -450,7 +465,7 @@ export function netPayInitialFrom(get: (key: string) => string | null | undefine
     }
   }
 
-  return { ...DEFAULT_NET_PAY_INITIAL, under30Master };
+  return { ...DEFAULT_NET_PAY_INITIAL, holidayInMay, under30Master };
 }
 
 /** A link into the calculator from a ruling check's answers. */
