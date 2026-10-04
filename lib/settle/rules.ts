@@ -1,7 +1,7 @@
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { unstable_cache } from "next/cache";
 import { getAmsterdamDate } from "@/lib/utils";
-import type { Database, SettleRule } from "@/lib/supabase/types";
+import type { Database, SettleRule, SettleRuleStep } from "@/lib/supabase/types";
 
 /**
  * SERVER-ONLY. Data access for the Settle track's rule engine.
@@ -52,9 +52,38 @@ export const getActiveRules = unstable_cache(
       .or(`effective_to.is.null,effective_to.gte.${today}`)
       .order("category")
       .order("effective_from");
-    return (data ?? []) as unknown as SettleRule[];
+    // `depends_on` arrived in 0011. Default it so a deploy that lands before the
+    // migration renders an unordered list instead of crashing on `undefined`.
+    return ((data ?? []) as unknown as SettleRule[]).map((r) => ({
+      ...r,
+      depends_on: r.depends_on ?? [],
+    }));
   },
   ["settle-rules"],
+  { revalidate: REVALIDATE_SECONDS, tags: ["settle-rules"] }
+);
+
+/**
+ * Every step in force today, ordered by rule then position. Same validity
+ * window and cache tag as getActiveRules(), so revalidating "settle-rules"
+ * refreshes both together.
+ *
+ * Returns [] when the read fails — including before 0011 creates the table —
+ * so a page degrades to rules without steps rather than erroring.
+ */
+export const getActiveRuleSteps = unstable_cache(
+  async (): Promise<SettleRuleStep[]> => {
+    const today = getAmsterdamDate();
+    const { data } = await adminClient()
+      .from("settle_rule_steps")
+      .select("*")
+      .lte("effective_from", today)
+      .or(`effective_to.is.null,effective_to.gte.${today}`)
+      .order("rule_key")
+      .order("position");
+    return (data ?? []) as unknown as SettleRuleStep[];
+  },
+  ["settle-rule-steps"],
   { revalidate: REVALIDATE_SECONDS, tags: ["settle-rules"] }
 );
 

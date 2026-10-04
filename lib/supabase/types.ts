@@ -445,6 +445,29 @@ export type SettleRule = {
   effective_from: string;
   effective_to: string | null;
   created_at: string;
+  /**
+   * Rule keys that logically come first (0011). Structural ordering only: it
+   * drives a soft "do X first" hint and never blocks marking anything done.
+   */
+  depends_on: string[];
+};
+
+/**
+ * One step inside a rule: what to do, what to bring (0011). Immutable reference
+ * content like SettleRule, and joined to it by `rule_key` with no FK.
+ */
+export type SettleRuleStep = {
+  id: number;
+  key: string;
+  rule_key: string;
+  position: number;
+  title_en: string;
+  body_en: string;
+  bring_en: string[];
+  official_url: string | null;
+  effective_from: string;
+  effective_to: string | null;
+  created_at: string;
 };
 
 export type SettleProfile = {
@@ -468,6 +491,8 @@ export type SettleTimelineItem = {
   status: SettleTimelineStatus;
   completed_at: string | null;
   created_at: string;
+  /** Keys of the settle_rule_steps rows the user has ticked (0011). */
+  completed_steps: string[];
 };
 
 export type SettleDocument = {
@@ -599,8 +624,13 @@ export interface Database {
       };
       settle_rules: {
         Row: SettleRule;
-        Insert: { key: string; category: string; title_en: string; summary_en: string; body_en: string; official_url?: string | null; trigger_conditions?: Json; offset_days?: number | null; offset_from?: string | null; fixed_date?: string | null; severity: string; effective_from: string; effective_to?: string | null; created_at?: string };
-        Update: { id?: number; key?: string; category?: string; title_en?: string; summary_en?: string; body_en?: string; official_url?: string | null; trigger_conditions?: Json; offset_days?: number | null; offset_from?: string | null; fixed_date?: string | null; severity?: string; effective_from?: string; effective_to?: string | null; created_at?: string };
+        Insert: { key: string; category: string; title_en: string; summary_en: string; body_en: string; official_url?: string | null; trigger_conditions?: Json; offset_days?: number | null; offset_from?: string | null; fixed_date?: string | null; severity: string; effective_from: string; effective_to?: string | null; created_at?: string; depends_on?: string[] };
+        Update: { id?: number; key?: string; category?: string; title_en?: string; summary_en?: string; body_en?: string; official_url?: string | null; trigger_conditions?: Json; offset_days?: number | null; offset_from?: string | null; fixed_date?: string | null; severity?: string; effective_from?: string; effective_to?: string | null; created_at?: string; depends_on?: string[] };
+      };
+      settle_rule_steps: {
+        Row: SettleRuleStep;
+        Insert: { key: string; rule_key: string; position: number; title_en: string; body_en: string; bring_en?: string[]; official_url?: string | null; effective_from: string; effective_to?: string | null; created_at?: string };
+        Update: { id?: number; key?: string; rule_key?: string; position?: number; title_en?: string; body_en?: string; bring_en?: string[]; official_url?: string | null; effective_from?: string; effective_to?: string | null; created_at?: string };
       };
       settle_profile: {
         Row: SettleProfile;
@@ -609,8 +639,8 @@ export interface Database {
       };
       settle_timeline_items: {
         Row: SettleTimelineItem;
-        Insert: { user_id: string; rule_key: string; due_date?: string | null; status?: string; completed_at?: string | null; created_at?: string };
-        Update: { id?: number; user_id?: string; rule_key?: string; due_date?: string | null; status?: string; completed_at?: string | null; created_at?: string };
+        Insert: { user_id: string; rule_key: string; due_date?: string | null; status?: string; completed_at?: string | null; created_at?: string; completed_steps?: string[] };
+        Update: { id?: number; user_id?: string; rule_key?: string; due_date?: string | null; status?: string; completed_at?: string | null; created_at?: string; completed_steps?: string[] };
       };
       settle_documents: {
         Row: SettleDocument;

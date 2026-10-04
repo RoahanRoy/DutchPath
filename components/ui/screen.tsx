@@ -301,6 +301,52 @@ export function Chip({
   );
 }
 
+/** A two-to-four option pill switch, as an ARIA radiogroup. */
+export function Segmented<T extends string>({
+  value,
+  options,
+  onChange,
+  c,
+  label,
+}: {
+  value: T;
+  options: { value: T; label: string }[];
+  onChange: (v: T) => void;
+  c: Palette;
+  label: string;
+}) {
+  return (
+    <div
+      role="radiogroup"
+      aria-label={label}
+      style={{ display: "inline-flex", padding: 3, borderRadius: 12, background: c.sunk, gap: 2 }}
+    >
+      {options.map((o) => {
+        const on = o.value === value;
+        return (
+          <button
+            key={o.value}
+            type="button"
+            role="radio"
+            aria-checked={on}
+            onClick={() => onChange(o.value)}
+            style={{
+              border: "none", cursor: "pointer", borderRadius: 9, padding: "7px 12px",
+              fontFamily: font.headline, fontSize: 12.5, fontWeight: 600,
+              background: on ? c.card : "transparent",
+              color: on ? c.ink : c.ink45,
+              boxShadow: on ? "0 1px 3px rgba(16,17,20,.10)" : "none",
+              transition: "background 0.15s, color 0.15s",
+            }}
+          >
+            {o.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 /* ── Buttons ──
    Returned as style objects rather than components so existing call sites can
    keep whatever element and handlers they already have. */

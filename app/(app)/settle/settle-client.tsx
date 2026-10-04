@@ -4,17 +4,28 @@ import { useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { SettleDisclaimer } from "@/components/settle-disclaimer";
+import { StepList, DependsHint } from "@/components/settle/step-list";
+import { blockedBy, openRuleKeys, toggleStep } from "@/lib/settle/checklist";
 import { useTheme, getColors, font } from "@/lib/use-theme";
 import { Screen, Kicker, Display, Card, Chip, ProgressBar, screenTopPad } from "@/components/ui/screen";
 import { getAmsterdamDate } from "@/lib/utils";
-import type { Database, SettleRule, SettleSeverity, SettleTimelineItem } from "@/lib/supabase/types";
+import type {
+  Database,
+  SettleRule,
+  SettleRuleStep,
+  SettleSeverity,
+  SettleTimelineItem,
+  SettleTimelineStatus,
+} from "@/lib/supabase/types";
 
 type TimelineUpdate = Database["public"]["Tables"]["settle_timeline_items"]["Update"];
 
-/** One stored timeline row joined to the rule it was generated from. */
+/** One stored timeline row joined to the rule it was generated from, and that
+ *  rule's checklist steps (empty when none are seeded). */
 export type SettleEntry = {
   item: SettleTimelineItem;
   rule: SettleRule;
+  steps: SettleRuleStep[];
 };
 
 /** How far ahead "This month" reaches. A rolling window, not the calendar
@@ -109,6 +120,13 @@ function relativeDue(iso: string | null, today: string): string {
   return `In ${diff} days`;
 }
 
+/** The status an item returns to when a "done" is undone — what computeTimeline
+ *  would have produced for it, so the stored row stays consistent. */
+function reopenedStatus(item: SettleTimelineItem, today: string): SettleTimelineStatus {
+  if (!item.due_date) return "not_applicable";
+  return item.due_date <= today ? "due" : "upcoming";
+}
+
 function groupOf(item: SettleTimelineItem, today: string): Group {
   if (item.status === "done" || item.status === "skipped") return "done";
   if (!item.due_date) return "later";
@@ -135,30 +153,39 @@ export function SettleClient({ entries }: { entries: SettleEntry[] }) {
   const [expanded, setExpanded] = useState<Record<number, boolean>>({});
 
   const rows: SettleEntry[] = entries.map((e) => ({
-    rule: e.rule,
+    ...e,
     item: { ...e.item, ...overrides[e.item.id] },
   }));
+
+  // For the soft "usually done after" hint: what is still open, and the title
+  // to show for each dependency.
+  const openKeys = openRuleKeys(rows.map((r) => r.item));
+  const titleByKey = new Map(rows.map((r) => [r.rule.key, r.rule.title_en]));
 
   const doneCount = rows.filter((r) => r.item.status === "done" || r.item.status === "skipped").length;
   const total = rows.length;
   const pct = total > 0 ? Math.round((doneCount / total) * 100) : 0;
   const allDone = total > 0 && doneCount === total;
 
-  const markDone = async (item: SettleTimelineItem) => {
+  /**
+   * Optimistic write of one timeline row: apply the patch to the view at once,
+   * then confirm. On failure the row returns to the override it had before this
+   * patch — not to the bare server props — so an earlier change that did save
+   * is not visually lost.
+   */
+  const patchItem = async (item: SettleTimelineItem, patch: TimelineUpdate & Partial<SettleTimelineItem>, failure: string) => {
     setError("");
-    const completedAt = new Date().toISOString();
+    const before = overrides[item.id];
 
-    // Optimistic: move the card immediately, then confirm.
-    setOverrides((prev) => ({ ...prev, [item.id]: { status: "done", completed_at: completedAt } }));
+    setOverrides((prev) => ({ ...prev, [item.id]: { ...prev[item.id], ...patch } }));
     setPending((prev) => ({ ...prev, [item.id]: true }));
 
     const supabase = createClient();
-    const patch: TimelineUpdate = { status: "done", completed_at: completedAt };
     // The hand-written `Database` type does not satisfy postgrest-js's
     // GenericSchema (no per-table `Relationships`), so every write in this
     // codebase infers its payload as `never` and is cast at the call site --
-    // see app/onboarding/page.tsx. The payload consts above are typed against
-    // the Insert types, so the data itself is still checked.
+    // see app/onboarding/page.tsx. The payload is typed against the Update
+    // type above, so the data itself is still checked.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error: updateError } = await (supabase.from("settle_timeline_items") as any)
       .update(patch)
@@ -171,15 +198,24 @@ export function SettleClient({ entries }: { entries: SettleEntry[] }) {
     });
 
     if (updateError) {
-      // Revert to whatever the server last told us.
       setOverrides((prev) => {
         const next = { ...prev };
-        delete next[item.id];
+        if (before) next[item.id] = before;
+        else delete next[item.id];
         return next;
       });
-      setError(`Could not mark that done: ${updateError.message}`);
+      setError(`${failure}: ${updateError.message}`);
     }
   };
+
+  const markDone = (item: SettleTimelineItem) =>
+    patchItem(item, { status: "done", completed_at: new Date().toISOString() }, "Could not mark that done");
+
+  const undoDone = (item: SettleTimelineItem) =>
+    patchItem(item, { status: reopenedStatus(item, today), completed_at: null }, "Could not undo that");
+
+  const toggleItemStep = (item: SettleTimelineItem, stepKey: string) =>
+    patchItem(item, { completed_steps: toggleStep(item.completed_steps, stepKey) }, "Could not save that step");
 
   const grouped = GROUP_ORDER.map((g) => ({
     group: g,
@@ -299,12 +335,15 @@ export function SettleClient({ entries }: { entries: SettleEntry[] }) {
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {groupRows.map(({ item, rule }) => {
+                {groupRows.map(({ item, rule, steps }) => {
                   const sev = severityColors(rule.severity, c);
                   const isPending = !!pending[item.id];
                   const tool = TOOL_BY_RULE_KEY[rule.key];
                   const isOpen = !!expanded[item.id];
                   const overdue = group === "overdue";
+                  const waitingOn = isDoneGroup
+                    ? []
+                    : blockedBy(rule, openKeys).map((k) => titleByKey.get(k) ?? k);
 
                   return (
                     <div
@@ -379,6 +418,18 @@ export function SettleClient({ entries }: { entries: SettleEntry[] }) {
                             )}
                           </div>
 
+                          <DependsHint titles={waitingOn} c={c} />
+
+                          {!isDoneGroup && (
+                            <StepList
+                              steps={steps}
+                              completed={item.completed_steps}
+                              onToggle={(key) => toggleItemStep(item, key)}
+                              disabled={isPending}
+                              c={c}
+                            />
+                          )}
+
                           <div style={{ display: "flex", gap: 8, marginTop: 13, flexWrap: "wrap" }}>
                             {rule.official_url && (
                               <a
@@ -417,17 +468,37 @@ export function SettleClient({ entries }: { entries: SettleEntry[] }) {
                             )}
 
                             {isDoneGroup ? (
-                              <span
-                                style={{
-                                  flex: 1, minWidth: 120,
-                                  display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 5,
-                                  fontSize: 13, fontWeight: 600, color: c.gr,
-                                  padding: "11px 0",
-                                }}
-                              >
-                                <span className="mso mso-fill" aria-hidden="true" style={{ fontSize: 16 }}>check_circle</span>
-                                {item.status === "skipped" ? "Skipped" : "Done"}
-                              </span>
+                              <>
+                                <span
+                                  style={{
+                                    flex: 1, minWidth: 120,
+                                    display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 5,
+                                    fontSize: 13, fontWeight: 600, color: c.gr,
+                                    padding: "11px 0",
+                                  }}
+                                >
+                                  <span className="mso mso-fill" aria-hidden="true" style={{ fontSize: 16 }}>check_circle</span>
+                                  {item.status === "skipped" ? "Skipped" : "Done"}
+                                </span>
+                                <button
+                                  type="button"
+                                  className="tap-shrink"
+                                  onClick={() => undoDone(item)}
+                                  disabled={isPending}
+                                  style={{
+                                    flex: 1, minWidth: 120,
+                                    border: `1px solid ${c.line}`, background: c.card2, color: c.ink70,
+                                    cursor: isPending ? "default" : "pointer",
+                                    fontFamily: font.headline, fontSize: 13, fontWeight: 600,
+                                    padding: "11px 0", borderRadius: 12,
+                                    opacity: isPending ? 0.5 : 1, transition: "opacity 0.2s",
+                                    display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 5,
+                                  }}
+                                >
+                                  <span className="mso" aria-hidden="true" style={{ fontSize: 16 }}>undo</span>
+                                  Undo
+                                </button>
+                              </>
                             ) : (
                               <button
                                 type="button"

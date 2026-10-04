@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient, getClaims } from "@/lib/supabase/server";
-import { getActiveRules } from "@/lib/settle/rules";
+import { getActiveRules, getActiveRuleSteps } from "@/lib/settle/rules";
+import { groupStepsByRule } from "@/lib/settle/checklist";
 import { computeTimeline } from "@/lib/settle/timeline";
 import { SettleOnboarding } from "./settle-onboarding";
 import { SettleClient, type SettleEntry } from "./settle-client";
@@ -25,8 +26,9 @@ export default async function SettlePage() {
 
   // Rules are shared reference content (cached, service-role); the two
   // user-scoped tables go through the cookie-bound client so RLS applies.
-  const [rules, { data: profileRaw }, { data: itemsRaw }] = await Promise.all([
+  const [rules, steps, { data: profileRaw }, { data: itemsRaw }] = await Promise.all([
     getActiveRules(),
+    getActiveRuleSteps(),
     // maybeSingle, not single — no row is the expected first-visit state.
     supabase.from("settle_profile").select("*").eq("user_id", userId).maybeSingle(),
     supabase.from("settle_timeline_items").select("*").eq("user_id", userId),
@@ -63,10 +65,15 @@ export default async function SettlePage() {
   // longer in force has no title to render and is dropped from the view — it
   // stays in the table, which is the point of `rule_key` carrying no FK.
   const ruleByKey = new Map(rules.map((r) => [r.key, r]));
+  const stepsByRule = groupStepsByRule(steps);
   const entries: SettleEntry[] = items
     .flatMap((item) => {
       const rule = ruleByKey.get(item.rule_key);
-      return rule ? [{ item, rule }] : [];
+      if (!rule) return [];
+      // `completed_steps` arrived in 0011; default it so rows read before the
+      // migration still render.
+      const withSteps = { ...item, completed_steps: item.completed_steps ?? [] };
+      return [{ item: withSteps, rule, steps: stepsByRule.get(rule.key) ?? [] }];
     })
     .sort((a, b) => {
       // Soonest first; undated items last.

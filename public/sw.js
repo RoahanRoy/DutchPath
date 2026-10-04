@@ -18,7 +18,7 @@
  * activate then drops every older cache.
  */
 
-const VERSION = "v5";
+const VERSION = "v6";
 const STATIC_CACHE = `dutchpath-static-${VERSION}`;
 const OFFLINE_URL = "/offline.html";
 
